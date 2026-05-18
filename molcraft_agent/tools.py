@@ -39,6 +39,80 @@ from molcraft_agent.experiments import (
 )
 from pipeline import run_evolutionary_pipeline
 
+# ── Stage tracking for begin_stage/end_stage tools ──
+_stage_name: str | None = None
+_stage_start: float | None = None
+
+
+class BeginStageParams(BaseModel):
+    name: str = Field(description="阶段名称: 诊断, 代码演进, 实验验证, 复盘")
+
+
+class BeginStage(CallableTool2):
+    name: str = "begin_stage"
+    description: str = (
+        "标记一个阶段的开始。在进入诊断、代码演进、实验验证、复盘四个阶段之一时调用。"
+        "必须在对应阶段结束时调用 end_stage 配对。"
+    )
+    params: type[BaseModel] = BeginStageParams
+
+    async def __call__(self, params: BeginStageParams) -> ToolReturnValue:
+        global _stage_name, _stage_start
+        if _stage_name is not None:
+            return ToolError(
+                output="",
+                message=f"阶段「{_stage_name}」尚未结束，不能开始新阶段",
+                brief="阶段嵌套错误",
+            )
+        import time
+        _stage_name = params.name
+        _stage_start = time.monotonic()
+        if hasattr(sys.stdout, "log_stage"):
+            sys.stdout.log_stage(name=params.name, status="begun")
+        return ToolOk(
+            output=json.dumps({
+                "status": "begun",
+                "stage": params.name,
+                "message": f"阶段「{params.name}」开始",
+            }, ensure_ascii=False),
+        )
+
+
+class EndStageParams(BaseModel):
+    pass
+
+
+class EndStage(CallableTool2):
+    name: str = "end_stage"
+    description: str = (
+        "标记当前阶段的结束。必须在 begin_stage 之后调用，自动计算耗时并记录。"
+    )
+    params: type[BaseModel] = EndStageParams
+
+    async def __call__(self, params: EndStageParams) -> ToolReturnValue:
+        global _stage_name, _stage_start
+        if _stage_name is None:
+            return ToolError(
+                output="",
+                message="没有正在进行的阶段，请先调用 begin_stage",
+                brief="阶段不匹配",
+            )
+        import time
+        elapsed = time.monotonic() - _stage_start
+        name = _stage_name
+        if hasattr(sys.stdout, "log_stage"):
+            sys.stdout.log_stage(name=name, status="completed", duration_seconds=round(elapsed, 1))
+        _stage_name = None
+        _stage_start = None
+        return ToolOk(
+            output=json.dumps({
+                "status": "completed",
+                "stage": name,
+                "duration_seconds": round(elapsed, 1),
+                "message": f"阶段「{name}」完成，耗时 {elapsed:.1f}s",
+            }, ensure_ascii=False),
+        )
+
 
 class GenerateParams(BaseModel):
     strategy: str = Field(
@@ -194,15 +268,6 @@ class PlanSynthesis(CallableTool2):
                 "route": result.get("route"),
                 "steps": result.get("steps"),
             }
-            # 分子逆合成完成后记录 molecule 事件
-            if hasattr(sys.stdout, "log_event"):
-                sys.stdout.log_event(
-                    "molecule",
-                    smiles=params.smiles,
-                    synthesis_steps=result.get("steps"),
-                    trivial_route=result.get("trivial", False),
-                    synthesis_route=result.get("route"),
-                )
             # 自动记录实验
             append_experiment(
                 tool="plan_synthesis",
@@ -309,7 +374,6 @@ class RunPipeline(CallableTool2):
                 n_generations=params.n_generations,
                 use_docking_guidance=params.use_docking_guidance,
                 output_dir="output",
-                append_result_log=True,
             )
             energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]
             trivial_count = sum(1 for r in results if r.get("trivial"))
@@ -412,9 +476,8 @@ class ReportIteration(CallableTool2):
                 "message": f"第 {params.round_num} 轮迭代已记录",
             }
             # 假设验证完成时记录 hypothesis_validation 事件
-            if hasattr(sys.stdout, "log_event"):
-                sys.stdout.log_event(
-                    "hypothesis_validation",
+            if hasattr(sys.stdout, "log_hypothesis_validation"):
+                sys.stdout.log_hypothesis_validation(
                     hypothesis_id=params.hypothesis_id,
                     success=params.success,
                     conclusion=params.summary,
