@@ -15,6 +15,7 @@ agent:
     - "kimi_cli.tools.think:Think"
 
     # MolCraft Agent 自定义化学工具
+    - "molcraft_agent.tools:IdentifyTarget"
     - "molcraft_agent.tools:GenerateMolecules"
     - "molcraft_agent.tools:DockMolecules"
     - "molcraft_agent.tools:PlanSynthesis"

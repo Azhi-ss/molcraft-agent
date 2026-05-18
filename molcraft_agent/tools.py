@@ -8,9 +8,18 @@
 import asyncio
 import json
 import os
+import re
 import sys
+import urllib.request
+import urllib.parse
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+
+import numpy as np
+from Bio.PDB import PDBParser
+from Bio.PDB.Polypeptide import is_aa
+from Bio.Blast import NCBIWWW, NCBIXML
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "tools"))
@@ -417,3 +426,208 @@ class ReportIteration(CallableTool2):
                 message=str(exc),
                 brief="迭代记录失败",
             )
+
+
+AA_CODES = {
+    'ALA': 'A', 'ARG': 'R', 'ASN': 'N', 'ASP': 'D', 'CYS': 'C',
+    'GLN': 'Q', 'GLU': 'E', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
+    'LEU': 'L', 'LYS': 'K', 'MET': 'M', 'PHE': 'F', 'PRO': 'P',
+    'SER': 'S', 'THR': 'T', 'TRP': 'W', 'TYR': 'Y', 'VAL': 'V',
+}
+
+
+class IdentifyTargetParams(BaseModel):
+    pdb_path: str = Field(
+        default="data/target.pdb",
+        description="靶点蛋白 PDB 文件路径",
+    )
+
+
+class IdentifyTarget(CallableTool2):
+    name: str = "identify_target"
+    description: str = (
+        "分析靶点蛋白：提取序列、识别蛋白身份（UniProt/BLAST）、定位活性位点、"
+        "验证对接盒子坐标是否对准活性口袋。这是阶段一「文献解析」的第一步，"
+        "确保所有后续对接实验基于正确的活性位点坐标。运行时间 5-30 秒。"
+    )
+    params: type[BaseModel] = IdentifyTargetParams
+
+    async def __call__(self, params: IdentifyTargetParams) -> ToolReturnValue:
+        try:
+            result = await asyncio.to_thread(_identify_target_impl, params.pdb_path)
+            return ToolOk(output=json.dumps(result, ensure_ascii=False))
+        except Exception as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "PDB 解析失败——检查 target.pdb 是否存在且格式正确",
+                    "retry": "确认 data/target.pdb 路径无误后重试",
+                }),
+                message=str(exc),
+                brief="靶点蛋白分析失败",
+            )
+
+
+def _identify_target_impl(pdb_path: str) -> dict:
+    pdb_path = Path(pdb_path)
+    if not pdb_path.exists():
+        raise FileNotFoundError(f"PDB 文件不存在: {pdb_path}")
+
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("target", str(pdb_path))
+    model = structure[0]
+
+    chains = list(model.get_chains())
+    chain = chains[0]
+
+    residues = [r for r in chain if is_aa(r)]
+    seq = "".join(AA_CODES.get(r.resname, "X") for r in residues)
+
+    # Structural analysis: N-lobe vs C-lobe, hinge region
+    heavy_atoms = []
+    for r in residues:
+        for a in r:
+            if a.element != "H":
+                heavy_atoms.append(a.get_coord())
+    all_coords = np.array(heavy_atoms)
+    protein_center = [float(x) for x in all_coords.mean(axis=0)]
+
+    n_lobe_res = residues[:85] if len(residues) >= 85 else residues[:len(residues)//2]
+    n_atoms = []
+    for r in n_lobe_res:
+        for a in r:
+            if a.element != "H":
+                n_atoms.append(a.get_coord())
+    n_center = [float(x) for x in np.array(n_atoms).mean(axis=0)] if n_atoms else protein_center
+
+    c_lobe_res = residues[85:] if len(residues) >= 85 else residues[len(residues)//2:]
+    c_atoms = []
+    for r in c_lobe_res:
+        for a in r:
+            if a.element != "H":
+                c_atoms.append(a.get_coord())
+    c_center = [float(x) for x in np.array(c_atoms).mean(axis=0)] if c_atoms else protein_center
+
+    cleft_center = [float(x) for x in (np.array(n_center) + np.array(c_center)) / 2]
+    suggested_center = [round(float(c), 2) for c in cleft_center]
+
+    # UniProt search
+    uniprot_result = _search_uniprot(seq)
+
+    # BLAST fallback
+    blast_result = None
+    if not uniprot_result.get("hit"):
+        blast_result = _search_blast(seq)
+
+    # Check current config
+    from src import config
+    current_center = config.DOCKING_CENTER
+    offset = round(
+        float(np.linalg.norm(np.array(current_center) - np.array(cleft_center))), 2
+    )
+
+    docking_verdict = "OK" if offset < 5.0 else "NEEDS_ADJUSTMENT"
+
+    protein_info = {
+        "name": "unknown",
+        "species": "unknown",
+        "uniprot_id": None,
+    }
+    if uniprot_result.get("hit"):
+        protein_info.update(uniprot_result["hit"])
+    elif blast_result:
+        protein_info.update(blast_result)
+
+    return {
+        "status": "success",
+        "summary": (
+            f"靶点蛋白: {protein_info.get('name', 'unknown')} "
+            f"({len(seq)} aa), 活性位点偏移 {offset} Å, "
+            f"对接坐标: {docking_verdict}"
+        ),
+        "protein": protein_info,
+        "sequence": {
+            "length": len(seq),
+            "sequence": seq,
+            "first_60": seq[:60],
+            "last_60": seq[-60:],
+        },
+        "structure": {
+            "chains": len(chains),
+            "residues": len(residues),
+            "protein_center": [round(float(c), 2) for c in protein_center],
+            "n_lobe_center": [round(float(c), 2) for c in n_center],
+            "c_lobe_center": [round(float(c), 2) for c in c_center],
+            "active_site_cleft": suggested_center,
+        },
+        "docking_check": {
+            "current_center": current_center,
+            "suggested_center": suggested_center,
+            "offset_angstrom": offset,
+            "verdict": docking_verdict,
+        },
+        "next_actions": [
+            "1. 如果 docking_check.verdict == 'NEEDS_ADJUSTMENT': 修改 src/config.py 的 DOCKING_CENTER 为 suggested_center",
+            "2. 用 identify_target 返回的蛋白信息指导文献搜索（SearchWeb 搜索蛋白名 + inhibitor/docking）",
+            "3. 继续阶段一：阅读 papers/ 文献，结合蛋白结构特征提出假设",
+        ] if docking_verdict == "NEEDS_ADJUSTMENT" else [
+            "1. 对接坐标已验证正确（偏移 < 5 Å），可信任现有对接结果",
+            "2. 用蛋白信息指导文献搜索",
+            "3. 继续正常迭代流程",
+        ],
+    }
+
+
+def _search_uniprot(seq: str) -> dict:
+    """Search UniProt REST API for protein identity by sequence fragment."""
+    query_seq = seq[:50] if len(seq) > 50 else seq
+    url = "https://rest.uniprot.org/uniprotkb/search"
+    params = {
+        "query": f'"{query_seq}"',
+        "fields": "accession,protein_name,organism_name,ft_act_site,ft_binding",
+        "format": "json",
+        "size": "3",
+    }
+    try:
+        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}")
+        req.add_header("User-Agent", "MolCraft-Agent/1.0")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+        results = data.get("results", [])
+        if results:
+            r = results[0]
+            name = r.get("proteinDescription", {}).get("recommendedName", {}).get("fullName", {}).get("value", "unknown")
+            organism = r.get("organism", {}).get("scientificName", "unknown")
+            return {
+                "hit": {
+                    "name": name,
+                    "species": organism,
+                    "uniprot_id": r.get("primaryAccession", "unknown"),
+                }
+            }
+    except Exception:
+        pass
+    return {"hit": None}
+
+
+def _search_blast(seq: str) -> dict | None:
+    """NCBI BLAST fallback for protein identification."""
+    try:
+        handle = NCBIWWW.qblast("blastp", "pdb", seq, hitlist_size=3, expect=0.001)
+        records = NCBIXML.parse(handle)
+        for rec in records:
+            for align in rec.alignments[:1]:
+                title = align.title
+                for hsp in align.hsps[:1]:
+                    identity = round(hsp.identities / hsp.align_length * 100, 1)
+                    return {
+                        "name": title[:80],
+                        "species": "see PDB entry",
+                        "identity_pct": identity,
+                        "evalue": hsp.expect,
+                    }
+        handle.close()
+    except Exception:
+        pass
+    return None

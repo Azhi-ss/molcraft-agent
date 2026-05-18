@@ -30,6 +30,7 @@
 
 1. **读取综述论文**：
    ```
+   identify_target()               # 必须先调用：识别靶点蛋白，验证对接坐标
    ReadFile: papers/autonomous_agents_survey.md
    ```
    重点关注以下章节和概念：

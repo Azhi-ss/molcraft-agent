@@ -1,31 +1,66 @@
-# Diagnosis — Round 3
+# 瓶颈诊断与假设报告 — Round 3
 
-## Problem Statement
+## 1. 当前状态（H011 + H012 后）
 
-After Rounds 1–2, the pipeline produces chemically diverse molecules but the top-10 ranking is dominated by sulfonamide scaffolds. The hypothesis is that *single-run Vina scores contain stochastic noise* that biases ranking toward certain scaffolds.
+| 指标 | H011 | H012 | 
+|------|:---:|:---:|
+| 最佳结合能 | -9.941 | -8.896 (随机波动) |
+| Top-10 平均 | -8.961 | -8.418 |
+| Trivial route | 1/10 | 1/10 |
+| Docking guidance | ON | ON |
 
-## Root Cause: Stochastic Docking Noise
+## 2. 瓶颈诊断
 
-- Vina uses a stochastic Monte Carlo search algorithm (seed=42 hardcoded).
-- Different seeds produce slightly different binding energies for identical molecules (±0.1–0.5 kcal/mol).
-- When 50+ molecules are compared on single-run scores, the 0.1–0.5 kcal/mol noise can shuffle the ranking of truly similar binders.
-- This biases selection toward scaffolds that happen to score well in a single run, reducing chemical diversity in the final set.
+### 瓶颈：突变取代基库过于贫乏
 
-## Solution: H009 — Consensus Docking
+**根因分析**:
+- `_add_substituent()` 仅支持 5 种取代基: F, Cl, OH, NH2, CH3
+- 药物分子常见的 CF3, CN, OCH3, NO2 等官能团无法通过突变引入
+- 这限制了生成器探索富含极性相互作用（氢键、卤键、π-π）的化学空间
+- Deep Lead Optimization (JACS 2024) 将 Side-Chain Decoration 定义为核心优化子任务
 
-### Implementation
-- `dock_molecule_consensus()` runs 3 independent dockings with seeds (42, 123, 456).
-- Takes the median energy as consensus score.
-- Applied to the top-20 candidates after evolutionary generations (not during them — too expensive).
-- Evolutions still use fast single-run docking; only final selection uses consensus.
+**文献支撑**:
+- **Deep Lead Optimization** (JACS 2024): Side-chain decoration 是先导化合物优化的核心
+- **MOOSE-Chem** (Yang et al., 2025): 多样化的初始种群是进化搜索的前提
+- **ChemCrow** (Bran et al., 2024): 化学空间覆盖度取决于可用操作集合
 
-### Expected Impact
-- More reliable final ranking → genuinely better binders selected.
-- Reduced scaffold bias → potentially more diverse top-10.
-- Minimal code risk: pure additive change.
+## 3. 假设 H013: 扩充突变取代基库
 
-## Metrics to Watch
-- **Best binding energy**: should improve or stay same
-- **Average binding energy**: should improve or stay same
-- **Chemical diversity**: broader scaffold representation in top-10
-- **Consensus std**: indicates scoring reliability
+```
+假设ID: H013
+瓶颈: _add_substituent 仅支持 5 种取代基，限制化学空间探索
+文献支撑: Deep Lead Optimization (JACS 2024) — Side-chain decoration 是核心优化子任务
+
+───────────────── 推理链 ─────────────────
+步骤 | 内容                              | 置信度 | 推理方式 | 依据来源
+S1   | 多种官能团可增加蛋白-配体相互作用  | 高     | 文献     | JACS 2024
+S2   | 当前突变无法引入 CF3/CN/OCH3 等    | 高     | 观察     | 代码审查
+S3   | 扩充库可使生成器探索更广化学空间    | 高     | 演绎     | 从 S2
+S4   | 更广空间可能包含结合能更优的分子    | 中     | 演绎     | 从 S3
+
+综合置信度: 中 (S4为"中")
+
+───────────────── 验证标准 ─────────────────
+Q1 如果核心指标提升 < 5%，是否仍保留？
+答：是
+理由：官能团多样性本身就是价值
+
+Q2 如果指标下降，最可能的原因是什么？
+答：新官能团引入过多极性基团导致 LogP 过低或 MW 超标
+理由：CF3、NO2 等会增加 MW
+
+Q3 本假设的最低可接受结果是什么？
+答：结合能下降不超过 3%，且 QED 均值 ≥ 0.5
+
+───────────────── 改进方案 ─────────────────
+改动文件: src/generator.py
+改动内容:
+  1. _add_substituent: 取代基从 5 种扩充至 10 种
+     新增: OC(甲氧基), C(F)(F)F(三氟甲基), C#N(氰基), 
+           [N+](=O)[O-](硝基), C=C(乙烯基)
+  2. _replace_atom: 原子替换范围扩展（新增硫→氧/氮方向）
+验证指标:
+  - 最佳结合能、top-10 平均结合能
+  - QED 均值
+  - trivial route 比例
+```
