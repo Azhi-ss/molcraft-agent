@@ -6,7 +6,6 @@ renames on commit(). Terminal output remains human-readable.
 """
 
 import json
-import os
 import shutil
 import sys
 import uuid
@@ -15,10 +14,12 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from src.event_schema import (
+    DockingProgressEvent,
     EndEvent,
     HypothesisValidationEvent,
     MetricsEvent,
     MoleculeEvent,
+    StageEvent,
     StartEvent,
 )
 
@@ -47,9 +48,12 @@ class EventLogger:
     # ── Lifecycle ──
 
     def commit(self) -> None:
+        if self._committed or self.log_file.closed:
+            return
         self.log_file.flush()
         self.log_file.close()
-        shutil.move(str(self.tmp_path), str(self.log_path))
+        if self.tmp_path.exists():
+            shutil.move(str(self.tmp_path), str(self.log_path))
         self._committed = True
 
     def close(self) -> None:
@@ -92,18 +96,16 @@ class EventLogger:
         status: str,
         duration_seconds: float | None = None,
     ) -> None:
-        from src.event_schema import StageEvent
-
         ev = StageEvent(name=name, status=status, duration_seconds=duration_seconds)
         self._write_event("stage", ev.to_dict())
 
     def log_docking_progress(
         self, current: int, total: int, success_rate: float
     ) -> None:
-        self._write_event(
-            "docking_progress",
-            {"current": current, "total": total, "success_rate": success_rate},
+        ev = DockingProgressEvent(
+            current=current, total=total, success_rate=success_rate
         )
+        self._write_event("docking_progress", ev.to_dict())
 
     def log_molecule(self, event: MoleculeEvent) -> None:
         self._write_event("molecule", event.to_dict())
