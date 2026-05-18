@@ -123,6 +123,29 @@ def _is_simple_molecule(smiles: str) -> bool:
 # ======================================================================
 
 RETRO_RULES = [
+    # ============================== H012 新增规则 ==============================
+    # 文献依据: LARC (Baker et al., 2025) — 规则覆盖率决定逆合成质量;
+    # ChemCrow (Bran et al., 2024) — 工具/库的丰富度直接决定 Agent 能力边界
+    
+    # -- 喹啉/异喹啉合成（先于通用吡啶规则匹配）--
+    # Friedländer 喹啉合成逆反应: 喹啉 → 邻氨基苯甲醛 + 酮
+    ("c1ccc2c(c1)cccn2", "c1ccc2c(c1)cccn2>>Nc1ccccc1C=O.CC=O"),
+    # 异喹啉 → Pictet-Spengler 逆反应
+    ("c1ccc2c(c1)ccnc2", "c1ccc2c(c1)ccnc2>>NCCc1ccccc1.C=O"),
+    
+    # -- 喹唑啉合成 --
+    # 喹唑啉 → 邻氨基苯甲酰胺 + 甲酸
+    ("c1ccc2c(c1)ncnc2", "c1ccc2c(c1)ncnc2>>Nc1ccccc1C(=O)N.C=O"),
+    
+    # -- 1,2,3-三唑 (Click Chemistry) --
+    # CuAAC 逆反应: 三唑 → 叠氮 + 炔
+    ("c1cnnn1", "c1cnnn1>>[N-]=[N+]=NC.C#C"),
+    
+    # -- 肼/联氨类 --
+    # 肼 → 重氮盐还原
+    ("[NH2][NH2]", "[NH2:1][NH2:2]>>[NH2:1]Cl.[NH2:2]"),
+    
+    # ============================== 原有规则 ==============================
     # ------------------- 联芳基 C-C 键 (H012) -------------------
     # Suzuki 逆反应: Ar-Ar' → Ar-Br + (HO)2B-Ar'
     # 文献依据: Coscientist (Boiko et al., 2023) — Suzuki coupling 是经典 C-C 键形成;
@@ -200,8 +223,9 @@ RETRO_RULES = [
     ("c1[nH]cnc1", "c1[nH]cnc1>>N.C=O.N"),
     # 噁唑
     ("c1ncoc1", "c1ncoc1>>N.C=O.O"),
-    # 吡啶（简化：从1,5-二羰基化合物）
-    ("c1ccncc1", "c1ccncc1>>O=C1CCCC(=O)C1.N"),
+    # 吡啶（H012 修复：R1 限制仅匹配孤立吡啶环，排除喹啉/异喹啉等稠环体系）
+    # 文献: JACS 2024 — 逆合成应反映真实化学转化，单步合成复杂稠环不可行
+    ("[c;R1]1[c;R1][c;R1][n;R1][c;R1][c;R1]1", "c1ccncc1>>O=C1CCCC(=O)C1.N"),
     # 嘧啶
     ("c1cncnc1", "c1cncnc1>>N.C=O.N.C=O"),
     
@@ -359,3 +383,91 @@ def plan_synthesis_v2(smiles: str):
     - ChemCrow (2024): 工具丰富度决定 Agent 能力边界
     """
     return plan_synthesis_recursive(smiles, max_depth=3, current_depth=0)
+
+
+def score_route_quality(route_str: str, smiles: str) -> float:
+    """评估逆合成路线的化学合理性（H012）。
+
+    文献依据:
+    - LARC (Baker et al., 2025): Agent-as-a-Judge 逆合成框架，
+      路线质量评审是确保合成可行性的关键环节
+    - ChemCrow (Bran et al., 2024): 工具输出质量评估决定下游决策可靠性
+
+    评分维度:
+    1. 多步路线 vs 单步（多步更真实，+0.2）
+    2. 反应物数量（多组分反应更合理，+0.1-0.2）
+    3. 复杂度比（产物/反应物原子比 > 3 为可疑，-0.3）
+    4. 单反应物路线（除非是简单的氧化/还原/水解，-0.2）
+
+    Returns:
+        float: 0.0（不可行）到 1.0（非常可行）
+    """
+    if not route_str or route_str == f"{smiles}>>{smiles}":
+        return 0.0  # 平凡路线 = 最低质量
+
+    steps = route_str.split(" | ")
+    step_scores = []
+
+    for step in steps:
+        if " >> " not in step and ">>" not in step:
+            continue
+
+        # 解析反应物和产物
+        sep = " >> " if " >> " in step else ">>"
+        parts = step.split(sep, 1)
+        if len(parts) != 2:
+            continue
+        reactants_str, product_str = parts
+        reactants = [r.strip() for r in reactants_str.split(".") if r.strip()]
+
+        score = 0.5  # 默认中等
+
+        # 1. 多反应物路线更真实（大多数合成反应涉及2+组分）
+        if len(reactants) >= 2:
+            score += 0.2
+        elif len(reactants) == 1:
+            # 单反应物路线须谨慎 — 检查是否为简单官能团转化
+            r_mol = Chem.MolFromSmiles(reactants[0])
+            p_mol = Chem.MolFromSmiles(product_str)
+            if r_mol and p_mol:
+                r_atoms = r_mol.GetNumAtoms()
+                p_atoms = p_mol.GetNumAtoms()
+                if p_atoms > r_atoms + 5:
+                    # 单反应物生成更大产物 — 极不可能
+                    score -= 0.3
+                elif p_atoms <= r_atoms:
+                    # 单反应物生成等大或更小产物 — 可能是脱保护/还原/氧化
+                    score += 0.1
+
+        # 2. 反应物复杂度检查
+        r_total_atoms = 0
+        for r in reactants:
+            r_mol = Chem.MolFromSmiles(r)
+            if r_mol:
+                r_total_atoms += r_mol.GetNumAtoms()
+
+        p_mol = Chem.MolFromSmiles(product_str)
+        if p_mol and r_total_atoms > 0:
+            ratio = p_mol.GetNumAtoms() / r_total_atoms
+            if ratio > 3.0:
+                # 产物远大于反应物之和 — 不可行的单步转化
+                score -= 0.3
+            elif ratio > 2.0:
+                score -= 0.1
+
+        # 3. 检查是否为同一分子（无转化）
+        if len(reactants) == 1 and reactants[0] == product_str:
+            score = 0.0
+
+        step_scores.append(max(0.0, min(1.0, score)))
+
+    if not step_scores:
+        return 0.0
+
+    # 平均分 + 多步路线奖励
+    avg = sum(step_scores) / len(step_scores)
+    if len(step_scores) >= 2:
+        # 多步路线通常更接近真实合成策略
+        avg = min(1.0, avg + 0.15)
+
+    return round(avg, 3)

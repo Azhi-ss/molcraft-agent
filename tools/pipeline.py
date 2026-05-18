@@ -19,6 +19,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
+from rdkit import Chem
 from generator import generate_molecules, random_mutate_smiles, generate_with_docking_guidance
 from docking import batch_dock, dock_molecule, dock_molecule_consensus
 from synthesis_v2 import plan_synthesis_v2
@@ -231,33 +232,74 @@ def run_evolutionary_pipeline(
     remaining = [d for d in unique_docked if d.get("smiles") not in consensus_smiles]
     unique_docked = consensus_results + remaining
 
-    final_top = unique_docked[:n_top]
-    log(f"去重后共 {len(unique_docked)} 个独特分子，选择 top {n_top}", log_lines)
+    # H012: 路线质量评分（LARC Agent-as-a-Judge 模式）
+    # 对候选池做逆合成规划 → 评分 → 复合排序
+    from synthesis_v2 import score_route_quality
 
-    if not final_top:
+    candidate_pool_size = min(n_top * 3, len(unique_docked))
+    candidate_pool = unique_docked[:candidate_pool_size]
+    log(f"去重后共 {len(unique_docked)} 个独特分子，候选池 {candidate_pool_size} 个进行路线评分", log_lines)
+
+    if not candidate_pool:
         log("错误: 没有分子对接成功", log_lines)
         sys.exit(1)
 
-    # 逆合成规划
-    log(f"为 top {len(final_top)} 分子规划合成路线", log_lines)
-    results = []
-    trivial_count = 0
-    for mol in final_top:
+    # 逆合成规划 + 路线质量评分
+    log(f"为候选池 {len(candidate_pool)} 个分子规划合成路线并评分", log_lines)
+    scored_candidates = []
+    for mol in candidate_pool:
         smiles = mol["smiles"]
         syn = plan_synthesis_v2(smiles)
         route = syn.get("route", f"{smiles}>>{smiles}") if syn.get("success") else f"{smiles}>>{smiles}"
         is_trivial = syn.get("trivial", False) or route == f"{smiles}>>{smiles}"
-        if is_trivial:
-            trivial_count += 1
-        results.append({
+        quality = score_route_quality(route, smiles)
+        scored_candidates.append({
             "mol_smiles": smiles,
             "route": route,
             "binding_energy": mol.get("binding_energy"),
             "qed": mol.get("qed"),
             "trivial": is_trivial,
+            "route_quality": quality,
+            "syn_steps": syn.get("steps", 0),
         })
-        log(f"  {smiles[:50]}... 结合能: {mol.get('binding_energy')} "
-            f"路线步数: {syn.get('steps', 1)} {'[TRIVIAL]' if is_trivial else ''}", log_lines)
+
+    # H012 复合评分: 0.8×BE_norm + 0.2×route_quality
+    energies_all = [c["binding_energy"] for c in scored_candidates if c["binding_energy"] is not None]
+    if energies_all:
+        e_min, e_max = min(energies_all), max(energies_all)
+        if e_max > e_min:
+            for c in scored_candidates:
+                if c["binding_energy"] is not None:
+                    be_norm = (e_max - c["binding_energy"]) / (e_max - e_min)
+                else:
+                    be_norm = 0.0
+                c["composite_score"] = 0.8 * be_norm + 0.2 * c["route_quality"]
+        else:
+            for c in scored_candidates:
+                c["composite_score"] = c["route_quality"]
+
+        # 按复合评分排序（越高越好）
+        scored_candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
+        log(f"复合评分排序完成 (0.8×BE + 0.2×路线质量)", log_lines)
+
+    # 选择 top N
+    final_top = scored_candidates[:n_top]
+    results = []
+    trivial_count = 0
+    for c in final_top:
+        if c["trivial"]:
+            trivial_count += 1
+        results.append({
+            "mol_smiles": c["mol_smiles"],
+            "route": c["route"],
+            "binding_energy": c["binding_energy"],
+            "qed": c["qed"],
+            "trivial": c["trivial"],
+        })
+        log(f"  {c['mol_smiles'][:50]}... BE={c['binding_energy']} "
+            f"steps={c['syn_steps']} quality={c['route_quality']:.2f} "
+            f"composite={c['composite_score']:.3f}"
+            f"{' [TRIVIAL]' if c['trivial'] else ''}", log_lines)
 
     # 统计
     energies = [r["binding_energy"] for r in results if r["binding_energy"] is not None]
@@ -330,6 +372,10 @@ def _generate_offspring(seeds, n_offspring_per_seed):
         new_smiles = random_mutate_smiles(seed_smiles, n_mut)
 
         if new_smiles and new_smiles != seed_smiles:
+            # 检查是否为单片段（多片段 SMILES 会导致 Meeko 崩溃）
+            mol_check = Chem.MolFromSmiles(new_smiles)
+            if mol_check is None or len(Chem.GetMolFrags(mol_check)) > 1:
+                continue
             props = evaluate_molecule(new_smiles)
             if passes_filters(props):
                 offspring.append(props)

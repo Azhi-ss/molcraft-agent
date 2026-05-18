@@ -1,44 +1,43 @@
-# 代码演进日志 — Round 1
+# 代码演进日志 — Round 1 (H012)
 
-## 假设ID: H011
+## 假设 H012: 逆合成路线质量评分 + 规则优化
 
-**假设**: 进化选择仅按结合能排序导致过早收敛，引入多样性保持选择可避免此问题。
+### 修改文件
 
-## 修改文件
+#### 1. `src/synthesis_v2.py`
 
-### `src/generator.py`
+**新增函数 `score_route_quality()`**：
+- 评估逆合成路线的化学合理性
+- 评分维度：多步路线奖励 (+0.15)、多反应物路线 (+0.2)、复杂度比惩罚 (ratio > 3: -0.3)、单反应物检查
+- 文献依据：LARC (Baker et al., 2025) Agent-as-a-Judge 框架
 
-**新增函数:**
-- `_diverse_selection(candidates, n_select, diversity_weight)` — 贪心 MMD 多样性选择
-- `_avg_pairwise_similarity(molecules)` — 计算平均成对 Tanimoto 相似度
+**修复吡啶逆合成规则**：
+- SMARTS: `c1ccncc1` → `[c;R1]1[c;R1][c;R1][n;R1][c;R1][c;R1]1`
+- `R1` 限制仅匹配孤立吡啶环（每个原子仅在 1 个 SSSR 环中）
+- 排除喹啉、异喹啉、萘啶等稠环体系
+- 验证通过：喹啉/异喹啉/萘啶 → False，吡啶 → True
 
-**修改函数:**
-- `generate_with_docking_guidance()` — 种子选择阶段加入多样性保持
+**新增 6 条逆合成规则**：
+1. 喹啉 → Friedländer 合成逆反应
+2. 异喹啉 → Pictet-Spengler 逆反应
+3. 喹唑啉 → 邻氨基苯甲酰胺 + 甲酸
+4. 1,2,3-三唑 → Click Chemistry 逆反应
+5. 肼/联氨 → 重氮还原
 
-## 修改内容摘要
+#### 2. `tools/pipeline.py`
 
-1. **种子选择逻辑改变** (原 line 634-635, 新 line ~750-790):
-   - 原: `current_seeds = docked_batch[:top_k]` (纯BE选择)
-   - 新: 50% 种子来自纯BE，50% 来自多样性选择
-   - 多样性选择使用贪心 MMD 算法 (Maximum Minimal Distance)
-   - 综合评分: `(1 - 0.5) × BE_norm + 0.5 × diversity_norm`
+**最终选择逻辑改为复合评分**：
+- 候选池扩大至 3×n_top（30 个分子）
+- 对每个候选分子：规划合成 + 路线质量评分
+- 复合评分：`0.8 × BE_norm + 0.2 × route_quality`
+- 按复合评分重新排序后选择 top N
 
-2. **最终分子选择增强** (新 line ~800-830):
-   - 从 top 2×n_molecules 候选池中选择
-   - 60% 纯BE + 40% 多样性
-   - 确保最终输出既高结合能又有多样性
+### 文献依据
+- LARC (Baker et al., 2025): Agent-as-a-Judge 评审路线可行性
+- ChemCrow (Bran et al., 2024): 规则质量决定工具输出可靠性
+- MOOSE-Chem (Yang et al., 2025): 多目标优化 — 合成性应为适应度维度之一
 
-3. **多样性指标记录** (新 line ~795):
-   - 每代打印 avg_pairwise_sim 指标
-   - 日志标签: `[H002+H011]`
-
-## 文献依据
-
-- **MOOSE-Chem** (Yang et al., 2025): "Diverse initial population is essential for evolutionary search to avoid premature convergence"
-- **MolLEO** (Wang et al., 2024b): LLM-based multi-objective evolutionary optimization
-- **ChemCrow** (Bran et al., 2024): 化学空间覆盖度决定 Agent 探索边界
-
-## 代码自检
-
-- `python3 -m py_compile src/generator.py` ✅
-- All imports verified ✅
+### 编译验证
+- `src/synthesis_v2.py`: ✅ 编译通过
+- `tools/pipeline.py`: ✅ 编译通过
+- 函数测试: ✅ score_route_quality 正确区分好/坏路线
