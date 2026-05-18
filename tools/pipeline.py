@@ -24,7 +24,7 @@ from generator import generate_molecules, random_mutate_smiles, generate_with_do
 from docking import batch_dock, dock_molecule, dock_molecule_consensus
 from synthesis_v2 import plan_synthesis_v2
 from receptor import prepare_receptor
-from src.event_schema import MoleculeEvent, MetricsEvent
+from event_schema import MoleculeEvent, MetricsEvent
 
 
 def log(msg, log_lines):
