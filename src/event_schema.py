@@ -4,13 +4,15 @@ Each event type is a dataclass with a to_dict() method for JSON serialization.
 Validation occurs at construction time.
 """
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, asdict
 from typing import Any
 
 
 def _check_required(value: Any, field_name: str) -> None:
     if value is None:
         raise ValueError(f"{field_name} is required")
+    if isinstance(value, str) and not value.strip():
+        raise ValueError(f"{field_name} must be a non-empty string")
 
 
 @dataclass
