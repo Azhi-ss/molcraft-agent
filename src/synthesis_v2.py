@@ -46,6 +46,10 @@ def _try_route(smiles: str, r1: str, r2: str = None) -> str:
 def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
     """通用逆合成规则执行函数。
 
+    H014 改进: 增加化学计量守恒验证（mass balance check）。
+    文献依据: LARC (Baker et al., 2025) — Agent-as-a-Judge 框架强调
+    逆合成路线必须满足化学计量守恒，原料原子数应与产物匹配。
+
     Args:
         mol: 目标分子 RDKit Mol 对象
         smarts_pattern: 匹配目标分子的 SMARTS
@@ -65,6 +69,11 @@ def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
     if not ps:
         return None
 
+    # 目标分子的非氢原子数（用于化学计量验证）
+    target_n_atoms = mol.GetNumAtoms(onlyExplicit=False)
+    # RDKit 的 GetNumAtoms 默认不包含 H — 我们只需要重原子数
+    target_heavy = mol.GetNumHeavyAtoms()
+
     # 遍历所有可能的产物集，找到第一个产生有效SMILES的
     for product_set in ps:
         if not product_set:
@@ -80,6 +89,28 @@ def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
             reactants = [r1]
 
         if route:
+            # H014: 化学计量守恒检查
+            # 验证反应物重原子数总和与目标分子是否在合理范围内
+            # 若规则只匹配部分分子（如仅匹配核心骨架而丢失取代基），
+            # 产物重原子数/原料重原子数会显著偏离 1.0
+            try:
+                reactant_heavy = 0
+                for r_smi in reactants:
+                    r_mol = Chem.MolFromSmiles(r_smi)
+                    if r_mol:
+                        reactant_heavy += r_mol.GetNumHeavyAtoms()
+                if reactant_heavy > 0:
+                    ratio = target_heavy / reactant_heavy
+                    # 允许 ±30% 容差（考虑脱保护基、缩合失水等）
+                    # H014 调优: 0.7-1.3 — 验证显示 0.5-1.5 过宽
+                    #   例: 取代喹啉(17atoms) / 无取代原料(12atoms) = 1.42 > 1.3 ✓ 拒绝
+                    if ratio < 0.7 or ratio > 1.3:
+                        # 原子不守恒 — 拒绝此条规则，尝试下一条
+                        continue
+            except Exception:
+                # 解析失败时不拒绝，保留原有行为
+                pass
+
             return {"success": True, "route": route, "reactants": reactants, "steps": 1}
 
     return None
