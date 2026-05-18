@@ -486,6 +486,156 @@ def _scaffold_hop(mol):
     except Exception:
         return None
 
+
+def _crossover_mol(mol1, mol2):
+    """分子 Crossover 重组算子（H013）：交换两个父代分子的侧链装饰。
+
+    文献依据:
+    - MOOSE-Chem (Yang et al., 2025): "Evolutionary operators include crossover
+      between parent molecules, fragment swapping, and scaffold hopping"
+    - MolLEO (Wang et al., 2024b): LLM 驱动的重组操作
+    - Deep Lead Optimization (JACS 2024): Side-chain decoration 和 Scaffold Hopping
+      可组合产生新化学型
+
+    算法（Murcko 骨架交换）:
+    1. 取 parent2 的 Murcko 骨架作为新核心
+    2. 从 parent1 移除 Murcko 骨架得到侧链
+    3. 将侧链连接到新核心上
+    4. 验证产物
+    """
+    if mol1 is None or mol2 is None:
+        return None
+    if mol1.GetNumAtoms() < 8 or mol2.GetNumAtoms() < 8:
+        return None
+
+    try:
+        # Step 1: 取 parent2 的 Murcko 骨架
+        core2 = MurckoScaffold.GetScaffoldForMol(mol2)
+        if core2 is None or core2.GetNumAtoms() < 3:
+            return None
+
+        # Step 2: 从 parent1 移除其 Murcko 骨架，得到侧链
+        core1 = MurckoScaffold.GetScaffoldForMol(mol1)
+        if core1 is None or core1.GetNumAtoms() < 3:
+            return None
+
+        side_chains = Chem.DeleteSubstructs(mol1, core1)
+        if side_chains is None or side_chains.GetNumAtoms() == 0:
+            # 尝试获取非环侧链
+            side_atoms = []
+            for a in mol1.GetAtoms():
+                if not a.IsInRing() and a.GetDegree() == 1:
+                    side_atoms.append(a.GetIdx())
+            if not side_atoms:
+                return None
+            # 用 RWMol 提取侧链
+            rw = Chem.RWMol(mol1)
+            atoms_to_keep = set()
+            for idx in side_atoms:
+                atom = mol1.GetAtomWithIdx(idx)
+                # 沿链追溯直到遇到环原子
+                visited = set()
+                stack = [idx]
+                while stack:
+                    aid = stack.pop()
+                    if aid in visited:
+                        continue
+                    visited.add(aid)
+                    a = mol1.GetAtomWithIdx(aid)
+                    if a.IsInRing() and aid not in side_atoms:
+                        continue
+                    atoms_to_keep.add(aid)
+                    for nbr in a.GetNeighbors():
+                        if nbr.GetIdx() not in visited and not nbr.IsInRing():
+                            stack.append(nbr.GetIdx())
+            atoms_to_remove = set(range(mol1.GetNumAtoms())) - atoms_to_keep
+            for aid in sorted(atoms_to_remove, reverse=True):
+                rw.RemoveAtom(aid)
+            side_chains = rw.GetMol()
+            if side_chains.GetNumAtoms() == 0:
+                return None
+
+        # Step 3: 找连接点
+        # 在 core2 上找可连接原子
+        core2_atoms = []
+        for a in core2.GetAtoms():
+            if a.GetAtomicNum() == 6 and a.GetDegree() < 4:
+                core2_atoms.append(a)
+        if not core2_atoms:
+            for a in core2.GetAtoms():
+                if a.GetDegree() < 4:
+                    core2_atoms.append(a)
+        if not core2_atoms:
+            return None
+
+        # 连接侧链到核心（最多2个侧链连接点）
+        combo = core2
+        n_attached = 0
+        max_attach = min(3, side_chains.GetNumAtoms() // 2 + 1)
+        attached_indices = set()
+
+        for frag in Chem.GetMolFrags(side_chains, asMols=True):
+            if n_attached >= max_attach:
+                break
+            if frag.GetNumAtoms() < 1:
+                continue
+
+            # 找侧链连接点
+            frag_anchors = []
+            for a in frag.GetAtoms():
+                if a.GetAtomicNum() != 0 and a.GetDegree() < a.GetExplicitValence():
+                    frag_anchors.append(a)
+            if not frag_anchors:
+                for a in frag.GetAtoms():
+                    if a.GetAtomicNum() != 0:
+                        frag_anchors.append(a)
+            if not frag_anchors:
+                continue
+
+            # 找可用核心连接点
+            available_core = [a for a in core2_atoms if a.GetIdx() not in attached_indices]
+            if not available_core:
+                break
+
+            # 组合并添加键
+            new_combo = Chem.CombineMols(combo, frag)
+            emol = Chem.EditableMol(new_combo)
+            core_anchor = random.choice(available_core)
+            frag_anchor = random.choice(frag_anchors)
+            frag_global_idx = combo.GetNumAtoms() + frag_anchor.GetIdx()
+
+            try:
+                emol.AddBond(core_anchor.GetIdx(), frag_global_idx, Chem.BondType.SINGLE)
+                combo = emol.GetMol()
+                Chem.SanitizeMol(combo)
+                attached_indices.add(core_anchor.GetIdx())
+                n_attached += 1
+            except Exception:
+                continue
+
+        if n_attached == 0:
+            return None
+
+        # Step 4: 最终验证
+        try:
+            Chem.SanitizeMol(combo)
+            new_smiles = Chem.MolToSmiles(combo, canonical=True)
+            verify = Chem.MolFromSmiles(new_smiles)
+            if verify is None:
+                return None
+            # 确保与父代不同
+            s1 = Chem.MolToSmiles(mol1, canonical=True)
+            s2 = Chem.MolToSmiles(mol2, canonical=True)
+            if new_smiles in (s1, s2):
+                return None
+            return combo
+        except Exception:
+            return None
+
+    except Exception:
+        return None
+
+
 def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None):
     """生成候选药物分子。
 
@@ -688,13 +838,29 @@ def generate_with_docking_guidance(
                     if passes_filters(props):
                         batch_mols.append(props)
         else:
-            # 后续代：从种子变异
+            # H013: 后续代：变异（85%）或 Crossover 重组（15%）
             seed_smiles_list = [s["smiles"] for s in current_seeds]
             while len(batch_mols) < batch_size and attempts < max_attempts:
                 attempts += 1
-                seed_smiles = random.choice(seed_smiles_list)
-                n_mut = random.randint(1, 3)  # 后续代变异强度略低，保持稳定性
-                new_smiles = random_mutate_smiles(seed_smiles, n_mut)
+
+                if random.random() < 0.15 and len(seed_smiles_list) >= 2:
+                    # H013: Crossover — 双亲片段交换重组
+                    s1, s2 = random.sample(seed_smiles_list, 2)
+                    mol1 = Chem.MolFromSmiles(s1)
+                    mol2 = Chem.MolFromSmiles(s2)
+                    if mol1 and mol2:
+                        result = _crossover_mol(mol1, mol2)
+                        if result is not None:
+                            new_smiles = Chem.MolToSmiles(result, canonical=True)
+                        else:
+                            continue
+                    else:
+                        continue
+                else:
+                    seed_smiles = random.choice(seed_smiles_list)
+                    n_mut = random.randint(1, 3)  # 后续代变异强度略低
+                    new_smiles = random_mutate_smiles(seed_smiles, n_mut)
+
                 if new_smiles and new_smiles not in {m["smiles"] for m in batch_mols}:
                     props = evaluate_molecule(new_smiles)
                     if passes_filters(props):
