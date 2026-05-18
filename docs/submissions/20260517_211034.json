@@ -1,0 +1,20 @@
+{
+  "submission_time": "2026-05-17T21:10:34",
+  "score": 0.454929,
+  "breakdown": {
+    "mol_score": 0.286219,
+    "route_score": 0.848585,
+    "sa_score": 0.745887,
+    "validity_score": 1.0,
+    "binding_score": 0.139538,
+    "route_validity_score": 1.0,
+    "starting_material_availability_score": 0.883187,
+    "sample_count": 10,
+    "llm_score": 1.0
+  },
+  "experiment_round": 3,
+  "hypothesis_id": "H001",
+  "git_commit": "fca4420",
+  "result_zip_path": "output/result_20260517_211034.zip",
+  "notes": "SA score 阈值收紧 (8.0→6.0) + 环数限制 (max=7)"
+}

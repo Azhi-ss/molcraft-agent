@@ -1,6 +1,10 @@
 """药物研发智能体的配置模块。"""
 import os
 import json
+from dotenv import load_dotenv
+
+# 自动加载项目根目录的 .env 文件
+load_dotenv()
 
 # 路径配置
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

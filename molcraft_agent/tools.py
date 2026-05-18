@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "tools"))
 
 from pydantic import BaseModel, Field
 from kimi_agent_sdk import CallableTool2, ToolError, ToolOk, ToolReturnValue
@@ -27,6 +28,7 @@ from molcraft_agent.experiments import (
     get_latest_round,
     get_best_binding_energy,
 )
+from pipeline import run_evolutionary_pipeline
 
 
 class GenerateParams(BaseModel):
@@ -46,6 +48,8 @@ class GenerateMolecules(CallableTool2):
     description: str = (
         "生成候选药物分子。返回分子 SMILES 列表及其关键性质（QED、MW、LogP）。"
         "运行时间取决于分子数量，通常 5-20 秒。"
+        "⚠️ 仅在需要定向探索特定骨架时使用。常规实验请直接用 run_pipeline 工具，"
+        "它已包含生成→对接→进化→合成全流程，且默认开启 H002 docking guidance。"
     )
     params: type[BaseModel] = GenerateParams
 
@@ -58,6 +62,8 @@ class GenerateMolecules(CallableTool2):
                 scaffold=params.scaffold,
             )
             result = {
+                "status": "success",
+                "summary": f"生成了 {len(mols)} 个候选分子",
                 "count": len(mols),
                 "molecules": [
                     {
@@ -69,8 +75,11 @@ class GenerateMolecules(CallableTool2):
                     }
                     for m in mols
                 ],
+                "next_actions": [
+                    "下一步: 调用 dock_molecules 对这批分子进行对接评估",
+                    "或: 直接调用 run_pipeline 替代手动流程（推荐，它自带 docking guidance）",
+                ],
             }
-            # 自动记录实验
             append_experiment(
                 tool="generate_molecules",
                 round_num=get_latest_round() + 1,
@@ -80,7 +89,12 @@ class GenerateMolecules(CallableTool2):
             return ToolOk(output=json.dumps(result, ensure_ascii=False))
         except Exception as exc:
             return ToolError(
-                output="",
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "RDKit 错误通常意味着无效 SMILES——检查种子骨架是否合法",
+                    "retry": "用更简单的 scaffold 或 strategy=random 重试",
+                }),
                 message=str(exc),
                 brief="分子生成失败",
             )
@@ -97,6 +111,8 @@ class DockMolecules(CallableTool2):
     description: str = (
         "批量对分子进行分子对接，计算与靶点的结合自由能（binding_energy，kcal/mol）。"
         "结合能越低（越负）越好，<-7 为优秀。运行时间与分子数量成正比，每个分子约 5-15 秒。"
+        "⚠️ 仅在需要评估特定分子时使用。常规实验请直接用 run_pipeline，"
+        "它自动完成对接且内置 H002 docking guidance（已验证 +0.4~0.8 kcal/mol）。"
     )
     params: type[BaseModel] = DockParams
 
@@ -137,7 +153,12 @@ class DockMolecules(CallableTool2):
             return ToolOk(output=json.dumps(output, ensure_ascii=False))
         except Exception as exc:
             return ToolError(
-                output="",
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "对接失败可能是受体文件损坏或 SMILES 无法转换——先检查 prepare_receptor 是否成功",
+                    "retry": "重新运行 prepare_receptor 然后重试",
+                }),
                 message=str(exc),
                 brief="分子对接失败",
             )
@@ -164,6 +185,15 @@ class PlanSynthesis(CallableTool2):
                 "route": result.get("route"),
                 "steps": result.get("steps"),
             }
+            # 分子逆合成完成后记录 molecule 事件
+            if hasattr(sys.stdout, "log_event"):
+                sys.stdout.log_event(
+                    "molecule",
+                    smiles=params.smiles,
+                    synthesis_steps=result.get("steps"),
+                    trivial_route=result.get("trivial", False),
+                    synthesis_route=result.get("route"),
+                )
             # 自动记录实验
             append_experiment(
                 tool="plan_synthesis",
@@ -226,6 +256,116 @@ class EvaluateMolecule(CallableTool2):
             )
 
 
+class RunPipelineParams(BaseModel):
+    n_generate: int = Field(
+        default=50,
+        description="每代生成的分子数量，建议 30-100",
+    )
+    n_top: int = Field(
+        default=10,
+        description="最终保留的 top N 分子",
+    )
+    strategy: str = Field(
+        default="mutate",
+        description="生成策略: mutate(变异), combine(组合), random(随机)",
+    )
+    n_generations: int = Field(
+        default=2,
+        description="进化代数（包括初始代）",
+    )
+    use_docking_guidance: bool = Field(
+        default=True,
+        description="⚡ 铁律：必须保持 True。H002 已验证将结合能从 -7.7~-8.1 提升至 -8.56~-8.80 kcal/mol。关闭它来做'对照实验'是错误的——关闭后基线自然退化 0.5 kcal/mol，无法判断新改动的净效应。正确的 A/B 测试：始终开 docking guidance，在其他变量上做对照。",
+    )
+
+
+class RunPipeline(CallableTool2):
+    name: str = "run_pipeline"
+    description: str = (
+        "⚡ 推荐首选：运行完整的进化迭代药物研发流程。"
+        "包含 生成分子→对接→进化→逆合成 全流程，默认开启 H002 docking guidance。"
+        "运行时间 5-15 分钟。产出的 result.csv 已保存到 output/ 目录。"
+        "除非需要定向探索特定骨架，否则不要用 generate_molecules/dock_molecules 逐个调——那些慢且没有 docking guidance。"
+        "铁律：use_docking_guidance 必须保持 True（默认），已验证提升结合能 0.4~0.8 kcal/mol。"
+    )
+    params: type[BaseModel] = RunPipelineParams
+
+    async def __call__(self, params: RunPipelineParams) -> ToolReturnValue:
+        try:
+            results = await asyncio.to_thread(
+                run_evolutionary_pipeline,
+                n_generate=params.n_generate,
+                n_top=params.n_top,
+                strategy=params.strategy,
+                n_generations=params.n_generations,
+                use_docking_guidance=params.use_docking_guidance,
+                output_dir="output",
+                append_result_log=True,
+            )
+            energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]
+            trivial_count = sum(1 for r in results if r.get("trivial"))
+            best_be = min(energies) if energies else None
+            avg_be = sum(energies) / len(energies) if energies else None
+
+            output = {
+                "status": "success",
+                "summary": f"Pipeline 完成: {len(results)} 分子, 最佳结合能 {best_be} kcal/mol, trivial 比例 {trivial_count}/{len(results)}",
+                "molecule_count": len(results),
+                "best_binding_energy": best_be,
+                "avg_binding_energy": avg_be,
+                "trivial_route_count": trivial_count,
+                "trivial_ratio": trivial_count / len(results) if results else 0,
+                "top_molecules": [
+                    {
+                        "smiles": r["mol_smiles"],
+                        "binding_energy": r.get("binding_energy"),
+                        "route": r.get("route", ""),
+                    }
+                    for r in results
+                ],
+                "next_actions": [
+                    "1. 调用 report_iteration 记录本轮实验（round/hypothesis_id/success/summary）",
+                    "2. 将本轮指标与基线 -8.56 kcal/mol 对比",
+                    "3. 如果结合能提升：判定 ACCEPTED，记录改动；如果下降：判定 REJECTED，回退代码",
+                    "4. 检查 trivial 比例是否 > 30%，如果是，下一轮考虑扩充逆合成规则库",
+                ],
+            }
+            append_experiment(
+                tool="run_pipeline",
+                round_num=get_latest_round() + 1,
+                params={
+                    "n_generate": params.n_generate,
+                    "n_top": params.n_top,
+                    "strategy": params.strategy,
+                    "n_generations": params.n_generations,
+                    "docking_guidance": params.use_docking_guidance,
+                },
+                result={
+                    "molecule_count": len(results),
+                    "best_be": best_be,
+                    "avg_be": avg_be,
+                    "trivial_ratio": trivial_count / len(results) if results else 0,
+                },
+            )
+            return ToolOk(output=json.dumps(output, ensure_ascii=False))
+        except Exception as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "summary": f"Pipeline 运行失败",
+                    "error": str(exc),
+                    "next_actions": [
+                        "1. 检查错误日志中的 traceback",
+                        "2. RDKit 错误通常意味着无效 SMILES——检查生成器输出",
+                        "3. Vina 错误通常意味着受体文件损坏——运行 prepare_receptor 修复",
+                        "4. 网络/API 错误——等待后重试",
+                    ],
+                }),
+                message=str(exc),
+                brief="进化管道运行失败",
+            )
+
+
 class ReportIterationParams(BaseModel):
     round_num: int = Field(description="当前迭代轮次（从1开始）")
     hypothesis_id: str = Field(description="本轮验证的假设ID，如 H001")
@@ -262,6 +402,14 @@ class ReportIteration(CallableTool2):
                 "round": params.round_num,
                 "message": f"第 {params.round_num} 轮迭代已记录",
             }
+            # 假设验证完成时记录 hypothesis_validation 事件
+            if hasattr(sys.stdout, "log_event"):
+                sys.stdout.log_event(
+                    "hypothesis_validation",
+                    hypothesis_id=params.hypothesis_id,
+                    success=params.success,
+                    conclusion=params.summary,
+                )
             return ToolOk(output=json.dumps(output, ensure_ascii=False))
         except Exception as exc:
             return ToolError(

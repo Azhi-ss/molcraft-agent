@@ -1,0 +1,20 @@
+{
+  "submission_time": "2026-05-18 02:22:00",
+  "score": 0.22776,
+  "breakdown": {
+    "mol_score": 0.284695,
+    "route_score": 0.094912,
+    "sa_score": 0.530553,
+    "validity_score": 1.0,
+    "binding_score": 0.16455,
+    "route_validity_score": 0.6,
+    "starting_material_availability_score": 0.6,
+    "sample_count": 10,
+    "llm_score": 0.5
+  },
+  "experiment_round": 5,
+  "hypothesis_id": "H005-direct-dg",
+  "git_commit": "fca4420",
+  "result_zip_path": "output/result_20260518_022200.zip",
+  "notes": "直接跑 pipeline --docking-guidance。结合能 -8.798 新纪录，但 route_score 崩 (0.09)，llm_score 腰斩 (0.5)。教训：必须让Agent通过run_pipeline工具跑才有效Agent能力分。"
+}

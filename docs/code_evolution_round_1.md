@@ -1,36 +1,35 @@
 # 代码演进记录 Round 1
 
 ## 假设ID
-H002
+H001: 收紧 SA score 过滤阈值
 
 ## 修改目标
-解决分子生成与分子对接脱节的问题，引入对接引导生成机制。
-
-## 修改文件
-1. `src/generator.py` — 新增 `generate_with_docking_guidance()` 函数
-2. `tools/pipeline.py` — 集成对接引导生成到 pipeline 中
-
-## 修改内容摘要
-
-### src/generator.py
-- 新增 `generate_with_docking_guidance()` 函数，实现小批量生成→对接→选择→变异的微循环
-- 参数设计：
-  - `batch_size=10`: 每批生成10个候选分子，避免盲生成大量分子
-  - `n_generations=3`: 3轮微循环迭代
-  - `top_k=5`: 每代选择结合能最优的5个作为种子
-  - 后续代变异强度降低（n_mut=1-3），保持分子稳定性
-- 保留原有 `generate_molecules()` 接口不变
-
-### tools/pipeline.py
-- 新增 `use_docking_guidance` 参数
-- 初始代可选择使用对接引导生成或传统生成
-- 新增 `--docking-guidance` CLI 参数
+将 `passes_filters()` 中的 SA score 阈值从 8.0 收紧至 6.0，并添加环数上限（MAX_RINGS=7）。
+同时优化 `estimate_sa_score()` 的计算公式，使其更准确反映合成难度。
 
 ## 文献依据
-- MOOSE-Chem (Yang et al., 2025): 进化算法导航组合空间
-- Coscientist (Boiko et al., 2023): 基于实验结果的迭代反思
-- 综述第4.2节: Post-Execution Feedback 策略
+- Deep Lead Optimization (JACS, 2024): 优质先导化合物的 SA score 通常在 2-5 之间
+- LARC (Baker et al., 2025): 规则覆盖率和合成可行性是评估分子的核心维度
+- 综述第3.2节: 分子生成需要约束在"可合成"空间内，避免浪费计算资源
 
-## 代码自检结果
-- `python3 -m py_compile src/generator.py tools/pipeline.py` — 通过
-- `python3 -c "from generator import generate_with_docking_guidance; print('import ok')"` — 通过
+## 修改文件
+1. `src/evaluator.py` — 修改 `passes_filters()` 和 `estimate_sa_score()`
+
+## 修改内容详情
+
+### src/evaluator.py
+**1. `estimate_sa_score()` 公式优化：**
+- 环贡献因子: 0.5 → 1.0（多环结构显著增加合成难度）
+- 添加稠环惩罚: 每个额外环系 +0.3（fused ring penalty）
+- 螺环惩罚: 1.0 → 1.5（螺环形成挑战性高）
+- 桥头原子惩罚: 1.5 → 2.0（桥头结构极难合成）
+- 保持手性中心和可旋转键贡献不变
+
+**2. `passes_filters()` 新增参数：**
+- `max_sa=6.0`: 从 8.0 降低至 6.0
+- `max_rings=7`: 限制分子中环数不超过 7 个
+
+## 代码自检
+```python
+python3 -m py_compile src/evaluator.py
+```

@@ -50,13 +50,31 @@ def evaluate_molecule(smiles: str):
 
 
 def estimate_sa_score(mol):
-    """非常粗略的合成可及性估算（0-10，越低越好）。
-    基于片段复杂度和环系分析。
+    """合成可及性估算（0-10，越低越好）。
+
+    H001 改进：
+    - 环贡献因子从 0.5→1.0（多环结构显著增加合成难度）
+    - 新增稠环惩罚：每个额外环系 +0.3（fused ring penalty）
+    - 螺环惩罚从 1.0→1.5（螺环形成挑战性高）
+    - 桥头原子惩罚从 1.5→2.0（桥头结构极难合成）
+
     """
-    # 统计稠环数量
+    # 统计环信息
     ri = mol.GetRingInfo()
     atom_rings = ri.AtomRings()
     n_rings = len(atom_rings)
+
+    # 检测稠环数（真正共享原子/键的环系）
+    # ri.BondRings() 返回所有环，错误地会对单环多环都惩罚
+    # 正确方式：统计共享 >=2 个原子的环对数量
+    n_fused_systems = 0
+    n = len(atom_rings)
+    for i in range(n):
+        for j in range(i + 1, n):
+            shared = len(set(atom_rings[i]) & set(atom_rings[j]))
+            if shared >= 2:  # 共享至少2个原子才是稠合环
+                n_fused_systems += 1
+    fused_penalty = n_fused_systems * 0.3
 
     # 螺环中心
     spiro = Chem.rdMolDescriptors.CalcNumSpiroAtoms(mol)
@@ -67,14 +85,22 @@ def estimate_sa_score(mol):
     # 手性中心
     stereo = Chem.rdMolDescriptors.CalcNumAtomStereoCenters(mol)
 
-    # 基础启发式公式
-    score = 1.0 + n_rings * 0.5 + spiro * 1.0 + bridge * 1.5 + stereo * 0.5
+    # 基础启发式公式（优化后）
+    score = 1.0 + n_rings * 1.0 + fused_penalty + spiro * 1.5 + bridge * 2.0 + stereo * 0.5
     score += Descriptors.NumRotatableBonds(mol) * 0.1
     return min(score, 10.0)
 
 
-def passes_filters(props: dict, min_qed=0.3, max_mw=500, min_mw=150, max_logp=5.0):
-    """检查分子是否通过基础类药性质过滤。"""
+def passes_filters(props: dict, min_qed=0.3, max_mw=500, min_mw=150, max_logp=5.0,
+                   max_sa=6.0, max_rings=7):
+    """检查分子是否通过基础类药性质过滤。
+
+    H001 改进：
+    - SA score 阈值从 8.0 收紧至 6.0
+    - 新增 max_rings=7 环数上限
+    - 文献依据：Deep Lead Optimization (JACS, 2024)
+
+    """
     if not props.get("valid"):
         return False
     if props["qed"] < min_qed:
@@ -83,6 +109,8 @@ def passes_filters(props: dict, min_qed=0.3, max_mw=500, min_mw=150, max_logp=5.
         return False
     if props["logp"] > max_logp:
         return False
-    if props["sa_score"] > 8.0:
+    if props["sa_score"] > max_sa:
+        return False
+    if props.get("rings", 0) > max_rings:
         return False
     return True

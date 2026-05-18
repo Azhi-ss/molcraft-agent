@@ -6,10 +6,21 @@
   - MOOSE-Chem (Yang et al., 2025): 进化算法导航组合空间
   - Coscientist (Boiko et al., 2023): 基于实验结果的迭代反思
   - 综述第4.2节: Post-Execution Feedback 策略
+
+改进点（H010）:
+- 引入 Scaffold Hopping（骨架替换）变异算子
+- 使用 BRICS 分解 + BM 骨架识别 → 骨架库替换 → 侧链重连
+- 文献依据:
+  - Deep Lead Optimization (JACS 2024): 明确定义 Scaffold Hopping 为四个核心
+    先导化合物优化子任务之一，提出"替换核心骨架同时保留有利取代基"
+  - MOOSE-Chem (Yang et al., 2025): "Diverse initial population is essential
+    for evolutionary search to avoid premature convergence"
+  - 综述第3.2节: Scaffold hopping 是药物发现的核心策略之一
 """
 import random
 from rdkit import Chem, rdBase
 from rdkit.Chem import AllChem, Descriptors, QED, BRICS
+from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit.DataStructs import TanimotoSimilarity
 from evaluator import evaluate_molecule, passes_filters
 
@@ -133,17 +144,29 @@ def random_mutate_smiles(smiles: str, n_mutations: int = 1):
 
 
 def _mutate_mol(mol):
-    """单次变异：添加/替换/删除一个小基团。"""
+    """单次变异：添加/替换/删除/连接/骨架替换。
+
+    H010 改进：新增 scaffold hopping 算子（~20% 概率），
+    对应 Deep Lead Optimization 的四个核心子任务中的 Scaffold Hopping。
+    """
     choice = random.random()
     try:
-        if choice < 0.3:
+        if choice < 0.25:
             mol = _add_substituent(mol)
-        elif choice < 0.6:
+        elif choice < 0.50:
             mol = _replace_atom(mol)
-        elif choice < 0.8:
+        elif choice < 0.60:
             mol = _remove_terminal(mol)
-        else:
+        elif choice < 0.80:
             mol = _insert_linker(mol)
+        else:
+            # H010: Scaffold Hopping（20% 概率）
+            result = _scaffold_hop(mol)
+            if result is not None:
+                mol = result
+            else:
+                # 骨架替换失败 → 回退到插入连接子
+                mol = _insert_linker(mol)
     except Exception:
         return None
     if mol is None:
@@ -235,6 +258,233 @@ def _insert_linker(mol):
         return mol
     return new_mol
 
+
+def _scaffold_hop(mol):
+    """Scaffold Hopping 算子（H010）：替换核心骨架，保留侧链装饰。
+
+    文献依据：
+    - Deep Lead Optimization (JACS 2024, §3.1): Scaffold Hopping 是先导化合物
+      优化的四个核心子任务之一，定义为"替换核心骨架同时保留有利取代基"
+    - 综述 §3.2: Scaffold hopping 是命中化合物到先导化合物过渡中的关键操作
+
+    算法流程：
+    1. BRICS 分解分子 → 得到片段列表
+    2. 识别最大片段作为"核心骨架"
+    3. 从 SCAFFOLDS 库选择不同于当前骨架的新骨架
+    4. 在新骨架上寻找合理连接点，将侧链重连
+    5. 验证生成分子的化学合理性
+    """
+    if mol is None or mol.GetNumAtoms() < 8:
+        # 过小的分子无法做有意义的骨架替换
+        return None
+
+    try:
+        # Step 1: BRICS 分解（使用 BRICSDecompose 返回 SMILES 集合）
+        from rdkit.Chem.BRICS import BRICSDecompose
+        frag_smiles_set = BRICSDecompose(mol)
+
+        if not frag_smiles_set or len(frag_smiles_set) < 2:
+            # BRICS 无法分解 → 回退到 Murcko 骨架分析
+            core = MurckoScaffold.GetScaffoldForMol(mol)
+            if core is None or core.GetNumAtoms() < 3:
+                return None
+            # 用 Murcko 骨架作为核心
+            frag_list = [core]
+            # 获取侧链：移除 Murcko 骨架后剩余部分
+            side_chains = Chem.DeleteSubstructs(mol, core)
+            if side_chains is not None and side_chains.GetNumAtoms() > 0:
+                frag_list.append(side_chains)
+            if len(frag_list) < 2:
+                return None
+            # Murcko 路径：直接用 mol 对象，跳过 BRICS 处理
+            valid_frags = frag_list
+            side_frags_raw = [frag_list[1]] if len(frag_list) > 1 else []
+            core_frag = frag_list[0]
+        else:
+            # BRICS 路径：将 SMILES 转换为 Mol 对象
+            frag_mols = {}
+            for smi in frag_smiles_set:
+                fm = Chem.MolFromSmiles(smi)
+                if fm is not None and fm.GetNumAtoms() >= 2:
+                    # 计算非 dummy 原子数
+                    nd = sum(1 for a in fm.GetAtoms() if a.GetAtomicNum() != 0)
+                    if nd >= 2:
+                        frag_mols[fm] = nd
+
+            if len(frag_mols) < 2:
+                return None
+
+            # Step 2: 按非 dummy 原子数排序，最大的作为核心骨架
+            sorted_frags = sorted(frag_mols.items(), key=lambda x: x[1], reverse=True)
+            core_frag = sorted_frags[0][0]
+
+            # 侧链：保留原始 mol（含 dummy atom）用于识别连接点
+            side_frags_raw = [f for f, _ in sorted_frags[1:]]
+
+            empty = set()
+            valid_frags = [f for f, _ in sorted_frags]
+            # Make core_smiles for later comparison
+            core_smiles_nodummy = Chem.MolToSmiles(core_frag, canonical=True)
+
+        # Get core SMILES (for similarity check later)
+        try:
+            core_smiles = Chem.MolToSmiles(core_frag, canonical=True)
+        except Exception:
+            core_smiles = ""
+
+        # Step 3: 从 SCAFFOLDS 库中选择新骨架
+        # 排除与当前骨架过于相似的（Tanimoto < 0.4）以鼓励多样性
+        candidate_scaffolds = []
+        core_fp = None
+        try:
+            core_fp = AllChem.GetMorganFingerprintAsBitVect(core_frag, 2, nBits=1024)
+        except Exception:
+            pass
+
+        for s_smi in SCAFFOLDS:
+            if s_smi == core_smiles:
+                continue
+            if core_fp is not None:
+                try:
+                    s_mol = Chem.MolFromSmiles(s_smi)
+                    if s_mol is None:
+                        continue
+                    s_fp = AllChem.GetMorganFingerprintAsBitVect(s_mol, 2, nBits=1024)
+                    sim = TanimotoSimilarity(core_fp, s_fp)
+                    if sim < 0.4:  # 选择足够不同的骨架
+                        candidate_scaffolds.append(s_smi)
+                except Exception:
+                    candidate_scaffolds.append(s_smi)
+            else:
+                candidate_scaffolds.append(s_smi)
+
+        if not candidate_scaffolds:
+            # 如果没有足够不同的骨架，允许更相似的
+            candidate_scaffolds = [s for s in SCAFFOLDS if s != core_smiles]
+
+        if not candidate_scaffolds:
+            return None
+
+        new_scaffold_smi = random.choice(candidate_scaffolds)
+        new_scaffold = Chem.MolFromSmiles(new_scaffold_smi)
+        if new_scaffold is None:
+            return None
+
+        # Step 4: 将侧链连接到新骨架
+        # 在新骨架上找可连接原子（碳原子，度 < 4）
+        scaffold_atoms = []
+        for atom in new_scaffold.GetAtoms():
+            if atom.GetAtomicNum() == 6 and atom.GetDegree() < 4:
+                scaffold_atoms.append(atom)
+
+        if not scaffold_atoms:
+            # 放宽到任何度 < 4 的原子
+            for atom in new_scaffold.GetAtoms():
+                if atom.GetDegree() < 4 and atom.GetAtomicNum() in (6, 7, 8):
+                    scaffold_atoms.append(atom)
+
+        if not scaffold_atoms:
+            return None
+
+        # 逐个连接侧链（最多连接3个，避免过度复杂）
+        combo = new_scaffold
+        n_sides = min(len(side_frags_raw), 3)
+        attached_atoms = set()
+
+        for i in range(n_sides):
+            side = side_frags_raw[i]
+
+            # Step 4a: 找到侧链的连接点（与 dummy atom 相邻的真实原子）
+            side_attachment_atoms = []
+            dummy_indices = []
+            for atom in side.GetAtoms():
+                if atom.GetAtomicNum() == 0:
+                    dummy_indices.append(atom.GetIdx())
+                    for nbr in atom.GetNeighbors():
+                        if nbr.GetAtomicNum() != 0:
+                            side_attachment_atoms.append(nbr)
+
+            if not side_attachment_atoms:
+                # 没有 dummy atom 时，退回到通用连接点查找
+                for atom in side.GetAtoms():
+                    if atom.GetAtomicNum() != 0 and atom.GetDegree() < 4:
+                        if atom.GetAtomicNum() == 6 and not atom.IsInRing():
+                            side_attachment_atoms.insert(0, atom)
+                        elif atom.GetAtomicNum() in (6, 7, 8) and atom.GetDegree() < 4:
+                            side_attachment_atoms.append(atom)
+
+            if not side_attachment_atoms:
+                continue
+
+            # Step 4b: 从侧链中移除 dummy atom，得到干净的侧链片段
+            side_clean = Chem.RWMol(side)
+            for di in sorted(dummy_indices, reverse=True):
+                side_clean.RemoveAtom(di)
+            side_clean = side_clean.GetMol()
+            # 不进行 sanitize，保留自由基用于成键
+
+            # 由于移除了 dummy 原子，侧链中原子索引可能偏移
+            # 重新计算连接点在干净侧链中的索引
+            old_to_new = {}
+            new_idx = 0
+            for old_idx in range(side.GetNumAtoms()):
+                if old_idx not in dummy_indices:
+                    old_to_new[old_idx] = new_idx
+                    new_idx += 1
+
+            side_attach_new_indices = [
+                old_to_new[a.GetIdx()]
+                for a in side_attachment_atoms
+                if a.GetIdx() in old_to_new
+            ]
+            if not side_attach_new_indices:
+                continue
+
+            # Step 4c: 选择骨架上的可用连接点
+            available_scaffold = [a for a in scaffold_atoms
+                                  if a.GetIdx() not in attached_atoms]
+            if not available_scaffold:
+                break
+
+            scaffold_anchor = random.choice(available_scaffold)
+            side_anchor_new_idx = random.choice(side_attach_new_indices)
+
+            # Step 4d: 组合分子并添加键
+            new_combo = Chem.CombineMols(combo, side_clean)
+            emol = Chem.EditableMol(new_combo)
+
+            combo_natoms = combo.GetNumAtoms()
+            side_anchor_global_idx = combo_natoms + side_anchor_new_idx
+
+            emol.AddBond(scaffold_anchor.GetIdx(), side_anchor_global_idx,
+                         Chem.BondType.SINGLE)
+
+            try:
+                combo = emol.GetMol()
+                Chem.SanitizeMol(combo)
+                attached_atoms.add(scaffold_anchor.GetIdx())
+            except Exception:
+                # 这个侧链连接失败，继续尝试下一个
+                continue
+
+        # Step 5: 最终验证
+        try:
+            Chem.SanitizeMol(combo)
+            new_smiles = Chem.MolToSmiles(combo, canonical=True)
+            # SMILES 往返验证
+            verify_mol = Chem.MolFromSmiles(new_smiles)
+            if verify_mol is None:
+                return None
+            # 确保生成的是与原始分子不同的结构
+            orig_smiles = Chem.MolToSmiles(mol, canonical=True)
+            if new_smiles == orig_smiles:
+                return None
+            return combo
+        except Exception:
+            return None
+
+    except Exception:
+        return None
 
 def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None):
     """生成候选药物分子。

@@ -12,13 +12,15 @@ import sys
 import os
 import json
 import csv
+import tempfile
+import uuid
 import argparse
 from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 from generator import generate_molecules, random_mutate_smiles, generate_with_docking_guidance
-from docking import batch_dock, dock_molecule
+from docking import batch_dock, dock_molecule, dock_molecule_consensus
 from synthesis_v2 import plan_synthesis_v2
 from receptor import prepare_receptor
 
@@ -30,6 +32,65 @@ def log(msg, log_lines):
     print(line, file=sys.stderr)
 
 
+PIPELINE_APPEND_LOG_ENV = "MOLCRAFT_PIPELINE_APPEND_RESULT_LOG"
+
+
+def _should_append_result_log() -> bool:
+    return os.getenv(PIPELINE_APPEND_LOG_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def write_result_log(
+    output_dir: str,
+    log_lines: list[str],
+    results: list[dict],
+    append: bool = True,
+) -> None:
+    """Write structured JSONL result.log file for pipeline runs.
+
+    When MOLCRAFT_LOG_PATH env var is set (by main.py), writes to that path
+    in append mode to unify logging. Otherwise falls back to output_dir/result.log.
+    """
+    env_log_path = os.environ.get("MOLCRAFT_LOG_PATH")
+    if env_log_path:
+        # main.py has opened this file already in write mode; always append
+        result_log_path = env_log_path
+        mode = "a"
+    else:
+        # Fallback: direct pipeline call, use output_dir
+        result_log_path = os.path.join(output_dir, "result.log")
+        mode = "a" if append else "w"
+    with open(result_log_path, mode, encoding="utf-8") as f:
+        # Write log_lines as structured events
+        for line in log_lines:
+            # Parse "[{ts}] {msg}" format back into structured event
+            if "] " in line:
+                ts_part, msg = line.split("] ", 1)
+                ts = ts_part[1:]  # Remove leading '['
+                f.write(json.dumps({
+                    "type": "log",
+                    "timestamp": ts,
+                    "message": msg
+                }, ensure_ascii=False, allow_nan=False) + "\n")
+            else:
+                f.write(json.dumps({
+                    "type": "log",
+                    "timestamp": datetime.now().isoformat(),
+                    "message": line
+                }, ensure_ascii=False, allow_nan=False) + "\n")
+        # Write final results as structured metrics event
+        trivial_count = sum(1 for r in results if r.get("trivial", False))
+        energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]
+        avg_energy = sum(energies) / len(energies) if energies else None
+        f.write(json.dumps({
+            "type": "metrics",
+            "timestamp": datetime.now().isoformat(),
+            "molecule_count": len(results),
+            "trivial_count": trivial_count,
+            "avg_binding_energy": avg_energy,
+            "min_binding_energy": min(energies) if energies else None,
+        }, ensure_ascii=False, allow_nan=False) + "\n")
+
+
 def run_evolutionary_pipeline(
     n_generate=50,
     n_top=10,
@@ -37,7 +98,8 @@ def run_evolutionary_pipeline(
     n_generations=2,
     n_offspring_per_seed=3,
     output_dir="output",
-    use_docking_guidance=False,
+    use_docking_guidance=True,
+    append_result_log=True,
 ):
     """运行进化式迭代药物研发流程。
 
@@ -49,6 +111,8 @@ def run_evolutionary_pipeline(
         n_offspring_per_seed: 每个种子产生的变异体数量
         output_dir: 输出目录
         use_docking_guidance: 是否使用 H002 对接引导生成
+        append_result_log: True 时追加到 main.py 已创建的结构化日志；
+            False 时覆盖旧日志，适合直接运行 pipeline.py
     """
     os.makedirs(output_dir, exist_ok=True)
     log_lines = []
@@ -137,6 +201,36 @@ def run_evolutionary_pipeline(
             unique_docked.append(d)
 
     unique_docked.sort(key=lambda x: x.get("binding_energy", 999))
+
+    # H009: 共识对接 — 对 top 候选分子用多次独立对接取中位数
+    # Coscientist 模式："performing experiments multiple times"
+    # 消除单次对接的随机噪声，提升最终排名可靠性
+    N_CONSENSUS = min(n_top * 2, len(unique_docked))
+    log(f"共识对接: 对 top {N_CONSENSUS} 候选执行 3 次独立对接取中位数...", log_lines)
+    consensus_top = unique_docked[:N_CONSENSUS]
+    consensus_results = []
+    for i, candidate in enumerate(consensus_top):
+        smiles = candidate.get("smiles", "")
+        if not smiles:
+            continue
+        cresult = dock_molecule_consensus(smiles)
+        if cresult.get("success"):
+            candidate["binding_energy"] = cresult["binding_energy"]
+            candidate["consensus_std"] = cresult.get("std_energy", 0.0)
+            candidate["consensus_n"] = cresult.get("n_success", 0)
+            consensus_results.append(candidate)
+            log(f"  [{i+1}/{N_CONSENSUS}] {smiles[:40]}... "
+                f"median={cresult['binding_energy']:.3f} std={cresult['std_energy']:.3f} "
+                f"(n={cresult['n_success']})", log_lines)
+
+    # 按中位数结合能重新排序
+    consensus_results.sort(key=lambda x: x.get("binding_energy", 999))
+
+    # 合并回 unique_docked：共识候选用新分数，其余保持不变
+    consensus_smiles = {r["smiles"] for r in consensus_results}
+    remaining = [d for d in unique_docked if d.get("smiles") not in consensus_smiles]
+    unique_docked = consensus_results + remaining
+
     final_top = unique_docked[:n_top]
     log(f"去重后共 {len(unique_docked)} 个独特分子，选择 top {n_top}", log_lines)
 
@@ -173,28 +267,39 @@ def run_evolutionary_pipeline(
         log(f"最佳结合能: {min(energies):.3f} kcal/mol", log_lines)
         log(f"Trivial route 比例: {trivial_count}/{len(results)} ({trivial_count/len(results)*100:.1f}%)", log_lines)
 
-    # 保存 CSV
-    csv_path = os.path.join(output_dir, "result.csv")
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["mol_smiles", "route"])
-        writer.writeheader()
-        for row in results:
-            writer.writerow({"mol_smiles": row["mol_smiles"], "route": row["route"]})
-    log(f"结果已保存到 {csv_path}", log_lines)
+    # 保存 CSV：先写临时文件，验证后原子替换，避免部分写入文件
+    csv_path = os.environ.get("MOLCRAFT_CSV_PATH", os.path.join(output_dir, "result.csv"))
+    csv_dir = os.path.dirname(os.path.abspath(csv_path)) or output_dir
+    fd, temp_csv = tempfile.mkstemp(prefix="result.", suffix=".csv.tmp", dir=csv_dir)
+    os.close(fd)
 
-    # 保存 log（追加模式，保留 Agent 执行记录）
-    log_path = os.path.join(output_dir, "result.log")
-    with open(log_path, "a", encoding="utf-8") as f:
-        if os.path.getsize(log_path) > 0:
-            f.write("\n\n")
-        f.write("\n".join(log_lines))
-    log(f"日志已追加到 {log_path}", log_lines)
+    try:
+        with open(temp_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=["mol_smiles", "route"])
+            writer.writeheader()
+            for row in results:
+                writer.writerow({"mol_smiles": row["mol_smiles"], "route": row["route"]})
+
+        # 原子替换：只有完整写入成功后才替换正式文件
+        os.replace(temp_csv, csv_path)
+        log(f"结果已保存到 {csv_path}", log_lines)
+    except Exception as e:
+        if os.path.exists(temp_csv):
+            os.unlink(temp_csv)
+        log(f"CSV 写入失败: {e}", log_lines)
+        raise
+
+    # 保存 result.log（JSONL 格式，兼容 main.py 的结构化日志）
+    write_result_log(output_dir, log_lines, results, append=append_result_log)
+    env_path = os.environ.get("MOLCRAFT_LOG_PATH")
+    final_log_path = env_path if env_path else os.path.join(output_dir, "result.log")
+    log(f"结构化日志已写入 {final_log_path}", log_lines)
 
     # 打印摘要
     log("=" * 60, log_lines)
     log("流程完成", log_lines)
     log(f"最佳结合能: {results[0]['binding_energy']} kcal/mol", log_lines)
-    log(f"输出文件: {csv_path}, {log_path}", log_lines)
+    log(f"输出文件: {csv_path}, {final_log_path}", log_lines)
     log("=" * 60, log_lines)
 
     return results
@@ -202,28 +307,28 @@ def run_evolutionary_pipeline(
 
 def _generate_offspring(seeds, n_offspring_per_seed):
     """从种子分子生成变异后代。
-    
+
     利用对接成功的种子作为起点，通过随机变异产生新分子。
     这模拟了进化算法中的"选择+变异"步骤。
     """
     import random
     from evaluator import evaluate_molecule, passes_filters
-    
+
     offspring = []
     attempts = 0
     max_attempts = len(seeds) * n_offspring_per_seed * 20
-    
+
     while len(offspring) < len(seeds) * n_offspring_per_seed and attempts < max_attempts:
         attempts += 1
         seed = random.choice(seeds)
         seed_smiles = seed.get("smiles", "")
         if not seed_smiles:
             continue
-        
+
         # 变异强度：1-4个突变点
         n_mut = random.randint(1, 4)
         new_smiles = random_mutate_smiles(seed_smiles, n_mut)
-        
+
         if new_smiles and new_smiles != seed_smiles:
             props = evaluate_molecule(new_smiles)
             if passes_filters(props):
@@ -241,7 +346,8 @@ def main():
     parser.add_argument("--n-generations", type=int, default=2, help="进化代数 (默认: 2)")
     parser.add_argument("--n-offspring", type=int, default=3, help="每个种子的变异体数量 (默认: 3)")
     parser.add_argument("--output-dir", type=str, default="output", help="输出目录")
-    parser.add_argument("--docking-guidance", action="store_true", help="启用 H002 对接引导生成")
+    parser.add_argument("--no-docking-guidance", action="store_false", dest="use_docking_guidance",
+                        help="禁用 H002 对接引导（不推荐，已验证会退化 0.4~0.8 kcal/mol）")
     args = parser.parse_args()
 
     run_evolutionary_pipeline(
@@ -252,6 +358,7 @@ def main():
         n_offspring_per_seed=args.n_offspring,
         output_dir=args.output_dir,
         use_docking_guidance=args.docking_guidance,
+        append_result_log=_should_append_result_log(),
     )
 
 

@@ -19,6 +19,7 @@ agent:
     - "molcraft_agent.tools:DockMolecules"
     - "molcraft_agent.tools:PlanSynthesis"
     - "molcraft_agent.tools:EvaluateMolecule"
+    - "molcraft_agent.tools:RunPipeline"
 
     # 迭代报告工具（Agent 主动报告迭代完成）
     - "molcraft_agent.tools:ReportIteration"
