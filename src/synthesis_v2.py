@@ -128,7 +128,12 @@ _SIMPLE_SCAFFOLDS_SMARTS = [
 
 
 def _is_simple_molecule(smiles: str) -> bool:
-    """判断分子是否为足够简单的起始原料，无需继续逆合成。"""
+    """判断分子是否为足够简单的起始原料，无需继续逆合成。
+    
+    H015 修复: 不再将多环芳烃/联芳基误判为"简单"。
+    含苯环且 ≤15 原子的分子如果是单环则简单，多环则可能需要断键。
+    文献依据: LARC (2025) — 起始原料应为商业可得的单环简单分子。
+    """
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return False
@@ -139,8 +144,16 @@ def _is_simple_molecule(smiles: str) -> bool:
     for s in _SIMPLE_SCAFFOLDS_SMARTS:
         patt = Chem.MolFromSmarts(s)
         if patt and mol.HasSubstructMatch(patt):
-            # 但取代基不能太多
-            if mol.GetNumAtoms() <= 15:
+            # H015 修复: 只接受单环或几乎无取代的分子（≤12 原子）
+            # 排除多环芳烃（联苯、萘等）被误判为"简单"
+            n_atoms = mol.GetNumAtoms()
+            ring_info = mol.GetRingInfo()
+            n_rings = ring_info.NumRings()
+            # 单环 + ≤15 原子 → 简单
+            if n_rings == 1 and n_atoms <= 15:
+                return True
+            # 多环但很小（如萘本身只有 10 原子）→ 简单
+            if n_rings >= 2 and n_atoms <= 10:
                 return True
     return False
 
@@ -259,6 +272,38 @@ RETRO_RULES = [
     ("[c;R1]1[c;R1][c;R1][n;R1][c;R1][c;R1]1", "c1ccncc1>>O=C1CCCC(=O)C1.N"),
     # 嘧啶
     ("c1cncnc1", "c1cncnc1>>N.C=O.N.C=O"),
+    
+    # ============================== H015 新增规则 ==============================
+    # 文献依据: LARC (Baker et al., 2025) — 规则覆盖率决定逆合成质量;
+    # Deep Lead Optimization (JACS 2024) — 稠环/桥环体系需要专门的断键策略
+    # 设计原则: 覆盖当前缺失的饱和含氮杂环骨架（THIQ、吲哚啉、饱和双环胺等）
+    
+    # -- 四氢异喹啉 (THIQ) 逆 Pictet-Spengler 反应 --
+    # 断裂苄位 C-N 键: THIQ → 苯乙胺 + 醛/酮
+    ("c1ccc2c(c1)CCNC2", "c1ccc2c(c1)CCNC2>>NCCc1ccccc1.C=O"),
+    
+    # -- 吲哚啉 (二氢吲哚) 逆还原环化 --
+    # 断裂 C-N 键开环: 吲哚啉 → 邻乙基苯胺
+    ("c1ccc2c(c1)CCN2", "c1ccc2c(c1)CCN2>>NCCc1ccccc1"),
+    
+    # -- 四氢喹啉 逆还原环化 --
+    # 1,2,3,4-四氢喹啉 → N-丙基苯胺
+    ("c1ccc2c(c1)CCCN2", "c1ccc2c(c1)CCCN2>>NCCCc1ccccc1"),
+    
+    # -- 饱和环内二级胺 C-N 键断裂 (逆还原胺化) --
+    # 只匹配饱和环体系内的 sp3C-sp3N 键，排除酰胺/磺酰胺/芳香体系
+    # 产物: C 转羰基 + 游离胺，原子数 +1 (O)，比例在 0.7-1.3 范围内
+    ("[C;R;!a;!$(C=*);!$(C#*)][N;R;!a;!$(N[a]);!$(NC=O);!$(NS(=O)=O)]",
+     "[C:1][N:2]>>[C:1]=O.[N:2]"),
+    
+    # -- 苄位 C-N 键在饱和环中 (retro-Pictet-Spengler 变体) --
+    # 更精确匹配: 芳环邻接的饱和 C-N 键
+    ("[c;R][C;R;!a][N;R;!a;!$(NC=O)]",
+     "[c:1][C:2][N:3]>>[c:1][C:2]=O.[N:3]"),
+    
+    # -- 苯并氮杂环 (benzazepine) 断键 --
+    # 7 元含氮杂环与苯稠合 → 逆 Bischler-Napieralski
+    ("c1ccc2c(c1)CCCNC2", "c1ccc2c(c1)CCCNC2>>NCCCCc1ccccc1.C=O"),
     
     # ------------------- 缩合反应 -------------------
     # 烯烃 — Wittig / 羟醛缩合逆反应
