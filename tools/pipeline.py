@@ -24,6 +24,7 @@ from generator import generate_molecules, random_mutate_smiles, generate_with_do
 from docking import batch_dock, dock_molecule, dock_molecule_consensus
 from synthesis_v2 import plan_synthesis_v2
 from receptor import prepare_receptor
+from src.event_schema import MoleculeEvent, MetricsEvent
 
 
 def log(msg, log_lines):
@@ -33,63 +34,14 @@ def log(msg, log_lines):
     print(line, file=sys.stderr)
 
 
-PIPELINE_APPEND_LOG_ENV = "MOLCRAFT_PIPELINE_APPEND_RESULT_LOG"
+def count_rings(smiles: str) -> int:
+    """Count the number of rings in a molecule."""
+    from rdkit import Chem
+    mol = Chem.MolFromSmiles(smiles)
+    if mol is None:
+        return 0
+    return Chem.rdMolDescriptors.CalcNumRings(mol)
 
-
-def _should_append_result_log() -> bool:
-    return os.getenv(PIPELINE_APPEND_LOG_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
-
-
-def write_result_log(
-    output_dir: str,
-    log_lines: list[str],
-    results: list[dict],
-    append: bool = True,
-) -> None:
-    """Write structured JSONL result.log file for pipeline runs.
-
-    When MOLCRAFT_LOG_PATH env var is set (by main.py), writes to that path
-    in append mode to unify logging. Otherwise falls back to output_dir/result.log.
-    """
-    env_log_path = os.environ.get("MOLCRAFT_LOG_PATH")
-    if env_log_path:
-        # main.py has opened this file already in write mode; always append
-        result_log_path = env_log_path
-        mode = "a"
-    else:
-        # Fallback: direct pipeline call, use output_dir
-        result_log_path = os.path.join(output_dir, "result.log")
-        mode = "a" if append else "w"
-    with open(result_log_path, mode, encoding="utf-8") as f:
-        # Write log_lines as structured events
-        for line in log_lines:
-            # Parse "[{ts}] {msg}" format back into structured event
-            if "] " in line:
-                ts_part, msg = line.split("] ", 1)
-                ts = ts_part[1:]  # Remove leading '['
-                f.write(json.dumps({
-                    "type": "log",
-                    "timestamp": ts,
-                    "message": msg
-                }, ensure_ascii=False, allow_nan=False) + "\n")
-            else:
-                f.write(json.dumps({
-                    "type": "log",
-                    "timestamp": datetime.now().isoformat(),
-                    "message": line
-                }, ensure_ascii=False, allow_nan=False) + "\n")
-        # Write final results as structured metrics event
-        trivial_count = sum(1 for r in results if r.get("trivial", False))
-        energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]
-        avg_energy = sum(energies) / len(energies) if energies else None
-        f.write(json.dumps({
-            "type": "metrics",
-            "timestamp": datetime.now().isoformat(),
-            "molecule_count": len(results),
-            "trivial_count": trivial_count,
-            "avg_binding_energy": avg_energy,
-            "min_binding_energy": min(energies) if energies else None,
-        }, ensure_ascii=False, allow_nan=False) + "\n")
 
 
 def run_evolutionary_pipeline(
@@ -100,7 +52,7 @@ def run_evolutionary_pipeline(
     n_offspring_per_seed=3,
     output_dir="output",
     use_docking_guidance=True,
-    append_result_log=True,
+    logger=None,  # Optional EventLogger instance
 ):
     """运行进化式迭代药物研发流程。
 
@@ -112,8 +64,7 @@ def run_evolutionary_pipeline(
         n_offspring_per_seed: 每个种子产生的变异体数量
         output_dir: 输出目录
         use_docking_guidance: 是否使用 H002 对接引导生成
-        append_result_log: True 时追加到 main.py 已创建的结构化日志；
-            False 时覆盖旧日志，适合直接运行 pipeline.py
+        logger: 可选的 EventLogger 实例，用于结构化日志输出
     """
     os.makedirs(output_dir, exist_ok=True)
     log_lines = []
@@ -263,6 +214,21 @@ def run_evolutionary_pipeline(
             "syn_steps": syn.get("steps", 0),
         })
 
+        if logger is not None:
+            composite = 0.0  # will be recalculated in H012 scoring below
+            logger.log_molecule(MoleculeEvent(
+                mol_smiles=smiles,
+                binding_energy=mol.get("binding_energy") or 0.0,
+                composite_score=composite,
+                syn_steps=syn.get("steps", 0),
+                sa_score=syn.get("sa_score"),
+                qed=mol.get("qed") or 0.0,
+                rings=count_rings(smiles),
+                trivial=is_trivial,
+                route_quality=quality,
+                docking_std=mol.get("consensus_std"),
+            ))
+
     # H012 复合评分: 0.8×BE_norm + 0.2×route_quality
     energies_all = [c["binding_energy"] for c in scored_candidates if c["binding_energy"] is not None]
     if energies_all:
@@ -331,17 +297,25 @@ def run_evolutionary_pipeline(
         log(f"CSV 写入失败: {e}", log_lines)
         raise
 
-    # 保存 result.log（JSONL 格式，兼容 main.py 的结构化日志）
-    write_result_log(output_dir, log_lines, results, append=append_result_log)
-    env_path = os.environ.get("MOLCRAFT_LOG_PATH")
-    final_log_path = env_path if env_path else os.path.join(output_dir, "result.log")
-    log(f"结构化日志已写入 {final_log_path}", log_lines)
+    # 结构化日志：通过 EventLogger 输出 metrics
+    if logger is not None:
+        energies = [r["binding_energy"] for r in results if r["binding_energy"] is not None]
+        steps = [r.get("syn_steps", 0) for r in results]
+        logger.log_metrics(MetricsEvent(
+            molecule_count=len(results),
+            non_trivial_count=len(results) - trivial_count,
+            trivial_count=trivial_count,
+            avg_binding_energy=sum(energies) / len(energies) if energies else None,
+            min_binding_energy=min(energies) if energies else None,
+            avg_syn_steps=sum(steps) / len(steps) if steps else None,
+            docking_success_rate=0.0,
+        ))
 
     # 打印摘要
     log("=" * 60, log_lines)
     log("流程完成", log_lines)
     log(f"最佳结合能: {results[0]['binding_energy']} kcal/mol", log_lines)
-    log(f"输出文件: {csv_path}, {final_log_path}", log_lines)
+    log(f"输出文件: {csv_path}", log_lines)
     log("=" * 60, log_lines)
 
     return results
@@ -404,7 +378,6 @@ def main():
         n_offspring_per_seed=args.n_offspring,
         output_dir=args.output_dir,
         use_docking_guidance=args.use_docking_guidance,
-        append_result_log=_should_append_result_log(),
     )
 
 
