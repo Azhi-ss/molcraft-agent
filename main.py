@@ -27,6 +27,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from src.event_logger import EventLogger
+from src.event_schema import MetricsEvent
+
 # 必须在导入 kimi_agent_sdk 之前加载环境变量！
 from dotenv import load_dotenv
 from pydantic import SecretStr
@@ -56,7 +59,6 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 ITERATION_LOG = Path(__file__).parent / "docs" / "iteration_log.jsonl"
 CUSTOM_LLM_PROVIDER_KEY = "env-openai-compatible"
 CUSTOM_LLM_MODEL_KEY = "env-llm"
-PIPELINE_APPEND_LOG_ENV = "MOLCRAFT_PIPELINE_APPEND_RESULT_LOG"
 PIPELINE_CSV_PATH_ENV = "MOLCRAFT_CSV_PATH"
 
 
@@ -113,64 +115,6 @@ def load_program() -> str:
             f"{PROGRAM_MD} 不存在。这是 Agent 的指令书，必须创建后才能运行。"
         )
     return PROGRAM_MD.read_text(encoding="utf-8")
-
-
-class StructuredLogger:
-    """结构化日志记录器：终端输出人类可读文本，文件输出 JSON Lines。
-
-    安全写入机制：先写入临时文件，只有 commit() 被调用后才替换正式文件。
-    这样可以避免运行失败时覆盖上一次成功的提交产物。
-    """
-
-    def __init__(self, log_path: Path) -> None:
-        self.terminal = sys.stdout
-        self.log_path = log_path
-        self.tmp_path = log_path.with_suffix(f".{uuid.uuid4().hex[:8]}.tmp.log")
-        self.log_file = open(self.tmp_path, "w", encoding="utf-8")
-        self._line_start = True
-        self._committed = False
-
-    def commit(self) -> None:
-        """确认日志有效，用临时文件替换正式 result.log。"""
-        self.log_file.flush()
-        self.log_file.close()
-        import shutil
-        shutil.move(str(self.tmp_path), str(self.log_path))
-        self._committed = True
-
-    def log_event(self, event_type: str, **data: Any) -> None:
-        """记录结构化事件到文件。严格 JSON 序列化，禁止 NaN/Infinity。"""
-        event = {
-            "type": event_type,
-            "timestamp": datetime.now().isoformat(),
-            **data
-        }
-        self.log_file.write(json.dumps(event, ensure_ascii=False, allow_nan=False) + "\n")
-        self.log_file.flush()
-
-    def write(self, message: str) -> None:
-        """终端输出保持人类可读，文件输出为 JSONL 格式。"""
-        self.terminal.write(message)
-        # stdout 包装为 JSON 事件写入文件，保证 result.log 是有效 JSONL
-        if message.strip():
-            event = {
-                "type": "stdout",
-                "timestamp": datetime.now().isoformat(),
-                "content": message
-            }
-            self.log_file.write(json.dumps(event, ensure_ascii=False, allow_nan=False) + "\n")
-            self.log_file.flush()
-
-    def flush(self) -> None:
-        self.terminal.flush()
-        self.log_file.flush()
-
-    def close(self) -> None:
-        """关闭日志文件，未提交时删除临时文件。"""
-        if not self.log_file.closed:
-            self.log_file.close()
-        if not self._committed and self.tmp_path.exists():
-            self.tmp_path.unlink(missing_ok=True)
 
 
 def zip_results(output_dir: Path) -> None:
@@ -297,14 +241,10 @@ async def main() -> None:
     log_path = OUTPUT_DIR / "result.log"
 
     # 重定向 stdout 到终端 + 文件
-    tee = StructuredLogger(log_path)
+    tee = EventLogger(log_path)
     original_stdout = sys.stdout
     sys.stdout = tee
 
-    # 设置环境变量，让 pipeline.py 写入独立的临时文件，避免和主日志写入相互干扰
-    # 运行结束后会合并 pipeline 的日志到主日志
-    pipeline_log_path = tee.tmp_path.with_suffix(".pipeline.tmp.log")
-    os.environ["MOLCRAFT_LOG_PATH"] = str(pipeline_log_path.resolve())
     pipeline_csv_path = tee.tmp_path.with_suffix(".pipeline.tmp.csv")
     pipeline_csv_path.unlink(missing_ok=True)
     os.environ[PIPELINE_CSV_PATH_ENV] = str(pipeline_csv_path.resolve())
@@ -339,10 +279,9 @@ async def main() -> None:
         print()
 
         # 记录启动事件
-        tee.log_event("start", round=count_iterations() + 1, max_minutes=args.max_minutes,
+        tee.log_start(round=count_iterations() + 1, max_minutes=args.max_minutes,
                       max_iterations=args.iterations, program_file=str(PROGRAM_MD))
 
-        os.environ[PIPELINE_APPEND_LOG_ENV] = "1"
         async for msg in prompt(
             program,
             config=llm_config,
@@ -400,28 +339,21 @@ async def main() -> None:
                     1 for m in molecules
                     if m.get('route', '') == m.get('mol_smiles', '') + '>>' + m.get('mol_smiles', '')
                 )
-                trivial_ratio = trivial_count / max(len(molecules), 1)
-                tee.log_event("metrics",
-                             sample_count=len(molecules),
-                             trivial_ratio=trivial_ratio)
+                non_trivial_count = len(molecules) - trivial_count
+                tee.log_metrics(MetricsEvent(
+                    molecule_count=len(molecules),
+                    non_trivial_count=non_trivial_count,
+                    trivial_count=trivial_count,
+                    avg_binding_energy=None,
+                    min_binding_energy=None,
+                    avg_syn_steps=None,
+                    docking_success_rate=0.0,
+                ))
             except Exception:
                 pass
 
         # 记录结束事件
-        tee.log_event("end", status=run_status)
-
-        # 合并 pipeline 产生的日志（独立文件避免写入冲突）
-        pipeline_log = Path(os.environ.get("MOLCRAFT_LOG_PATH", ""))
-        if pipeline_log.exists() and pipeline_log.stat().st_size > 0:
-            tee.log_file.flush()  # 确保之前的写入已落盘
-            # 关闭当前写入句柄后合并
-            tee.log_file.close()
-            with open(tee.tmp_path, "a", encoding="utf-8") as f_out:
-                with open(pipeline_log, "r", encoding="utf-8") as f_in:
-                    f_out.write(f_in.read())
-            pipeline_log.unlink(missing_ok=True)
-            # 重新打开文件
-            tee.log_file = open(tee.tmp_path, "a", encoding="utf-8")
+        tee.log_end(status=run_status)
 
         # 只有成功运行且有新产物时才提交日志并打包结果
         if run_status == "success":
