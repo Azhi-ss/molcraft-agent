@@ -69,7 +69,41 @@
    ReadFile: src/evaluator.py      # 性质评估
    ReadFile: src/config.py         # 配置
    ReadFile: tools/pipeline.py     # 主流程（注意 --docking-guidance 是关键参数）
+   ReadFile: src/synthesis_v2.py   # 逆合成 — 重点！当前最大瓶颈
    ```
+
+   **当前优先方向：扩充逆合成规则库**
+   低门槛方向（结合能）已近天花板（-9.7~-9.9 kcal/mol）。现在转向中等门槛：降低 trivial route。
+
+   `synthesis_v2.py` 的 `REACTION_RULES` 列表仅约 18 条 SMARTS 断键规则，主要覆盖：
+   酰胺、磺酰胺、酯、醚、Suzuki 偶联、Buchwald 胺化。稠环、桥环、螺环、杂环芳香体系完全缺失，
+   走 BRICS fallback → trivial route。
+
+   **如何设计新的 SMARTS 断键规则：**
+
+   RDKit 的 `ReactionFromSmarts` 语法：
+   ```python
+   from rdkit.Chem import AllChem
+   # 格式: '反应物>>产物'，[c:1] 标记原子映射
+   rxn = AllChem.ReactionFromSmarts('[c:1][c:2]>>[c:1]Br.[c:2]B(O)O')  # Suzuki 逆反应
+   # 添加到 synthesis_v2.py 的 REACTION_RULES: (匹配子结构SMARTS, 反应SMARTS)
+   ```
+
+   **逆合成断键启发式（决定需要什么规则）：**
+   - 新 C-C 键 → aldol, Claisen, Michael, Wittig, Grignard, Diels-Alder, Suzuki
+   - 新 C-O 键 → 酯化, 醚化 (Williamson), Mitsunobu
+   - 新 C-N 键 → 还原胺化, 酰胺偶联, Buchwald, SNAr, Gabriel
+   - 稠环断开 → Diels-Alder 逆反应, Friedel-Crafts 环化逆反应
+   - 桥环断开 → 分子内 SN2 逆反应, 自由基环化逆反应
+   - 螺环断开 → pinacol 重排逆反应, 半缩酮逆反应
+   - 杂环 (吡啶/嘧啶/吲哚) → 逆 Pictet-Spengler, 逆 Bischler-Napieralski
+
+   **扩规则方法：**
+   1. 分析当前 result.csv 中 trivial route 分子的结构——哪些键类型被 BRICS 回退了
+   2. 对照上面的启发式判断正确断键方式
+   3. 用 RDKit SMARTS 设计新规则，匹配目标子结构，写出逆合成反应
+   4. 加到 `REACTION_RULES` 列表：`("SMARTS_子结构匹配", "SMARTS_反应")`
+   5. 跑 `run_pipeline` 验证 trivial 比例变化
 
 2. **诊断分析**（使用 `Think` 工具）：
    - 对比文献中的先进方法，现有代码差距在哪里？

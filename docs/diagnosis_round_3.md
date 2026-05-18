@@ -1,66 +1,45 @@
-# 瓶颈诊断与假设报告 — Round 3
+# 瓶颈诊断报告 — Round 3
 
-## 1. 当前状态（H011 + H012 后）
+## H012+H013 后状态
+- ✅ BE: -9.755 (接近基线 -9.941, 差距仅 1.9%)
+- ✅ Trivial: 0/10 
+- ✅ 路线质量: 全部 ≥ 0.70
+- ⚠️ Crossover 成功率仅 30%
 
-| 指标 | H011 | H012 | 
-|------|:---:|:---:|
-| 最佳结合能 | -9.941 | -8.896 (随机波动) |
-| Top-10 平均 | -8.961 | -8.418 |
-| Trivial route | 1/10 | 1/10 |
-| Docking guidance | ON | ON |
+## 剩余瓶颈
 
-## 2. 瓶颈诊断
+### 瓶颈 1: 种子选择仅看 BE，忽略 SA
+MOOSE-Chem 强调"Multi-objective optimization: docking score AND synthetic accessibility co-optimized."
+当前在种子选择阶段只用 BE，SA 仅做硬过滤。
 
-### 瓶颈：突变取代基库过于贫乏
+### 瓶颈 2: Crossover 成功率可提升
+30% 成功率意味着 70% 的 crossover 尝试被浪费。可通过重试机制提升。
 
-**根因分析**:
-- `_add_substituent()` 仅支持 5 种取代基: F, Cl, OH, NH2, CH3
-- 药物分子常见的 CF3, CN, OCH3, NO2 等官能团无法通过突变引入
-- 这限制了生成器探索富含极性相互作用（氢键、卤键、π-π）的化学空间
-- Deep Lead Optimization (JACS 2024) 将 Side-Chain Decoration 定义为核心优化子任务
-
-**文献支撑**:
-- **Deep Lead Optimization** (JACS 2024): Side-chain decoration 是先导化合物优化的核心
-- **MOOSE-Chem** (Yang et al., 2025): 多样化的初始种群是进化搜索的前提
-- **ChemCrow** (Bran et al., 2024): 化学空间覆盖度取决于可用操作集合
-
-## 3. 假设 H013: 扩充突变取代基库
+## 假设 H014: SA 软引导 + Crossover 重试
 
 ```
-假设ID: H013
-瓶颈: _add_substituent 仅支持 5 种取代基，限制化学空间探索
-文献支撑: Deep Lead Optimization (JACS 2024) — Side-chain decoration 是核心优化子任务
+假设ID: H014
+瓶颈: BE种子选择无SA意识，crossover成功率低
+文献支撑:
+  - MOOSE-Chem (Yang 2025): Multi-objective co-optimization of BE and SA
+  - MolLEO (Wang 2024b): 进化算法中重试机制提升有效变异率
 
 ───────────────── 推理链 ─────────────────
-步骤 | 内容                              | 置信度 | 推理方式 | 依据来源
-S1   | 多种官能团可增加蛋白-配体相互作用  | 高     | 文献     | JACS 2024
-S2   | 当前突变无法引入 CF3/CN/OCH3 等    | 高     | 观察     | 代码审查
-S3   | 扩充库可使生成器探索更广化学空间    | 高     | 演绎     | 从 S2
-S4   | 更广空间可能包含结合能更优的分子    | 中     | 演绎     | 从 S3
+步骤 | 内容                                    | 置信度
+S1   | SA软引导优先低SA分子为种子               | 高
+S2   | 低SA种子产生更合成友好的后代              | 中
+S3   | Crossover重试提升有效后代数               | 高
 
-综合置信度: 中 (S4为"中")
+综合置信度: 中
 
 ───────────────── 验证标准 ─────────────────
-Q1 如果核心指标提升 < 5%，是否仍保留？
-答：是
-理由：官能团多样性本身就是价值
-
-Q2 如果指标下降，最可能的原因是什么？
-答：新官能团引入过多极性基团导致 LogP 过低或 MW 超标
-理由：CF3、NO2 等会增加 MW
-
-Q3 本假设的最低可接受结果是什么？
-答：结合能下降不超过 3%，且 QED 均值 ≥ 0.5
+Q3: 最低可接受结果？
+答: BE下降不超过2%，trivial保持0/10
 
 ───────────────── 改进方案 ─────────────────
 改动文件: src/generator.py
 改动内容:
-  1. _add_substituent: 取代基从 5 种扩充至 10 种
-     新增: OC(甲氧基), C(F)(F)F(三氟甲基), C#N(氰基), 
-           [N+](=O)[O-](硝基), C=C(乙烯基)
-  2. _replace_atom: 原子替换范围扩展（新增硫→氧/氮方向）
-验证指标:
-  - 最佳结合能、top-10 平均结合能
-  - QED 均值
-  - trivial route 比例
+  1. generate_with_docking_guidance: BE种子选择时加入 SA×0.1 惩罚
+  2. Crossover 重试：失败时最多重试3次
+验证指标: BE + trivial + 路线质量
 ```
