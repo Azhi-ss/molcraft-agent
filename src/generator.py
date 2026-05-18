@@ -549,6 +549,92 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None):
     return result
 
 
+def _diverse_selection(candidates, n_select, diversity_weight=0.3):
+    """多样性保持选择（H011）：使用贪心 MMD 算法选择候选分子。
+
+    文献依据:
+    - MOOSE-Chem (Yang et al., 2025): "Diverse initial population is essential
+      for evolutionary search to avoid premature convergence"
+    - MolLEO (Wang et al., 2024b): 多目标进化优化中多样性是核心维度
+
+    算法: Maximum Minimal Distance (MMD) 贪心选择
+    1. 计算所有分子的 Morgan 指纹
+    2. 从结合能最优分子开始
+    3. 迭代选择: 综合评分 = (1-w)×BE_norm + w×diversity_norm
+       其中 diversity_norm = min(Tanimoto_distance to already selected)
+
+    Args:
+        candidates: list[dict], 每个含 "smiles", "binding_energy"
+        n_select: 选择数量
+        diversity_weight: 多样性权重 (0=纯BE, 1=纯多样性)
+
+    Returns:
+        list[dict]: 按综合评分排序的选择结果
+    """
+    if len(candidates) <= n_select:
+        return list(candidates)
+
+    # 预计算指纹
+    fps = []
+    for c in candidates:
+        try:
+            mol = Chem.MolFromSmiles(c["smiles"])
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024)
+            fps.append(fp)
+        except Exception:
+            fps.append(None)
+
+    # 归一化结合能到 [0, 1]（越低越好 → 归一化后 1 为最好）
+    energies = [c.get("binding_energy", 999) for c in candidates]
+    e_min, e_max = min(energies), max(energies)
+    if e_max > e_min:
+        be_norm = [(e_max - e) / (e_max - e_min) for e in energies]
+    else:
+        be_norm = [0.5] * len(energies)
+
+    selected = []
+    selected_indices = set()
+
+    # Step 1: 选择结合能最优分子作为起点
+    best_idx = min(range(len(candidates)), key=lambda i: energies[i])
+    selected.append(candidates[best_idx])
+    selected_indices.add(best_idx)
+
+    # Step 2: 贪心选择剩余分子
+    for _ in range(1, n_select):
+        best_score = -1
+        best_idx = -1
+
+        for i, cand in enumerate(candidates):
+            if i in selected_indices:
+                continue
+            if fps[i] is None:
+                continue
+
+            # 计算与已选集合的最小 Tanimoto 距离（距离 = 1 - 相似度）
+            max_sim = 0.0
+            for si in selected_indices:
+                if fps[si] is not None:
+                    sim = TanimotoSimilarity(fps[i], fps[si])
+                    if sim > max_sim:
+                        max_sim = sim
+            diversity_norm = 1.0 - max_sim  # 距离作为多样性分数
+
+            # 综合评分
+            score = (1 - diversity_weight) * be_norm[i] + diversity_weight * diversity_norm
+            if score > best_score:
+                best_score = score
+                best_idx = i
+
+        if best_idx >= 0:
+            selected.append(candidates[best_idx])
+            selected_indices.add(best_idx)
+
+    # 按结合能排序返回
+    selected.sort(key=lambda x: x.get("binding_energy", 999))
+    return selected
+
+
 def generate_with_docking_guidance(
     docking_fn,
     n_molecules=50,
@@ -558,18 +644,21 @@ def generate_with_docking_guidance(
     strategy="mutate",
     scaffold=None,
 ):
-    """对接引导的分子生成（H002）。
+    """对接引导的分子生成（H002 + H011 多样性保持）。
 
     核心思想：将分子对接作为适应度函数，嵌入生成循环中。
-    每批生成少量分子 → 对接评估 → 选择结合能最优的作为种子 → 变异产生下一代。
-    这避免了盲生成大量低质量分子，显著提升计算效率。
+    每批生成少量分子 → 对接评估 → 多样性保持选择 → 变异产生下一代。
+    这避免了盲生成大量低质量分子，同时防止过早收敛。
+
+    H011 改进：种子选择加入多样性保持（贪心 MMD 算法），
+    避免纯结合能选择导致的过早收敛。
 
     Args:
         docking_fn: 对接函数，接收 SMILES 字符串，返回 dict 包含 "binding_energy"
         n_molecules: 目标生成分子总数
         batch_size: 每批生成的候选分子数
         n_generations: 进化代数
-        top_k: 每代选择 top_k 作为种子
+        top_k: 每代按结合能保留的 top_k，剩余 (n_seeds - top_k) 由多样性选择
         strategy: 初始生成策略
         scaffold: 可选种子骨架
 
@@ -630,17 +719,58 @@ def generate_with_docking_guidance(
         # 累积到全局池
         all_evaluated.extend(docked_batch)
 
-        # 选择种子
-        n_seeds = min(top_k, len(docked_batch))
-        current_seeds = docked_batch[:n_seeds]
+        # H011: 多样性保持选择种子
+        # 策略: 50% 种子来自纯 BE（确保选择压力），50% 来自多样性选择（确保探索性）
+        n_be_seeds = max(1, top_k // 2)
+        n_diverse_seeds = max(1, top_k - n_be_seeds)
+        n_total_seeds = min(top_k, len(docked_batch))
+
+        # 纯 BE 种子
+        be_seeds = docked_batch[:n_be_seeds]
+
+        # 多样性种子（从剩余分子中选择）
+        remaining = docked_batch[n_be_seeds:]
+        if remaining and n_diverse_seeds > 0:
+            diverse_seeds = _diverse_selection(
+                remaining, min(n_diverse_seeds, len(remaining)), diversity_weight=0.5
+            )
+        else:
+            diverse_seeds = []
+
+        # 合并种子（去重）
+        seed_smiles_set = {s["smiles"] for s in be_seeds}
+        current_seeds = list(be_seeds)
+        for s in diverse_seeds:
+            if s["smiles"] not in seed_smiles_set:
+                seed_smiles_set.add(s["smiles"])
+                current_seeds.append(s)
+
+        # 确保有足够种子
+        if len(current_seeds) < n_total_seeds:
+            for cand in docked_batch:
+                if cand["smiles"] not in seed_smiles_set:
+                    seed_smiles_set.add(cand["smiles"])
+                    current_seeds.append(cand)
+                if len(current_seeds) >= n_total_seeds:
+                    break
+
+        current_seeds = current_seeds[:n_total_seeds]
+
+        # 计算多样性指标
+        if len(docked_batch) >= 2:
+            avg_sim = _avg_pairwise_similarity(docked_batch[:min(20, len(docked_batch))])
+        else:
+            avg_sim = 0.0
 
         print(
-            f"[H002] Gen {gen+1}/{n_generations}: generated {len(batch_mols)}, "
-            f"docked {len(docked_batch)}, best {docked_batch[0]['binding_energy'] if docked_batch else 'N/A'}",
+            f"[H002+H011] Gen {gen+1}/{n_generations}: generated {len(batch_mols)}, "
+            f"docked {len(docked_batch)}, best {docked_batch[0]['binding_energy'] if docked_batch else 'N/A'}, "
+            f"seeds {len(current_seeds)} (BE={n_be_seeds} diverse={len(diverse_seeds)}), "
+            f"avg_pairwise_sim={avg_sim:.3f}",
             file=sys.stderr,
         )
 
-    # 全局去重 + 排序
+    # 全局去重 + 多样性最终排序
     seen = set()
     unique = []
     for m in all_evaluated:
@@ -650,4 +780,59 @@ def generate_with_docking_guidance(
             unique.append(m)
 
     unique.sort(key=lambda x: x.get("binding_energy", 999))
-    return unique[:n_molecules]
+
+    # H011: 最终选择也加入多样性 — 从 top 2*n_molecules 中做多样性选择
+    # 确保最终的分子集合既有高结合能又有多样性
+    candidate_pool = unique[:min(n_molecules * 2, len(unique))]
+    if len(candidate_pool) > n_molecules:
+        # 保留 top 60% 纯BE + 40% 多样性
+        n_be = int(n_molecules * 0.6)
+        n_div = n_molecules - n_be
+        be_final = candidate_pool[:n_be]
+        remaining_pool = candidate_pool[n_be:]
+        if remaining_pool and n_div > 0:
+            div_final = _diverse_selection(
+                remaining_pool, min(n_div, len(remaining_pool)), diversity_weight=0.5
+            )
+        else:
+            div_final = []
+
+        # 合并: BE 种子 + 多样性种子
+        final_set = set(m["smiles"] for m in be_final)
+        result = list(be_final)
+        for m in div_final:
+            if m["smiles"] not in final_set:
+                final_set.add(m["smiles"])
+                result.append(m)
+        # 如果不够，从剩余中补充
+        for m in candidate_pool:
+            if len(result) >= n_molecules:
+                break
+            if m["smiles"] not in final_set:
+                final_set.add(m["smiles"])
+                result.append(m)
+        result.sort(key=lambda x: x.get("binding_energy", 999))
+        return result[:n_molecules]
+
+    return candidate_pool[:n_molecules]
+
+
+def _avg_pairwise_similarity(molecules):
+    """计算分子集合的平均成对 Tanimoto 相似度（H011 辅助）。"""
+    if len(molecules) < 2:
+        return 0.0
+    fps = []
+    for m in molecules:
+        try:
+            mol = Chem.MolFromSmiles(m.get("smiles", ""))
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024)
+            fps.append(fp)
+        except Exception:
+            fps.append(None)
+
+    sims = []
+    for i in range(len(fps)):
+        for j in range(i + 1, len(fps)):
+            if fps[i] is not None and fps[j] is not None:
+                sims.append(TanimotoSimilarity(fps[i], fps[j]))
+    return sum(sims) / len(sims) if sims else 0.0

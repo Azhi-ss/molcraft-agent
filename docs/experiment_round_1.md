@@ -1,41 +1,55 @@
-# 实验验证记录 Round 1
+# 实验验证报告 — Round 1
 
-## 假设ID
-H002: 对接引导生成（docking-guided generation）
+## 假设ID: H011
+
+**假设**: 进化选择加入多样性保持（贪心 MMD 算法）可以避免过早收敛，发现结合能更优的分子。
 
 ## 实验配置
-- 基线: `python3 tools/pipeline.py --n-generate 30 --n-top 10 --strategy mutate --n-generations 2 --n-offspring 3`
-- 改进: `python3 tools/pipeline.py --n-generate 30 --n-top 10 --strategy mutate --n-generations 2 --n-offspring 3 --docking-guidance`
 
-## 实验结果
+| 参数 | 实验组 (H011) | 基线 (Round 3) |
+|------|:---:|:---:|
+| n_generate | 50 | 50 |
+| n_top | 10 | 10 |
+| strategy | mutate | mutate |
+| n_generations | 2 | 2 |
+| docking_guidance | ON | ON |
+| diversity_selection | ON (diversity_weight=0.5) | OFF |
 
-### 基线（传统pipeline）
-| 指标 | 数值 |
-|------|------|
-| Top 10 平均结合能 | -7.959 kcal/mol |
-| 最佳结合能 | -8.598 kcal/mol |
-| Trivial route 比例 | 2/10 (20.0%) |
+## 结果数据
 
-### H002 改进后
-| 指标 | 数值 |
-|------|------|
-| Top 10 平均结合能 | -7.884 kcal/mol |
-| 最佳结合能 | -8.086 kcal/mol |
-| Trivial route 比例 | 2/10 (20.0%) |
+| 指标 | 基线 (R3) | H011 (R1) | 变化 |
+|------|:---:|:---:|:---:|
+| **最佳结合能** | -8.335 | **-9.941** | **+1.606 (+19.3%)** |
+| **Top-10 平均结合能** | -8.131 | **-8.961** | **+0.830 (+10.2%)** |
+| Trivial route 比例 | 0% (0/10) | 10% (1/10) | +10% |
+| Docking success | 100% | 100% | - |
+
+## Top 分子详情
+
+| # | SMILES (截断) | BE | Route |
+|---|-------------|------|------|
+| 1 | Oc1ccc(-c2ccc3c(-c4ccncc4)ccnc3c2)cc1 | -9.941 | 多步杂环合成 |
+| 2 | NC(=O)Cc1ccc(S(=O)(=O)Nc2cccc(-c3ccccc3)c2)cc1 | -9.903 | 磺酰胺 |
+| 3 | Nc1cccc(-c2ccc3c(c2)CCNC3)c1 | -8.866 | 多步酰胺环化 |
+| 4 | O=CC1Nc2cccc(C3CCCCC3)c2CC1F | -8.737 | 多步 |
+| 5 | O=CC1CCc2c(cccc2C2CCCCC2)N1 | -8.723 | 多步 |
+| 6 | c1ccc(-c2cccc3ccncc23)cc1 | -8.712 | 杂环合成 |
+| 7 | c1ccc(-c2ccc3ccccc3c2)cc1 | -8.701 | TRIVIAL |
+| 8 | Nc1cccc(C2Nc3cc(Cl)ccc3CO2)c1 | -8.679 | 多步 |
+| 9 | O=CS1=CC=CC(F)=C1c1ccnc(-c2ccccc2)c1 | -8.676 | 多步 |
+| 10 | Cc1ccc(-c2ccccc2C(N)=O)cc1F | -8.675 | 多步 |
 
 ## 对比分析
-- 平均结合能变化: -7.959 → -7.884（**下降 0.075 kcal/mol，约 0.9%**）
-- 最佳结合能变化: -8.598 → -8.086（**下降 0.512 kcal/mol**）
-- Trivial route 比例: 无变化（20.0%）
+
+1. **结合能大幅提升**: 最佳 BE 从 -8.335 提升至 -9.941（+19.3%），超过了 -9.0 的阈值。平均 BE 从 -8.131 提升至 -8.961（+10.2%）。
+2. **分子多样性**: 产物涵盖联芳基、磺酰胺、稠环杂环、酰胺等多种骨架类型，表明多样性保持有效。
+3. **Trivial route 轻微增加**: 从 0% → 10%（1/10），来自联苯分子（c1ccc(-c2ccc3ccccc3c2)cc1）。该分子结构简单但也合理。
+4. **副作用**: 无明显副作用。所有分子均通过 Lipinski 规则和 SA 过滤。
 
 ## 结论
-**假设 H002 验证失败。**
 
-## 失败原因分析
-1. **样本量不足**: docking guidance 每代只生成10个分子，3代共30个候选，远少于传统方法的60+个
-2. **过早收敛**: 每代选择top 5作为种子，缺乏多样性保持机制，容易陷入局部最优
-3. **batch_size 太小**: 对接评估存在噪声，小样本下选择不稳定
-4. **参数未调优**: batch_size=10, top_k=5 可能不是最优配置，但规则禁止在同一假设上反复调参
+**✅ H011 验证成功。** 多样性保持选择显著提升了结合能（+19.3% best, +10.2% avg），且所有 10 个分子中有 9 个具有有效的多步合成路线。该改进应保留并作为新的基线。
 
-## 下一步行动
-标记 H002 为 **REJECTED**，转向下一个假设 **H003: 逆合成多步递归规划**。
+## 假设置信度分析
+
+H011 推理链中 S4/S5 为"中"置信度——但结果表明探索更广空间确实找到了更好的分子。S4/S5 应上调至"高"。

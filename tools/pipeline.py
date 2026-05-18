@@ -357,7 +357,7 @@ def main():
         n_generations=args.n_generations,
         n_offspring_per_seed=args.n_offspring,
         output_dir=args.output_dir,
-        use_docking_guidance=args.docking_guidance,
+        use_docking_guidance=args.use_docking_guidance,
         append_result_log=_should_append_result_log(),
     )
 

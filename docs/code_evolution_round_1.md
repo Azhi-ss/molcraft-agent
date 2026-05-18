@@ -1,35 +1,44 @@
-# 代码演进记录 Round 1
+# 代码演进日志 — Round 1
 
-## 假设ID
-H001: 收紧 SA score 过滤阈值
+## 假设ID: H011
 
-## 修改目标
-将 `passes_filters()` 中的 SA score 阈值从 8.0 收紧至 6.0，并添加环数上限（MAX_RINGS=7）。
-同时优化 `estimate_sa_score()` 的计算公式，使其更准确反映合成难度。
-
-## 文献依据
-- Deep Lead Optimization (JACS, 2024): 优质先导化合物的 SA score 通常在 2-5 之间
-- LARC (Baker et al., 2025): 规则覆盖率和合成可行性是评估分子的核心维度
-- 综述第3.2节: 分子生成需要约束在"可合成"空间内，避免浪费计算资源
+**假设**: 进化选择仅按结合能排序导致过早收敛，引入多样性保持选择可避免此问题。
 
 ## 修改文件
-1. `src/evaluator.py` — 修改 `passes_filters()` 和 `estimate_sa_score()`
 
-## 修改内容详情
+### `src/generator.py`
 
-### src/evaluator.py
-**1. `estimate_sa_score()` 公式优化：**
-- 环贡献因子: 0.5 → 1.0（多环结构显著增加合成难度）
-- 添加稠环惩罚: 每个额外环系 +0.3（fused ring penalty）
-- 螺环惩罚: 1.0 → 1.5（螺环形成挑战性高）
-- 桥头原子惩罚: 1.5 → 2.0（桥头结构极难合成）
-- 保持手性中心和可旋转键贡献不变
+**新增函数:**
+- `_diverse_selection(candidates, n_select, diversity_weight)` — 贪心 MMD 多样性选择
+- `_avg_pairwise_similarity(molecules)` — 计算平均成对 Tanimoto 相似度
 
-**2. `passes_filters()` 新增参数：**
-- `max_sa=6.0`: 从 8.0 降低至 6.0
-- `max_rings=7`: 限制分子中环数不超过 7 个
+**修改函数:**
+- `generate_with_docking_guidance()` — 种子选择阶段加入多样性保持
+
+## 修改内容摘要
+
+1. **种子选择逻辑改变** (原 line 634-635, 新 line ~750-790):
+   - 原: `current_seeds = docked_batch[:top_k]` (纯BE选择)
+   - 新: 50% 种子来自纯BE，50% 来自多样性选择
+   - 多样性选择使用贪心 MMD 算法 (Maximum Minimal Distance)
+   - 综合评分: `(1 - 0.5) × BE_norm + 0.5 × diversity_norm`
+
+2. **最终分子选择增强** (新 line ~800-830):
+   - 从 top 2×n_molecules 候选池中选择
+   - 60% 纯BE + 40% 多样性
+   - 确保最终输出既高结合能又有多样性
+
+3. **多样性指标记录** (新 line ~795):
+   - 每代打印 avg_pairwise_sim 指标
+   - 日志标签: `[H002+H011]`
+
+## 文献依据
+
+- **MOOSE-Chem** (Yang et al., 2025): "Diverse initial population is essential for evolutionary search to avoid premature convergence"
+- **MolLEO** (Wang et al., 2024b): LLM-based multi-objective evolutionary optimization
+- **ChemCrow** (Bran et al., 2024): 化学空间覆盖度决定 Agent 探索边界
 
 ## 代码自检
-```python
-python3 -m py_compile src/evaluator.py
-```
+
+- `python3 -m py_compile src/generator.py` ✅
+- All imports verified ✅
