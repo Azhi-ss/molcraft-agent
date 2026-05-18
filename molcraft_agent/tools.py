@@ -10,6 +10,7 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -42,6 +43,7 @@ from pipeline import run_evolutionary_pipeline
 # ── Stage tracking for begin_stage/end_stage tools ──
 _stage_name: str | None = None
 _stage_start: float | None = None
+_stage_lock = asyncio.Lock()
 
 
 class BeginStageParams(BaseModel):
@@ -57,21 +59,20 @@ class BeginStage(CallableTool2):
     params: type[BaseModel] = BeginStageParams
 
     async def __call__(self, params: BeginStageParams) -> ToolReturnValue:
-        global _stage_name, _stage_start
-        if _stage_name is not None:
-            return ToolError(
-                output="",
-                message=f"阶段「{_stage_name}」尚未结束，不能开始新阶段",
-                brief="阶段嵌套错误",
-            )
-        import time
-        _stage_name = params.name
-        _stage_start = time.monotonic()
+        async with _stage_lock:
+            global _stage_name, _stage_start
+            if _stage_name is not None:
+                return ToolError(
+                    output="",
+                    message=f"阶段「{_stage_name}」尚未结束，不能开始新阶段",
+                    brief="阶段嵌套错误",
+                )
+            _stage_name = params.name
+            _stage_start = time.monotonic()
         if hasattr(sys.stdout, "log_stage"):
             sys.stdout.log_stage(name=params.name, status="begun")
         return ToolOk(
             output=json.dumps({
-                "status": "begun",
                 "stage": params.name,
                 "message": f"阶段「{params.name}」开始",
             }, ensure_ascii=False),
@@ -79,34 +80,43 @@ class BeginStage(CallableTool2):
 
 
 class EndStageParams(BaseModel):
-    pass
+    force: bool = Field(
+        default=False,
+        description="强制结束阶段（用于恢复卡住的状态）。设为 true 时，即使没有正在进行的阶段也不会报错。",
+    )
 
 
 class EndStage(CallableTool2):
     name: str = "end_stage"
     description: str = (
         "标记当前阶段的结束。必须在 begin_stage 之后调用，自动计算耗时并记录。"
+        "如果卡住了（begin_stage 后崩溃了），可以传 force=true 强制恢复。"
     )
     params: type[BaseModel] = EndStageParams
 
     async def __call__(self, params: EndStageParams) -> ToolReturnValue:
-        global _stage_name, _stage_start
-        if _stage_name is None:
-            return ToolError(
-                output="",
-                message="没有正在进行的阶段，请先调用 begin_stage",
-                brief="阶段不匹配",
-            )
-        import time
-        elapsed = time.monotonic() - _stage_start
-        name = _stage_name
+        async with _stage_lock:
+            global _stage_name, _stage_start
+            if _stage_name is None:
+                if params.force:
+                    return ToolOk(
+                        output=json.dumps({
+                            "message": "没有正在进行的阶段，force=true 已跳过",
+                        }, ensure_ascii=False),
+                    )
+                return ToolError(
+                    output="",
+                    message="没有正在进行的阶段，请先调用 begin_stage。如果卡住了，传 force=true",
+                    brief="阶段不匹配",
+                )
+            elapsed = time.monotonic() - _stage_start
+            name = _stage_name
+            _stage_name = None
+            _stage_start = None
         if hasattr(sys.stdout, "log_stage"):
             sys.stdout.log_stage(name=name, status="completed", duration_seconds=round(elapsed, 1))
-        _stage_name = None
-        _stage_start = None
         return ToolOk(
             output=json.dumps({
-                "status": "completed",
                 "stage": name,
                 "duration_seconds": round(elapsed, 1),
                 "message": f"阶段「{name}」完成，耗时 {elapsed:.1f}s",
