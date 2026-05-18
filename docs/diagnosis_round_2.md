@@ -1,71 +1,57 @@
-# 瓶颈诊断与假设报告 — Round 2
+# 瓶颈诊断报告 — Round 2
 
-## 1. 当前状态（H011 后）
+## H012 后状态
+- ✅ 路线质量: 不现实吡啶路线 3个→0个
+- ✅ 路线评分复合选择正常工作
+- ⚠️ BE: -9.335 (基线 -9.941, -6.1%)
+- ⚠️ 仅 5 种变异算子，缺少双亲重组(crossover)
 
-| 指标 | 值 |
-|------|:---:|
-| 最佳结合能 | -9.941 |
-| Top-10 平均结合能 | -8.961 |
-| Trivial route 比例 | 1/10 (10%) |
-| Docking guidance | ON |
-| Diversity selection | ON (H011) |
+## 新瓶颈: 分子探索空间受限
 
-**唯一瓶颈**: 1 个 trivial molecule (`c1ccc(-c2ccc3ccccc3c2)cc1`) — 联芳基化合物，合成模块无法识别 C-C 断键。
+**现象**: 当前所有变异算子为单亲操作（add/replace/remove/insert/scaffold_hop），
+无法组合两个高分分子的有益片段。这是进化算法的已知限制。
 
-## 2. 瓶颈诊断
+**根因**: 缺少 crossover（交叉重组）算子，限制了化学空间的有效探索。
 
-### 瓶颈：联芳基 C-C 键无逆合成规则
+**文献**: MOOSE-Chem (Yang 2025) — "crossover between parent molecules" 是核心变异算子；
+MolLEO (Wang 2024b) — LLM 驱动的重组操作能显著提升分子多样性。
 
-**根因分析**:
-- 当前 RETRO_RULES 覆盖：酰胺、酯、醚、胺、磺酰胺、酮、杂环等
-- **缺失**: 直接联芳基 C-C 键（biaryl）的逆合成规则
-- 联芳基在实际药物中非常常见，通常通过 Suzuki/Migita/Kumada 等交叉偶联合成
-- 产物中多个高分分子含联芳基 motif，如果能在逆合成中识别出来，可进一步提升路线质量
-
-**文献支撑**:
-- **Coscientist** (Boiko et al., 2023): 成功展示 Agent 自主规划 Suzuki 反应
-- **LARC** (Baker et al., 2025): 规则覆盖率是逆合成质量的关键
-- **ChemCrow** (Bran et al., 2024): 工具/库丰富度直接决定 Agent 能力边界
-
-## 3. 假设 H012: 添加联芳基 C-C 键逆合成规则
+## 假设 H013: 分子 Crossover 重组算子
 
 ```
-假设ID: H012
-瓶颈: 缺少联芳基 C-C 键逆合成规则，导致 biaryl 分子路线为 trivial
+假设ID: H013
+瓶颈: generator.py 只有单亲变异，缺少双亲交叉重组
 文献支撑:
-  - Coscientist (Boiko et al., 2023): Suzuki coupling 是经典的 C-C 键形成反应
-  - LARC (Baker et al., 2025): 规则覆盖率决定逆合成质量
+  - MOOSE-Chem (Yang et al., 2025): "Evolutionary operators include crossover
+    between parent molecules, fragment swapping, and scaffold hopping"
+  - MolLEO (Wang et al., 2024b): LLM 驱动的重组操作提升化学空间探索效率
+  - Deep Lead Optimization (JACS 2024): Fragment replacement 是先导优化核心子任务
 
 ───────────────── 推理链 ─────────────────
 步骤 | 内容                                    | 置信度 | 推理方式 | 依据来源
-S1   | 联芳基是 Suzuki 等交叉偶联产物         | 高     | 文献     | Coscientist 2023
-S2   | 当前规则库无 biaryl 裂解规则            | 高     | 观察     | 代码审查
-S3   | 添加规则可将 trivial → 有效路线         | 高     | 演绎     | 从 S1,S2
-S4   | trivial 比例降低                       | 高     | 演绎     | 从 S3
+S1   | Crossover 引入新化学空间区域            | 高     | 文献     | MOOSE-Chem
+S2   | 新空间区域可能含更高 BE 分子             | 中     | 演绎     | 进化算法理论
+S3   | 双亲重组不会破坏现有优秀分子             | 高     | 演绎     | 仅影响新生成分子
 
-综合置信度: 高
+综合置信度: 中
 
 ───────────────── 验证标准 ─────────────────
-Q1 如果核心指标提升 < 5%，是否仍保留？
-答：是
-理由：即使结合能不变，路线质量改善就有价值
+Q1: 核心指标提升 < 5%，是否仍保留？
+答: 否
+理由: H013 目标是 BE 提升。若 BE 无明显改善，crossover 算子价值有限
 
-Q2 如果指标下降，最可能的原因是什么？
-答：规则冲突导致错误断键
-理由：SMARTS 规则可能与现有规则重叠
+Q2: 指标下降最可能原因？
+答: Crossover 产生无效分子过多，浪费对接资源
+理由: 随机交换片段可能产生化学上不合理的结构
 
-Q3 本假设的最低可接受结果是什么？
-答：trivial 比例 ≤ 1/10，且结合能不退化超过 3%
+Q3: 最低可接受结果？
+答: 最佳 BE ≥ -9.5 或平均 BE 提升 ≥ 0.2 kcal/mol，trivial 不增加
 
 ───────────────── 改进方案 ─────────────────
-改动文件: src/synthesis_v2.py
+改动文件: src/generator.py
 改动内容:
-  1. 添加联芳基 C-C 键逆合成规则（Suzuki 逆反应）:
-     [c:1]-[c:2] >> [c:1]Br.[c:2]B(O)O  （芳基溴 + 芳基硼酸 → 联芳基）
-  2. 放在 RETRO_RULES 列表靠前位置，优先匹配
-  3. 仅在两个碳都在芳环中时才匹配，避免误匹配烷基-芳基键
-验证指标:
-  - trivial route 比例（目标 ≤ 1/10）
-  - 结合能不变或提升
-  - 路线步数（预期增加，表示成功找到多步路线）
+  1. 新增 _crossover_mol(mol1, mol2) 函数
+  2. 在 _mutate_mol 中增加 ~15% 概率调用 crossover
+  3. Crossover 算法: BRICS 分解两分子 → 交换片段 → 重组验证
+验证指标: BE + 多样性(avg_pairwise_sim) + trivial 比例
 ```
