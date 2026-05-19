@@ -1,5 +1,6 @@
 """Scorer core functions: validity, SA normalization, binding normalization."""
 
+import csv
 import json
 from pathlib import Path
 
@@ -218,3 +219,170 @@ def compute_route_score(
 def compute_total_score(mol_score: float, route_score: float) -> float:
     """Total = 0.7*mol + 0.3*route."""
     return 0.7 * mol_score + 0.3 * route_score
+
+
+def _is_trivial_route(route: str, target_smiles: str) -> bool:
+    """Check if route is trivial (A>>A).
+
+    - No >> in route → True
+    - Single reactant identical to product → True
+    - Single reactant identical to first product (before any .) → True
+    - Otherwise → False
+    """
+    if ">>" not in route:
+        return True
+
+    parts = route.split(">>")
+    if len(parts) != 2:
+        return False
+
+    reactants_str, products_str = parts
+
+    # Check single reactant identical to product
+    reactants = [r.strip() for r in reactants_str.split(".")]
+    if len(reactants) == 1:
+        reactant = reactants[0]
+        product = products_str.strip()
+        # Remove any . separated additional products for comparison
+        first_product = product.split(".")[0].strip()
+        if reactant == product or reactant == first_product:
+            return True
+
+    return False
+
+
+def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict:
+    """Score a result.csv file and return full scoring report.
+
+    Args:
+        csv_path: Path to result.csv (columns: mol_smiles,route)
+        vina_scores: Dict mapping SMILES → Vina raw score (kcal/mol, negative)
+        cal: Calibration params (loaded from file if None)
+
+    Returns:
+        Dict with keys: total_score, mol_score, route_score, binding_score,
+        validity_score, sa_score, route_validity_score,
+        starting_material_availability_score, sample_count
+        All float values rounded to 6 decimal places.
+    """
+    import math
+
+    if vina_scores is None:
+        vina_scores = {}
+    if cal is None:
+        cal = load_calibration()
+
+    rows = []
+    with open(csv_path, newline="") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+
+    if not rows:
+        return {
+            "total_score": 0.0,
+            "mol_score": 0.0,
+            "route_score": 0.0,
+            "binding_score": 0.0,
+            "validity_score": 0.0,
+            "sa_score": 0.0,
+            "route_validity_score": 0.0,
+            "starting_material_availability_score": 0.0,
+            "sample_count": 0,
+        }
+
+    validity_scores = []
+    binding_scores = []
+    sa_scores = []
+    route_validity_flags = []
+    sm_availabilities = []
+    step_penalties = []
+
+    for row in rows:
+        mol_smiles = row.get("mol_smiles", "").strip()
+        route = row.get("route", "").strip()
+
+        # Validity
+        val_score = compute_validity_score(mol_smiles)
+        validity_scores.append(val_score)
+
+        # Binding
+        vina_raw = vina_scores.get(mol_smiles, None)
+        if vina_raw is not None:
+            b_score = compute_binding_score(vina_raw, cal)
+        else:
+            b_score = 0.0
+        binding_scores.append(b_score)
+
+        # SA score
+        mol = Chem.MolFromSmiles(mol_smiles) if mol_smiles else None
+        if mol is not None:
+            sa_raw = estimate_sa_score(mol)
+            s_score = compute_sa_score_normalized(sa_raw, cal)
+        else:
+            s_score = 0.0
+        sa_scores.append(s_score)
+
+        # Route validity (trivial check)
+        is_non_trivial = not _is_trivial_route(route, mol_smiles)
+        route_validity_flags.append(is_non_trivial)
+
+        # Extract reactants from LAST step for SM availability
+        # Route format: step1 | step2 | step3  or  reactant1.reactant2>>product
+        # Multi-step: "A>>B | C>>D | D>>E" → last step is "D>>E"
+        # Single step: "A.B>>C"
+        reactants_for_sm = []
+        if ">>" in route:
+            # Split by >> to get the last reaction step
+            steps = route.split("|")
+            last_step = steps[-1].strip()
+            if ">>" in last_step:
+                reactants_side = last_step.split(">>")[0].strip()
+                reactants_for_sm = [r.strip() for r in reactants_side.split(".") if r.strip()]
+
+        sm_avail = compute_starting_material_availability_score(reactants_for_sm)
+        sm_availabilities.append(sm_avail)
+
+        # Step count: number of | separators + 1
+        n_steps = route.count("|") + 1
+        step_penalty = compute_step_penalty_score(n_steps)
+        step_penalties.append(step_penalty)
+
+    # Average across molecules
+    n = len(rows)
+    avg_validity = sum(validity_scores) / n if n > 0 else 0.0
+    avg_binding = sum(binding_scores) / n if n > 0 else 0.0
+    avg_sa = sum(sa_scores) / n if n > 0 else 0.0
+    avg_sm_avail = sum(sm_availabilities) / n if n > 0 else 0.0
+    avg_step_penalty = sum(step_penalties) / n if n > 0 else 0.0
+
+    # Route validity: fraction of non-trivial valid routes
+    # Use route_validity_flags directly (True = non-trivial = valid route)
+    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+
+    # Use placeholders for convergence and balance
+    convergence = 1.0
+    balance = 0.9
+
+    # Compute sub-scores
+    mol_score = compute_mol_score(avg_binding, avg_validity, avg_sa)
+    route_score = compute_route_score(
+        route_validity, avg_sm_avail, avg_step_penalty, convergence, balance
+    )
+    total_score = compute_total_score(mol_score, route_score)
+
+    def r6(x):
+        """Round to 6 decimal places."""
+        return math.floor(x * 1_000_000 + 0.5) / 1_000_000
+
+    return {
+        "total_score": r6(total_score),
+        "mol_score": r6(mol_score),
+        "route_score": r6(route_score),
+        "binding_score": r6(avg_binding),
+        "validity_score": r6(avg_validity),
+        "sa_score": r6(avg_sa),
+        "route_validity_score": r6(route_validity),
+        "starting_material_availability_score": r6(avg_sm_avail),
+        "sample_count": n,
+    }

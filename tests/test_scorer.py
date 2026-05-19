@@ -17,6 +17,8 @@ from src.scorer import (
     compute_mol_score,
     compute_route_score,
     compute_total_score,
+    _is_trivial_route,
+    score_csv,
 )
 
 
@@ -134,3 +136,43 @@ class TestTotalScore:
     def test_composition(self):
         # mol=0.525, route=0.96 → 0.7*0.525 + 0.3*0.96 = 0.6555
         assert compute_total_score(0.525, 0.96) == pytest.approx(0.6555)
+
+
+class TestIsTrivialRoute:
+    def test_trivial_same_molecule(self):
+        assert _is_trivial_route("c1ccccc1>>c1ccccc1", "c1ccccc1") == True
+
+    def test_nontrivial(self):
+        assert (
+            _is_trivial_route(
+                "Brc1ccccc1.OB(O)c1ccccc1>>c1ccccc1-c1ccccc1", "c1ccccc1-c1ccccc1"
+            )
+            == False
+        )
+
+    def test_no_arrow(self):
+        assert _is_trivial_route("c1ccccc1", "c1ccccc1") == True
+
+
+class TestScoreCSV:
+    def test_basic_scoring(self, tmp_path):
+        # Write a minimal CSV, score it
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text(
+            "mol_smiles,route\nc1ccccc1,c1ccccc1>>c1ccccc1\nc1ccc(-c2ccccc2)cc1,Brc1ccccc1.OB(O)c1ccccc1>>c1ccc(-c2ccccc2)cc1\n"
+        )
+        vina = {"c1ccccc1": -5.0, "c1ccc(-c2ccccc2)cc1": -9.0}
+        result = score_csv(str(csv_file), vina_scores=vina)
+        assert "total_score" in result
+        assert "mol_score" in result
+        assert "route_score" in result
+        assert "binding_score" in result
+        assert "route_validity_score" in result
+        assert 0.0 <= result["total_score"] <= 1.0
+        assert result["sample_count"] == 2
+
+    def test_missing_vina_gets_zero_binding(self, tmp_path):
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text("mol_smiles,route\nc1ccccc1,c1ccccc1>>c1ccccc1\n")
+        result = score_csv(str(csv_file), vina_scores={})
+        assert result["binding_score"] == 0.0
