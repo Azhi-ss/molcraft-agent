@@ -181,3 +181,82 @@ class TestScoreCSV:
         csv_file.write_text("mol_smiles,route\nc1ccccc1,c1ccccc1>>c1ccccc1\n")
         result = score_csv(str(csv_file), vina_scores={})
         assert result["binding_score"] == 0.0
+
+    def test_missing_mol_smiles_column_raises(self, tmp_path):
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text("smiles,route\nc1ccccc1,c1ccccc1>>c1ccccc1\n")
+        with pytest.raises(ValueError, match="mol_smiles"):
+            score_csv(str(csv_file), vina_scores={})
+
+    def test_missing_route_column_raises(self, tmp_path):
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text("mol_smiles,synthesis\nc1ccccc1,s1>>p1\n")
+        with pytest.raises(ValueError, match="route"):
+            score_csv(str(csv_file), vina_scores={})
+
+    def test_empty_csv_returns_zero(self, tmp_path):
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text("mol_smiles,route\n")
+        result = score_csv(str(csv_file), vina_scores={})
+        assert result["sample_count"] == 0
+        assert result["total_score"] == 0.0
+
+    def test_empty_route_gets_zero_step_penalty(self, tmp_path):
+        csv_file = tmp_path / "result.csv"
+        csv_file.write_text("mol_smiles,route\nc1ccccc1,\n")
+        result = score_csv(str(csv_file), vina_scores={"c1ccccc1": -5.0})
+        assert result["route_validity_score"] == 0.0
+
+
+class TestBalanceScoreEdgeCases:
+    def test_zero_zero_is_perfect_balance(self):
+        assert compute_balance_score(0, 0) == 1.0
+
+    def test_zero_reactant_nonzero_product(self):
+        assert compute_balance_score(0, 5) == 0.0
+
+
+class TestStartingMaterialAvailability:
+    def test_empty_list(self):
+        assert compute_starting_material_availability_score([]) == 0.0
+
+    def test_all_valid_reactants(self):
+        score = compute_starting_material_availability_score(["c1ccccc1", "c1ccncc1"])
+        assert 0.8 <= score <= 1.0
+
+
+class TestCalibrationPersistence:
+    def test_round_trip(self, tmp_path):
+        cal_path = tmp_path / "calibration.json"
+        cal = {
+            "version": 1,
+            "binding_score": {
+                "function": "clipped_linear",
+                "params": {"threshold": -2.23, "range": 35.94},
+            },
+            "sa_score": {"function": "step", "params": {"cutoff": 4.0, "scale": 4.0}},
+        }
+        save_calibration(cal, path=str(cal_path))
+        loaded = load_calibration(path=str(cal_path))
+        assert loaded["binding_score"]["function"] == "clipped_linear"
+        assert loaded["binding_score"]["params"]["threshold"] == -2.23
+        assert loaded["binding_score"]["params"]["range"] == 35.94
+
+    def test_load_missing_file_returns_defaults(self, tmp_path):
+        cal = load_calibration(path="/nonexistent/cal.json")
+        assert cal["binding_score"]["function"] == "clipped_linear"
+
+    def test_load_empty_json_returns_defaults(self, tmp_path):
+        cal_path = tmp_path / "empty.json"
+        cal_path.write_text("{}")
+        cal = load_calibration(path=str(cal_path))
+        assert cal["binding_score"]["function"] == "clipped_linear"
+
+    def test_load_partial_json_merges_defaults(self, tmp_path):
+        cal_path = tmp_path / "partial.json"
+        cal_path.write_text(
+            '{"sa_score": {"function": "inverted", "params": {"max_sa": 10.0, "scale": 10.0}}}'
+        )
+        cal = load_calibration(path=str(cal_path))
+        assert cal["sa_score"]["function"] == "inverted"
+        assert cal["binding_score"]["function"] == "clipped_linear"

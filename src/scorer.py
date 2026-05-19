@@ -161,7 +161,7 @@ def compute_balance_score(reactant_heavy: int, product_heavy: int) -> float:
     Else: max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
     """
     if reactant_heavy == 0:
-        return 0.0
+        return 1.0 if product_heavy == 0 else 0.0
     ratio = product_heavy / reactant_heavy
     if ratio < 0.5 or ratio > 1.5:
         return 0.0
@@ -282,6 +282,14 @@ def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict
         for row in reader:
             rows.append(row)
 
+    # Validate required columns (H1 fix: fail fast with clear error)
+    if rows:
+        header = set(rows[0].keys())
+        if "mol_smiles" not in header:
+            raise ValueError("CSV is missing required column: 'mol_smiles'")
+        if "route" not in header:
+            raise ValueError("CSV is missing required column: 'route'")
+
     if not rows:
         return {
             "total_score": 0.0,
@@ -347,8 +355,8 @@ def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict
         sm_avail = compute_starting_material_availability_score(reactants_for_sm)
         sm_availabilities.append(sm_avail)
 
-        # Step count: number of | separators + 1
-        n_steps = route.count("|") + 1
+        # Step count: number of | separators + 1 (0 for empty routes)
+        n_steps = route.count("|") + 1 if route.strip() else 0
         step_penalty = compute_step_penalty_score(n_steps)
         step_penalties.append(step_penalty)
 
