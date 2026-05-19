@@ -11,15 +11,14 @@ CALIBRATION_PATH = Path(__file__).parent.parent / "data" / "calibration.json"
 
 # Default calibration values
 DEFAULT_CALIBRATION = {
+    "version": 1,
     "binding_score": {
-        "type": "clipped_linear",
-        "threshold": 0.0,
-        "range": 15.0,
+        "function": "clipped_linear",
+        "params": {"threshold": 0.0, "range": 15.0},
     },
     "sa_score": {
-        "type": "step",
-        "cutoff": 4.0,
-        "scale": 4.0,
+        "function": "step",
+        "params": {"cutoff": 4.0, "scale": 4.0},
     },
 }
 
@@ -38,7 +37,18 @@ def load_calibration(path=None) -> dict:
 
     if Path(path).exists():
         with open(path) as f:
-            return json.load(f)
+            cal = json.load(f)
+        # Merge with defaults for any missing keys
+        result = DEFAULT_CALIBRATION.copy()
+        result.update(cal)
+        for key in DEFAULT_CALIBRATION:
+            if key not in cal and isinstance(DEFAULT_CALIBRATION[key], dict):
+                result[key] = DEFAULT_CALIBRATION[key]
+            elif key in cal and isinstance(DEFAULT_CALIBRATION.get(key), dict) and isinstance(cal[key], dict):
+                merged = DEFAULT_CALIBRATION[key].copy()
+                merged.update(cal[key])
+                result[key] = merged
+        return result
     return DEFAULT_CALIBRATION.copy()
 
 
@@ -87,8 +97,9 @@ def compute_sa_score_normalized(sa_raw: float, cal: dict = None) -> float:
         cal = load_calibration()
 
     sa_cal = cal.get("sa_score", DEFAULT_CALIBRATION["sa_score"])
-    cutoff = sa_cal.get("cutoff", 4.0)
-    scale = sa_cal.get("scale", 4.0)
+    params = sa_cal.get("params", sa_cal)  # support both nested and flat
+    cutoff = params.get("cutoff", 4.0)
+    scale = params.get("scale", 4.0)
 
     if sa_raw >= cutoff:
         return 0.0
@@ -111,17 +122,18 @@ def compute_binding_score(vina_raw: float, cal: dict = None) -> float:
         cal = load_calibration()
 
     binding_cal = cal.get("binding_score", DEFAULT_CALIBRATION["binding_score"])
-    norm_type = binding_cal.get("type", "clipped_linear")
+    func = binding_cal.get("function", binding_cal.get("type", "clipped_linear"))
+    params = binding_cal.get("params", binding_cal)  # support both nested and flat
 
-    if norm_type == "clipped_linear":
-        threshold = binding_cal.get("threshold", 0.0)
-        range_ = binding_cal.get("range", 15.0)
+    if func == "clipped_linear":
+        threshold = params.get("threshold", 0.0)
+        range_ = params.get("range", 15.0)
         score = (threshold - vina_raw) / range_
-    elif norm_type == "minmax":
-        min_val = binding_cal.get("min", -15.0)
-        max_val = binding_cal.get("max", 0.0)
+    elif func == "minmax":
+        min_val = params.get("min", -15.0)
+        max_val = params.get("max", 0.0)
         score = (vina_raw - min_val) / (max_val - min_val)
     else:
-        raise ValueError(f"Unknown binding normalization type: {norm_type}")
+        raise ValueError(f"Unknown binding normalization function: {func}")
 
     return max(0.0, min(1.0, score))
