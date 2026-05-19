@@ -299,8 +299,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 #tree-container{width:100%;height:100%;position:relative}
 
 .node circle{stroke-width:2px}
-.node .success circle{fill:#2ecc71;stroke:#27ae60}
-.node .failure circle{fill:#95a5a6;stroke:#7f8c8d}
+.node.success circle{fill:#2ecc71;stroke:#27ae60}
+.node.failure circle{fill:#95a5a6;stroke:#7f8c8d}
 .node text{font-size:12px;fill:#ecf0f1;font-family:monospace}
 .node .be-label{font-size:10px;fill:#bdc3c7}
 
@@ -352,8 +352,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   if (!DATA || DATA.length === 0) {
     document.getElementById("tree-container").innerHTML =
       '<div class="empty-state">No evolution data yet<br><small>Run main.py first, then rebuild with build_evomap.py</small></div>';
-    return;
-  }
+  } else {
 
   const svg = d3.select("#tree-container svg");
   svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
@@ -468,6 +467,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   window.addEventListener("resize", () => {
     svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
   });
+  }
 </script>
 </body>
 </html>
