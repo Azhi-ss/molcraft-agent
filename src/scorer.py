@@ -2,7 +2,10 @@
 
 import json
 from pathlib import Path
+
 from rdkit import Chem
+
+from src.evaluator import estimate_sa_score
 
 
 # Path to calibration file, relative to project root
@@ -137,3 +140,81 @@ def compute_binding_score(vina_raw: float, cal: dict = None) -> float:
         raise ValueError(f"Unknown binding normalization function: {func}")
 
     return max(0.0, min(1.0, score))
+
+
+def compute_route_validity_score(routes_valid: list[bool]) -> float:
+    """Fraction of routes that pass validity checks. Empty list → 0.0."""
+    if not routes_valid:
+        return 0.0
+    return sum(routes_valid) / len(routes_valid)
+
+
+def compute_balance_score(reactant_heavy: int, product_heavy: int) -> float:
+    """0-1 score based on atom balance. Perfect=1.0, >50% imbalance=0.0.
+    ratio = product_heavy / reactant_heavy
+    If ratio < 0.5 or ratio > 1.5 → 0.0
+    Else: max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+    """
+    if reactant_heavy == 0:
+        return 0.0
+    ratio = product_heavy / reactant_heavy
+    if ratio < 0.5 or ratio > 1.5:
+        return 0.0
+    return max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+
+
+def compute_step_penalty_score(n_steps: int) -> float:
+    """1.0 for 1 step, decreasing by 0.15 per extra step. n_steps<=0 → 0.0."""
+    if n_steps <= 0:
+        return 0.0
+    return max(0.0, 1.0 - 0.15 * (n_steps - 1))
+
+
+def compute_starting_material_availability_score(reactant_smiles: list[str]) -> float:
+    """Heuristic: SA < 4 → 1.0, SA 4-6 → 0.5, SA > 6 → 0.0. Average over all reactants.
+    Empty list → 0.0. Uses estimate_sa_score from evaluator.
+    """
+    if not reactant_smiles:
+        return 0.0
+    scores = []
+    for smi in reactant_smiles:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is None:
+            continue
+        sa = estimate_sa_score(mol)
+        if sa < 4:
+            scores.append(1.0)
+        elif sa <= 6:
+            scores.append(0.5)
+        else:
+            scores.append(0.0)
+    if not scores:
+        return 0.0
+    return sum(scores) / len(scores)
+
+
+def compute_mol_score(binding_score: float, validity_score: float, sa_score: float) -> float:
+    """Molecular score = 0.8*binding + 0.1*validity + 0.1*sa."""
+    return 0.8 * binding_score + 0.1 * validity_score + 0.1 * sa_score
+
+
+def compute_route_score(
+    route_validity: float,
+    sm_availability: float,
+    step_penalty: float,
+    convergence: float,
+    balance: float,
+) -> float:
+    """Route score = 0.55*route_validity + 0.30*sm_availability + 0.05*step_penalty + 0.05*convergence + 0.05*balance."""
+    return (
+        0.55 * route_validity
+        + 0.30 * sm_availability
+        + 0.05 * step_penalty
+        + 0.05 * convergence
+        + 0.05 * balance
+    )
+
+
+def compute_total_score(mol_score: float, route_score: float) -> float:
+    """Total = 0.7*mol + 0.3*route."""
+    return 0.7 * mol_score + 0.3 * route_score

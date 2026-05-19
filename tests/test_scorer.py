@@ -10,6 +10,13 @@ from src.scorer import (
     compute_validity_score,
     compute_sa_score_normalized,
     compute_binding_score,
+    compute_route_validity_score,
+    compute_balance_score,
+    compute_step_penalty_score,
+    compute_starting_material_availability_score,
+    compute_mol_score,
+    compute_route_score,
+    compute_total_score,
 )
 
 
@@ -72,3 +79,58 @@ class TestBindingScore:
     def test_vina_positive_clamped(self):
         """vina > threshold is clamped to 0.0."""
         assert compute_binding_score(5.0) == 0.0
+
+
+class TestRouteValidityScore:
+    def test_all_valid(self):
+        assert compute_route_validity_score([True] * 10) == 1.0
+
+    def test_half_valid(self):
+        assert compute_route_validity_score([True] * 5 + [False] * 5) == 0.5
+
+    def test_empty(self):
+        assert compute_route_validity_score([]) == 0.0
+
+
+class TestBalanceScore:
+    def test_perfect_balance(self):
+        assert compute_balance_score(12, 12) == 1.0
+
+    def test_one_off(self):
+        score = compute_balance_score(12, 11)
+        assert 0.8 < score <= 1.0
+
+    def test_large_imbalance(self):
+        # ratio=8/12=0.667 > 0.5 so not zero; 12->4 (ratio=0.333 < 0.5) triggers 0.0
+        assert compute_balance_score(12, 4) == 0.0
+
+
+class TestStepPenaltyScore:
+    def test_one_step(self):
+        assert compute_step_penalty_score(1) == 1.0
+
+    def test_three_steps(self):
+        assert compute_step_penalty_score(3) == pytest.approx(0.7)
+
+    def test_five_steps(self):
+        # 1.0 - 0.15*(5-1) = 0.4
+        assert compute_step_penalty_score(5) == pytest.approx(0.4)
+
+
+class TestMolScore:
+    def test_composition(self):
+        # binding=0.5, validity=1.0, sa=0.25 → 0.8*0.5 + 0.1*1.0 + 0.1*0.25 = 0.525
+        assert compute_mol_score(0.5, 1.0, 0.25) == pytest.approx(0.525)
+
+
+class TestRouteScore:
+    def test_composition(self):
+        # route_validity=1.0, sm_avail=0.9, step_penalty=0.8, convergence=1.0, balance=1.0
+        # = 0.55 + 0.27 + 0.04 + 0.05 + 0.05 = 0.96
+        assert compute_route_score(1.0, 0.9, 0.8, 1.0, 1.0) == pytest.approx(0.96)
+
+
+class TestTotalScore:
+    def test_composition(self):
+        # mol=0.525, route=0.96 → 0.7*0.525 + 0.3*0.96 = 0.6555
+        assert compute_total_score(0.525, 0.96) == pytest.approx(0.6555)
