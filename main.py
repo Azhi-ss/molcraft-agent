@@ -245,6 +245,10 @@ async def main() -> None:
     # 记录本次运行开始时间，用于检测新生成的产物
     run_start_time = time.time()
 
+    # 生成唯一 run_id，用于 evomap 多 session 区分
+    run_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
+    os.environ["MOLCRAFT_RUN_ID"] = run_id
+
     program = load_program()
     llm_config, llm_model_key = build_agent_llm_config()
 

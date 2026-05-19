@@ -57,6 +57,7 @@ def _persist_molecules(results: list[dict]) -> None:
     _MOLECULES_JSONL.parent.mkdir(parents=True, exist_ok=True)
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "run_id": os.environ.get("MOLCRAFT_RUN_ID", "unknown"),
         "molecules": [
             {
                 "smiles": r.get("mol_smiles", ""),
