@@ -109,6 +109,28 @@ def parse_result_log(path: Path) -> list[dict[str, Any]]:
     return runs
 
 
+def parse_molecules_jsonl(path: Path) -> list[dict[str, Any]]:
+    """Parse output/molecules.jsonl — each line a pipeline run with molecule array.
+
+    Returns list of runs: {timestamp, molecules: [{smiles, be, qed, trivial}, ...]}
+    """
+    runs: list[dict[str, Any]] = []
+    if not path.exists():
+        return runs
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if obj.get("molecules"):
+                    runs.append(obj)
+            except json.JSONDecodeError:
+                continue
+    return runs
+
+
 # ── Tree construction ────────────────────────────────────────────────────────
 
 
@@ -138,12 +160,13 @@ def _extract_best_be(summary: str) -> float | None:
 def build_tree(
     iter_entries: list[dict[str, Any]],
     runs: list[dict[str, Any]],
+    mol_runs: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    """Merge iteration log entries with run metrics and assign parentage.
+    """Merge iteration log entries with run metrics and molecule data.
 
     Matching: runs aligned to iter entries by round number + chronological order.
+    Molecule data from molecules.jsonl matched by timestamp order to entries.
     Parentage: each entry's parent is the most recent ACCEPTED hypothesis before it.
-    Root entries have parent=None.
     """
     run_by_round: dict[int, list[dict[str, Any]]] = {}
     for run in runs:
@@ -193,6 +216,20 @@ def build_tree(
             mols = sorted(run.get("molecules", []),
                          key=lambda x: x.get("be") or 999)
             entry["molecules"] = mols[:5]
+
+    # Merge molecule data from molecules.jsonl (matched by timestamp order)
+    if mol_runs:
+        mol_runs_sorted = sorted(mol_runs, key=lambda r: r.get("timestamp", ""))
+        entries_need_mols = [e for e in iter_entries if not e["molecules"]]
+        entries_need_mols.reverse()
+        for i, mr in enumerate(mol_runs_sorted):
+            if i >= len(entries_need_mols):
+                break
+            entry = entries_need_mols[i]
+            mols = sorted(mr.get("molecules", []),
+                         key=lambda x: x.get("be") or 999)
+            entry["molecules"] = mols[:5]
+            entry["molecule_count"] = len(mr["molecules"])
 
     last_accepted: dict[int, str] = {}
     for entry in iter_entries:
@@ -467,7 +504,10 @@ def main() -> None:
         print("result.log not found, tree nodes will lack molecule details")
 
     print("Building tree...")
-    tree = build_tree(iter_entries, runs)
+    mol_runs = parse_molecules_jsonl(project_root / "output" / "molecules.jsonl")
+    if mol_runs:
+        print(f"  {len(mol_runs)} molecule records loaded")
+    tree = build_tree(iter_entries, runs, mol_runs)
 
     print(f"Generating HTML: {output_path}")
     output_path.parent.mkdir(parents=True, exist_ok=True)

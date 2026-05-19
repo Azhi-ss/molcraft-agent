@@ -45,6 +45,31 @@ _stage_name: str | None = None
 _stage_start: float | None = None
 _stage_lock = asyncio.Lock()
 
+# ── Molecule persistence for evomap ──
+
+_MOLECULES_JSONL = Path(__file__).resolve().parent.parent / "output" / "molecules.jsonl"
+
+
+def _persist_molecules(results: list[dict]) -> None:
+    """Append pipeline molecule data to molecules.jsonl for evomap."""
+    if not results:
+        return
+    _MOLECULES_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "molecules": [
+            {
+                "smiles": r.get("mol_smiles", ""),
+                "be": r.get("binding_energy"),
+                "qed": r.get("qed"),
+                "trivial": r.get("trivial", False),
+            }
+            for r in results
+        ],
+    }
+    with open(_MOLECULES_JSONL, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False, allow_nan=False) + "\n")
+
 
 class BeginStageParams(BaseModel):
     name: str = Field(description="阶段名称: 诊断, 代码演进, 实验验证, 复盘")
@@ -389,6 +414,9 @@ class RunPipeline(CallableTool2):
             trivial_count = sum(1 for r in results if r.get("trivial"))
             best_be = min(energies) if energies else None
             avg_be = sum(energies) / len(energies) if energies else None
+
+            # Persist molecule data for evomap visualization
+            _persist_molecules(results)
 
             output = {
                 "status": "success",

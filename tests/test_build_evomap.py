@@ -161,6 +161,49 @@ def test_generate_html_empty_tree():
     out.unlink()
 
 
+# --- Molecules JSONL test ---
+
+
+def test_parse_molecules_jsonl():
+    from tools.build_evomap import parse_molecules_jsonl
+
+    tmp = Path(tempfile.mkstemp(suffix=".jsonl")[1])
+    tmp.write_text(json.dumps({
+        "timestamp": "2026-05-18T21:19:51",
+        "molecules": [
+            {"smiles": "c1ccccc1", "be": -8.56, "qed": 0.8, "trivial": False},
+            {"smiles": "c1ccccc1O", "be": -8.10, "qed": 0.7, "trivial": True},
+        ]
+    }) + "\n")
+
+    runs = parse_molecules_jsonl(tmp)
+    assert len(runs) == 1
+    assert len(runs[0]["molecules"]) == 2
+    assert runs[0]["molecules"][0]["be"] == -8.56
+    tmp.unlink()
+
+
+def test_build_tree_with_molecules():
+    from tools.build_evomap import build_tree
+
+    iter_entries = [
+        {"round": 1, "hypothesis_id": "BASELINE", "success": True,
+         "summary": "base", "timestamp": "2026-05-17T10:00:00",
+         "best_be": None, "avg_be": None, "trivial_count": 0, "molecule_count": 0, "molecules": []},
+    ]
+    mol_runs = [
+        {"timestamp": "2026-05-17T11:00:00",
+         "molecules": [
+             {"smiles": "c1ncccc1", "be": -9.0, "qed": 0.9, "trivial": False}
+         ]},
+    ]
+
+    tree = build_tree(iter_entries, [], mol_runs)
+    assert len(tree) == 1
+    assert len(tree[0]["molecules"]) == 1
+    assert tree[0]["molecules"][0]["smiles"] == "c1ncccc1"
+
+
 # --- Task 4: Integration test ---
 
 
