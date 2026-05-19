@@ -243,6 +243,27 @@ def build_tree(
         if entry["success"]:
             last_accepted[rn] = entry["hypothesis_id"]
 
+    # Ensure single root for D3 tree: nodes with parent=null → virtual root
+    root_count = sum(1 for e in iter_entries if e["parent"] is None)
+    if root_count > 1:
+        virtual_root = {
+            "round": 0,
+            "hypothesis_id": "MOLCRAFT",
+            "success": True,
+            "summary": "MolCraft Agent",
+            "timestamp": "",
+            "best_be": None,
+            "avg_be": None,
+            "trivial_count": 0,
+            "molecule_count": 0,
+            "parent": None,
+            "molecules": [],
+        }
+        for e in iter_entries:
+            if e["parent"] is None:
+                e["parent"] = "MOLCRAFT"
+        iter_entries.insert(0, virtual_root)
+
     return iter_entries
 
 
