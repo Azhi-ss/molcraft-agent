@@ -3,170 +3,162 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molecular Evolution Map --- MolCraft Agent</title>
+<title>Molecular Evolution Map -- MolCraft Agent</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh}
-#tree-container{width:100%;height:100%;position:relative}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#eee;height:100vh;display:flex;flex-direction:column}
+#cy{flex:0 0 60vh;background:#1a1a2e;border-bottom:2px solid #34495e}
+#lower{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#tabs{display:flex;background:#16213e;border-bottom:1px solid #34495e}
+.tab{padding:8px 18px;cursor:pointer;font-size:13px;color:#7f8c8d;border-bottom:2px solid transparent}
+.tab.active{color:#3498db;border-bottom-color:#3498db}
+#table-wrap{flex:1;overflow:auto;padding:8px 12px}
+#mol-panel{flex:1;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:12px 16px;display:none}
+#mol-panel .mol-card{display:inline-block;width:180px;margin-right:12px;background:#243447;border-radius:6px;padding:8px;text-align:center;vertical-align:top}
+.mol-card .be{color:#e74c3c;font-weight:bold}
+.mol-card .qed{color:#bdc3c7;font-size:11px}
+.mol-card .route-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-top:4px}
+.mol-card .route-badge.trivial{background:#7f8c8d;color:#fff}
+.mol-card .route-badge.non-trivial{background:#27ae60;color:#fff}
 
-.node circle{stroke-width:2px}
-.node .success circle{fill:#2ecc71;stroke:#27ae60}
-.node .failure circle{fill:#95a5a6;stroke:#7f8c8d}
-.node text{font-size:12px;fill:#ecf0f1;font-family:monospace}
-.node .be-label{font-size:10px;fill:#bdc3c7}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{padding:6px 10px;border:1px solid #2c3e50;text-align:center;white-space:nowrap}
+th{background:#16213e;position:sticky;top:0;z-index:1}
+tr:nth-child(even){background:rgba(44,62,80,0.3)}
+.session-col{color:#7f8c8d;font-size:10px}
+.be-up{color:#2ecc71}
+.be-down{color:#e74c3c}
+.empty-state{text-align:center;padding:40px;color:#7f8c8d;font-size:16px}
 
-.link{fill:none;stroke-width:2px}
-.link.success{stroke:#27ae60}
-.link.failure{stroke:#7f8c8d;stroke-dasharray:6,4}
-
-.tooltip{
-  position:absolute;padding:10px 14px;background:rgba(44,62,80,0.95);
-  border:1px solid #34495e;border-radius:6px;font-size:13px;
-  pointer-events:none;max-width:360px;line-height:1.5;
-  box-shadow:0 4px 12px rgba(0,0,0,0.4)
-}
+.tooltip{position:absolute;padding:10px 14px;background:rgba(44,62,80,0.95);border:1px solid #34495e;border-radius:6px;font-size:13px;pointer-events:none;max-width:360px;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:none;z-index:10}
 .tooltip .hid{font-weight:bold;color:#3498db;font-size:15px}
 .tooltip .bebig{color:#e74c3c;font-size:16px;font-weight:bold}
 
-#detail-panel{
-  position:absolute;bottom:0;left:0;right:0;height:200px;
-  background:rgba(30,39,56,0.97);border-top:1px solid #34495e;
-  overflow-x:auto;overflow-y:hidden;white-space:nowrap;
-  padding:12px 16px;display:none
-}
-#detail-panel .mol-card{
-  display:inline-block;width:180px;margin-right:12px;
-  background:#243447;border-radius:6px;padding:8px;
-  text-align:center;vertical-align:top
-}
-.mol-card .be{color:#e74c3c;font-weight:bold}
-.mol-card .qed{color:#bdc3c7;font-size:11px}
-.mol-card .route-badge{
-  display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-top:4px
-}
-.mol-card .route-badge.trivial{background:#7f8c8d;color:#fff}
-.mol-card .route-badge.non-trivial{background:#27ae60;color:#fff}
-.empty-state{text-align:center;padding:40px;color:#7f8c8d;font-size:16px}
+#legend{position:absolute;top:8px;right:12px;background:rgba(22,33,62,0.9);padding:8px 12px;border-radius:6px;font-size:11px;z-index:10}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
 </style>
 </head>
 <body>
-<div id="tree-container">
-  <svg width="100%" height="100%"></svg>
-  <div class="tooltip" style="display:none"></div>
+<div id="cy"></div>
+<div id="lower">
+  <div id="tabs">
+    <div class="tab active" data-tab="table">Session Compare</div>
+    <div class="tab" data-tab="mol">Molecules</div>
+  </div>
+  <div id="table-wrap"><table id="session-table"></table></div>
+  <div id="mol-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a graph node to see molecule structures</div></div>
 </div>
-<div id="detail-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a node to see molecule details</div></div>
+<div id="legend"></div>
+<div class="tooltip"></div>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="cytoscape.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded",() => {
-  const DATA = [{"hypothesis_id": "H001", "round": 3, "success": true, "parent": null, "best_be": -7.761, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H001 accepted: SA score threshold tightened (8.0→6.0) + ring count limit (max=7). Top-10 avg binding energy -7.761 kcal/mol (vs historical -7.986, +0.225), but 9/10 molecules have non-trivial synthesis routes with 1-step classic reactions. Synthetic feasibility significantly improved. Best molecule: Cc1cc(C)c2ccccc2c1O (-8.098, trivial, simple naphthalene derivative). All non-trivial routes use amide/sulfonamide/ether coupling - realistic building blocks. Trivial route ratio maintained at 10%.", "molecules": []}, {"hypothesis_id": "BASELINE", "round": 1, "success": true, "parent": null, "best_be": -8.56, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "基线进化管线运行：对接引导进化（H002）生成 86 个独特分子，2 代进化后最佳结合能 -8.56 kcal/mol（前次最优 -8.098），Top 10 平均 -8.058，全部 10 个分子具备有效合成路线（8 个单步合成）。结合能下降 0.46 kcal/mol，路线覆盖率 100%。成功标准达成：最佳结合能 < -8.0 且全部路线有效。", "molecules": []}, {"hypothesis_id": "H009", "round": 3, "success": true, "parent": "H001", "best_be": -8.148, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H009 — Consensus Docking: Implemented dock_molecule_consensus() which runs 3 independent Vina dockings (seeds 42,123,456) and takes median energy. Applied to top-20 candidates (10 in quick run) after evolutionary generations — not during evolution to avoid cost blowup. Pipeline ran successfully: 59 unique molecules after 2 generations, top-10 re-scored with consensus, consensus std 0.004–0.063 kcal/mol confirms non-trivial stochastic noise. Best binding energy: -8.148 kcal/mol, avg: -7.890 kcal/mol. Key improvement: final ranking now uses consensus median instead of single-run score, eliminating random seed bias. Trivial route ratio: 3/5 (60%). Code is clean, backward-compatible, minimal risk.", "molecules": []}, {"hypothesis_id": "H004", "round": 4, "success": false, "parent": "H009", "best_be": -8.43, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H004 (fitness-proportionate selection + elite preservation) REJECTED. Best binding energy degraded from -8.56 to -8.43 kcal/mol, top-10 average from -8.058 to -7.901 kcal/mol. Key diagnosis: H002 docking guidance already applies top-k selection pressure; stacking H004 on top caused over-constraint and premature convergence. Additionally, sulfonamide-dominance in prior results reflects genuine target protein preference for SO2 motifs, not evolutionary drift. Chemical diversity improved but at the cost of binding affinity. Code changes preserved with # H004: markers for potential rollback or tuning in future rounds.", "molecules": []}, {"hypothesis_id": "H010", "round": 3, "success": true, "parent": "H009", "best_be": -8.13, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H010 Scaffold Hopping via BRICS decomposition: ACCEPTED. Fixed _scaffold_hop() to use BRICS.BRICSDecompose() (was calling non-existent BRICS.BreakMol). Full pipeline results: avg BE improved from -7.90 to -8.13 kcal/mol (+0.23), best BE -8.335 vs baseline -8.43 (minor -0.095). Scaffold diversity unchanged at 60% (6/10 Murcko scaffolds). Trivial ratio 0/10. The operator works correctly (95% success rate, 85% unique outputs in unit tests) and enriches mutation operator portfolio without degrading results. New functionalized scaffolds (sulfonamide/sulfoximine motifs) appeared in top candidates.", "molecules": []}, {"hypothesis_id": "H011", "round": 1, "success": true, "parent": "BASELINE", "best_be": -9.941, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "最佳结合能从 -8.335 提升至 -9.941 (+19.3%)，top-10 平均从 -8.131 提升至 -8.961 (+10.2%)。trivial route 比例 1/10。多样性保持（贪心 MMD 算法）有效防止过早收敛，发现更好的化学空间。", "molecules": []}, {"hypothesis_id": "H012", "round": 2, "success": false, "parent": "H011", "best_be": -9.941, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "添加 Suzuki 联芳基逆合成规则成功（c1ccc(-c2ccc3ccccc3c2)cc1 从不 trivial 变为有效路线），但聚合 trivial 比例仍为 1/10（不同分子）。结合能 -8.896（vs H011 -9.941），属随机波动。规则本身验证正确但本轮指标不达标。", "molecules": []}, {"hypothesis_id": "H012", "round": 1, "success": true, "parent": "H011", "best_be": -9.941, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "SMARTS修复完全消除3条不现实吡啶路线(O=C1CCCC(=O)C1.N)，路线质量复合评分(0.8×BE+0.2×quality)生效。最佳BE -9.335(基线-9.941, -6.1%), 平均BE -8.546(-4.6%), Trivial 1/10不变。多步路线从4/10升至5/10, Suzuki偶联路线从1/10升至4/10。额外修复offspring多片段崩溃使n-generations=2正常运行。", "molecules": []}, {"hypothesis_id": "H013", "round": 2, "success": true, "parent": "H012", "best_be": -9.755, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "Crossover重组算子(15%概率,Murcko骨架交换)显著提升BE: 最佳-9.755(vs H012 -9.335, +0.42), 平均-8.675(+0.13)。Trivial从1/10降至0/10。85个独特分子中crossover成功产生新化学型。文献: MOOSE-Chem/MolLEO进化算子理论。", "molecules": []}, {"hypothesis_id": "H014", "round": 6, "success": true, "parent": "H010", "best_be": -9.17, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H014 化学计量验证: 阈值 0.7-1.3 成功消除 Friedländer 规则误匹配（如取代喹啉 17atoms vs 无取代原料 12atoms = 1.42 被正确拒绝），路线回退到正确的 Suzuki 断键。最佳 BE -9.17（+3.1% vs R5），平均 -8.06（随机方差）。Trivial 比例保持 0.1 — 剩余 trivial 源自饱和双环骨架缺失规则，需 H015 解决。", "molecules": []}, {"hypothesis_id": "H015", "round": 7, "success": true, "parent": "H014", "best_be": -9.074, "avg_be": null, "trivial_count": 0, "molecule_count": 0, "summary": "H015: 饱和杂环断键规则 + _is_simple_molecule 修复。新增 6 条逆合成规则（THIQ、吲哚啉、四氢喹啉、饱和环 C-N 断键等），修复 _is_simple_molecule 误判多环芳烃为\"简单\"。Trivial ratio 首次达到 0/10（从 0.1 降至 0.0）。最佳 BE -9.074 kcal/mol，平均 -8.31 kcal/mol。H014+H015 组合实现零 trivial route。", "molecules": []}];
+(function() {
+  var GRAPH = [{"data": {"id": "MOLCRAFT", "bg": "#2ecc71", "border": "#34495e", "size": 14, "best_be": null, "avg_be": null, "summary": "MolCraft Agent", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H001", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -7.761, "avg_be": null, "summary": "H001 accepted: SA score threshold tightened (8.0→6.0) + ring count limit (max=7). Top-10 avg binding energy -7.761 kcal/mol (vs historical -7.986, +0.225), but 9/10 molecules have non-trivial synthesis routes with 1-step classic reactions. Synthetic feasibility significantly improved. Best molecule: Cc1cc(C)c2ccccc2c1O (-8.098, trivial, simple naphthalene derivative). All non-trivial routes use amide/sulfonamide/ether coupling - realistic building blocks. Trivial route ratio maintained at 10%.", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "MOLCRAFT_to_H001", "source": "MOLCRAFT", "target": "H001", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "BASELINE", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -8.56, "avg_be": null, "summary": "基线进化管线运行：对接引导进化（H002）生成 86 个独特分子，2 代进化后最佳结合能 -8.56 kcal/mol（前次最优 -8.098），Top 10 平均 -8.058，全部 10 个分子具备有效合成路线（8 个单步合成）。结合能下降 0.46 kcal/mol，路线覆盖率 100%。成功标准达成：最佳结合能 < -8.0 且全部路线有效。", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "MOLCRAFT_to_BASELINE", "source": "MOLCRAFT", "target": "BASELINE", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H009", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -8.148, "avg_be": null, "summary": "H009 — Consensus Docking: Implemented dock_molecule_consensus() which runs 3 independent Vina dockings (seeds 42,123,456) and takes median energy. Applied to top-20 candidates (10 in quick run) after evolutionary generations — not during evolution to avoid cost blowup. Pipeline ran successfully: 59 unique molecules after 2 generations, top-10 re-scored with consensus, consensus std 0.004–0.063 kcal/mol confirms non-trivial stochastic noise. Best binding energy: -8.148 kcal/mol, avg: -7.890 kcal/mol. Key improvement: final ranking now uses consensus median instead of single-run score, eliminating random seed bias. Trivial route ratio: 3/5 (60%). Code is clean, backward-compatible, minimal risk.", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H001_to_H009", "source": "H001", "target": "H009", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H004", "bg": "#95a5a6", "border": "#34495e", "size": 12, "best_be": -8.43, "avg_be": null, "summary": "H004 (fitness-proportionate selection + elite preservation) REJECTED. Best binding energy degraded from -8.56 to -8.43 kcal/mol, top-10 average from -8.058 to -7.901 kcal/mol. Key diagnosis: H002 docking guidance already applies top-k selection pressure; stacking H004 on top caused over-constraint and premature convergence. Additionally, sulfonamide-dominance in prior results reflects genuine target protein preference for SO2 motifs, not evolutionary drift. Chemical diversity improved but at the cost of binding affinity. Code changes preserved with # H004: markers for potential rollback or tuning in future rounds.", "success": false, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H009_to_H004", "source": "H009", "target": "H004", "ecolor": "#7f8c8d", "estyle": "dashed"}}, {"data": {"id": "H010", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -8.13, "avg_be": null, "summary": "H010 Scaffold Hopping via BRICS decomposition: ACCEPTED. Fixed _scaffold_hop() to use BRICS.BRICSDecompose() (was calling non-existent BRICS.BreakMol). Full pipeline results: avg BE improved from -7.90 to -8.13 kcal/mol (+0.23), best BE -8.335 vs baseline -8.43 (minor -0.095). Scaffold diversity unchanged at 60% (6/10 Murcko scaffolds). Trivial ratio 0/10. The operator works correctly (95% success rate, 85% unique outputs in unit tests) and enriches mutation operator portfolio without degrading results. New functionalized scaffolds (sulfonamide/sulfoximine motifs) appeared in top candidates.", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H009_to_H010", "source": "H009", "target": "H010", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H011", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -9.941, "avg_be": null, "summary": "最佳结合能从 -8.335 提升至 -9.941 (+19.3%)，top-10 平均从 -8.131 提升至 -8.961 (+10.2%)。trivial route 比例 1/10。多样性保持（贪心 MMD 算法）有效防止过早收敛，发现更好的化学空间。", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "BASELINE_to_H011", "source": "BASELINE", "target": "H011", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H012.1", "bg": "#95a5a6", "border": "#34495e", "size": 12, "best_be": -9.941, "avg_be": null, "summary": "添加 Suzuki 联芳基逆合成规则成功（c1ccc(-c2ccc3ccccc3c2)cc1 从不 trivial 变为有效路线），但聚合 trivial 比例仍为 1/10（不同分子）。结合能 -8.896（vs H011 -9.941），属随机波动。规则本身验证正确但本轮指标不达标。", "success": false, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H011_to_H012.1", "source": "H011", "target": "H012.1", "ecolor": "#7f8c8d", "estyle": "dashed"}}, {"data": {"id": "H012.2", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -9.941, "avg_be": null, "summary": "SMARTS修复完全消除3条不现实吡啶路线(O=C1CCCC(=O)C1.N)，路线质量复合评分(0.8×BE+0.2×quality)生效。最佳BE -9.335(基线-9.941, -6.1%), 平均BE -8.546(-4.6%), Trivial 1/10不变。多步路线从4/10升至5/10, Suzuki偶联路线从1/10升至4/10。额外修复offspring多片段崩溃使n-generations=2正常运行。", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H011_to_H012.2", "source": "H011", "target": "H012.2", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H013", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -9.755, "avg_be": null, "summary": "Crossover重组算子(15%概率,Murcko骨架交换)显著提升BE: 最佳-9.755(vs H012 -9.335, +0.42), 平均-8.675(+0.13)。Trivial从1/10降至0/10。85个独特分子中crossover成功产生新化学型。文献: MOOSE-Chem/MolLEO进化算子理论。", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H012.1_to_H013", "source": "H012.1", "target": "H013", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H014", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -9.17, "avg_be": null, "summary": "H014 化学计量验证: 阈值 0.7-1.3 成功消除 Friedländer 规则误匹配（如取代喹啉 17atoms vs 无取代原料 12atoms = 1.42 被正确拒绝），路线回退到正确的 Suzuki 断键。最佳 BE -9.17（+3.1% vs R5），平均 -8.06（随机方差）。Trivial 比例保持 0.1 — 剩余 trivial 源自饱和双环骨架缺失规则，需 H015 解决。", "success": true, "run_id": "unknown", "molecules": []}}, {"data": {"id": "H010_to_H014", "source": "H010", "target": "H014", "ecolor": "#27ae60", "estyle": "solid"}}, {"data": {"id": "H015", "bg": "#2ecc71", "border": "#34495e", "size": 12, "best_be": -9.074, "avg_be": null, "summary": "H015: 饱和杂环断键规则 + _is_simple_molecule 修复。新增 6 条逆合成规则（THIQ、吲哚啉、四氢喹啉、饱和环 C-N 断键等），修复 _is_simple_molecule 误判多环芳烃为\"简单\"。Trivial ratio 首次达到 0/10（从 0.1 降至 0.0）。最佳 BE -9.074 kcal/mol，平均 -8.31 kcal/mol。H014+H015 组合实现零 trivial route。", "success": true, "run_id": "unknown", "molecules": [{"smiles": "CC(=O)c1ccc2cccc(-c3ccccc3)c2c1", "be": -9.591, "qed": 0.598, "trivial": false}, {"smiles": "CC(=O)c1ccccc1NC(=O)c1ccc(-c2ccccc2)cc1", "be": -9.364, "qed": 0.702, "trivial": false}, {"smiles": "Cc1ccc(Cc2ccc(S(=O)Nc3ccccc3)cc2SN)cc1", "be": -9.037, "qed": 0.621, "trivial": false}, {"smiles": "Cc1ccc(NC(=O)c2cc(CC(=O)O)cc3c2C3)c(N)c1", "be": -8.994, "qed": 0.644, "trivial": false}, {"smiles": "c1ccc(COc2cccc(-c3ccccc3)c2)cc1", "be": -8.899, "qed": 0.646, "trivial": false}]}}, {"data": {"id": "H014_to_H015", "source": "H014", "target": "H015", "ecolor": "#27ae60", "estyle": "solid"}}];
+  var SESSIONS = [];
 
-  if (!DATA || DATA.length === 0) {
-    document.getElementById("tree-container").innerHTML =
-      '<div class="empty-state">No evolution data yet<br><small>Run main.py first, then rebuild with build_evomap.py</small></div>';
+  if (!GRAPH || GRAPH.length === 0) {
+    document.getElementById("cy").innerHTML =
+      '<div class="empty-state">No data yet<br><small>Run main.py, then rebuild with build_evomap.py</small></div>';
     return;
   }
 
-  const svg = d3.select("#tree-container svg");
-  const tooltip = d3.select(".tooltip");
-  const detailPanel = d3.select("#detail-panel");
-  const margin = {top:40, right:120, bottom:40, left:160};
+  var sessionColors = ["#3498db","#e67e22","#2ecc71","#9b59b6","#1abc9c","#f39c12"];
+  var sessionColorMap = {};
+  SESSIONS.forEach(function(s, i) {
+    sessionColorMap[s] = sessionColors[i % sessionColors.length];
+  });
 
-  const rootData = DATA.find(d => d.parent === null) || DATA[0];
-  const stratify = d3.stratify()
-    .id(d => d.hypothesis_id)
-    .parentId(d => d.parent);
-  const root = stratify(DATA);
-  root.each(d => { d._children = d.children; });
+  var cy = cytoscape({
+    container: document.getElementById("cy"),
+    elements: GRAPH,
+    style: [
+      { selector: "node", style: {
+        "label": "data(id)",
+        "color": "#ecf0f1",
+        "font-size": "11px",
+        "font-family": "monospace",
+        "text-valign": "center",
+        "text-halign": "center",
+        "background-color": "data(bg)",
+        "border-color": "data(border)",
+        "border-width": 2.5,
+        "width": "data(size)",
+        "height": "data(size)"
+      }},
+      { selector: "edge", style: {
+        "width": 2,
+        "line-color": "data(ecolor)",
+        "target-arrow-color": "data(ecolor)",
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier",
+        "line-style": "data(estyle)"
+      }}
+    ],
+    layout: { name: "breadthfirst", directed: true, spacingFactor: 1.3, avoidOverlap: true },
+    wheelSensitivity: 0.3,
+    maxZoom: 3,
+    minZoom: 0.3
+  });
 
-  const width = window.innerWidth;
-  const height = window.innerHeight - 200;
-  const treeLayout = d3.tree()
-    .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
-  treeLayout(root);
+  // Tooltip
+  var tooltip = document.querySelector(".tooltip");
+  cy.on("mouseover", "node", function(evt) {
+    var d = evt.target.data();
+    tooltip.style.display = "block";
+    tooltip.innerHTML =
+      '<div class="hid">' + d.id + '</div>' +
+      '<div>Best BE: <span class="bebig">' + (d.best_be != null ? d.best_be.toFixed(3) + " kcal/mol" : "N/A") + '</span></div>' +
+      '<div>Avg BE: ' + (d.avg_be != null ? d.avg_be.toFixed(3) + " kcal/mol" : "N/A") + '</div>' +
+      '<div>Session: ' + (d.run_id || "N/A") + '</div>' +
+      '<div style="margin-top:6px;color:#bdc3c7;font-size:11px;max-height:60px;overflow:hidden">' + (d.summary||"").substring(0,200) + '</div>';
+    tooltip.style.left = (evt.originalEvent.pageX + 12) + "px";
+    tooltip.style.top = (evt.originalEvent.pageY - 28) + "px";
+  });
+  cy.on("mouseout", "node", function() { tooltip.style.display = "none"; });
 
-  const g = svg.append("g").attr("transform",`translate(${margin.left},${margin.top})`);
-
-  // Edges
-  g.selectAll(".link")
-    .data(root.links())
-    .join("path")
-    .attr("class", d => `link ${d.target.data.success ? "success" : "failure"}`)
-    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-    .append("title")
-    .text(d => `best BE: ${d.target.data.best_be != null ? d.target.data.best_be.toFixed(2) : "N/A"}`);
-
-  // Nodes
-  const node = g.selectAll(".node")
-    .data(root.descendants())
-    .join("g")
-    .attr("class", d => `node ${d.data.success ? "success" : "failure"}`)
-    .attr("transform", d => `translate(${d.y},${d.x})`)
-    .on("mouseover", (event, d) => {
-      const dd = d.data;
-      tooltip.style("display","block")
-        .html(`<div class="hid">${dd.hypothesis_id}</div>
-               <div>Best BE: <span class="bebig">${dd.best_be != null ? dd.best_be.toFixed(3) + " kcal/mol" : "N/A"}</span></div>
-               <div>Avg BE: ${dd.avg_be != null ? dd.avg_be.toFixed(3) + " kcal/mol" : "N/A"}</div>
-               <div>Mols: ${dd.molecule_count || "N/A"} | Trivial: ${dd.trivial_count}</div>
-               <div style="margin-top:6px;color:#bdc3c7;font-size:11px;max-height:60px;overflow:hidden">${(dd.summary||"").substring(0,200)}</div>`);
-    })
-    .on("mousemove", (event) => {
-      tooltip.style("left",(event.pageX+12)+"px").style("top",(event.pageY-28)+"px");
-    })
-    .on("mouseout", () => tooltip.style("display","none"))
-    .on("click", (event, d) => showMolecules(d.data));
-
-  node.append("circle")
-    .attr("r", d => d.data.hypothesis_id === "BASELINE" ? 8 : 6);
-
-  node.append("text")
-    .attr("dy", -12)
-    .attr("text-anchor","middle")
-    .text(d => d.data.hypothesis_id);
-
-  node.filter(d => d.data.best_be != null).append("text")
-    .attr("dy", 20)
-    .attr("text-anchor","middle")
-    .attr("class","be-label")
-    .text(d => d.data.best_be.toFixed(1));
+  // Click node -> show molecules
+  cy.on("click", "node", function(evt) {
+    var d = evt.target.data();
+    showMolecules(d);
+    document.querySelector(".tab[data-tab='mol']").click();
+  });
 
   function showMolecules(data) {
-    const mols = data.molecules || [];
+    var mols = data.molecules || [];
+    var panel = document.getElementById("mol-panel");
     if (mols.length === 0) {
-      detailPanel.style("display","block")
-        .html(`<div style="padding:12px;color:#7f8c8d">${data.hypothesis_id}: no molecule data saved</div>`);
+      panel.innerHTML = '<div style="padding:12px;color:#7f8c8d">' + data.id + ': no molecule data</div>';
       return;
     }
-    let cards = `<div style="padding:4px 0 4px 12px;color:#bdc3c7;font-size:12px">${data.hypothesis_id} --- ${(data.summary||"").substring(0,120)}</div>`;
-    mols.forEach(m => {
-      const isTriv = m.trivial;
-      cards += `<div class="mol-card">
-        <div id="mol-${m.smiles.replace(/[^a-zA-Z0-9]/g,'')}" style="width:160px;height:100px;margin:0 auto"></div>
-        <div class="be">BE: ${m.be != null ? m.be.toFixed(2) : "N/A"}</div>
-        <div class="qed">QED: ${m.qed != null ? m.qed.toFixed(2) : "N/A"} | Steps: ${m.syn_steps || "?"}</div>
-        <span class="route-badge ${isTriv?'trivial':'non-trivial'}">${isTriv?'trivial':'valid route'}</span>
-      </div>`;
+    var cards = '<div style="padding:4px 0;color:#bdc3c7;font-size:12px">' + data.id + '</div>';
+    mols.forEach(function(m) {
+      var isTriv = m.trivial;
+      cards += '<div class="mol-card">' +
+        '<div id="mol-' + m.smiles.replace(/[^a-zA-Z0-9]/g,'') + '" style="width:160px;height:100px;margin:0 auto"></div>' +
+        '<div class="be">BE: ' + (m.be != null ? m.be.toFixed(2) : "N/A") + '</div>' +
+        '<div class="qed">QED: ' + (m.qed != null ? m.qed.toFixed(2) : "N/A") + ' | Steps: ' + (m.syn_steps || "?") + '</div>' +
+        '<span class="route-badge ' + (isTriv?"trivial":"non-trivial") + '">' + (isTriv?"trivial":"valid route") + '</span>' +
+        '</div>';
     });
-    detailPanel.style("display","block").html(cards);
+    panel.innerHTML = cards;
 
     if (typeof initRDKit === "undefined") {
-      const s = document.createElement("script");
+      var s = document.createElement("script");
       s.src = "https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js";
-      s.onload = () => initRDKit().then(() => renderMols(mols));
+      s.onload = function() { initRDKit().then(function() { renderMols(mols); }); };
       document.head.appendChild(s);
     } else {
-      initRDKit().then(() => renderMols(mols));
+      initRDKit().then(function() { renderMols(mols); });
     }
   }
-
   function renderMols(mols) {
-    mols.forEach(m => {
-      const divId = "mol-" + m.smiles.replace(/[^a-zA-Z0-9]/g,'');
-      const el = document.getElementById(divId);
+    mols.forEach(function(m) {
+      var divId = "mol-" + m.smiles.replace(/[^a-zA-Z0-9]/g,"");
+      var el = document.getElementById(divId);
       if (!el) return;
       try {
-        const mol = RDKitModule.get_mol(m.smiles);
+        var mol = RDKitModule.get_mol(m.smiles);
         if (!mol) return;
         mol.draw_to_canvas(el, 160, 100);
         mol.delete();
@@ -176,10 +168,75 @@ document.addEventListener("DOMContentLoaded",() => {
     });
   }
 
-  window.addEventListener("resize", () => {
-    svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+  // Tab switching
+  document.querySelectorAll(".tab").forEach(function(t) {
+    t.addEventListener("click", function() {
+      document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
+      t.classList.add("active");
+      var tab = t.dataset.tab;
+      document.getElementById("table-wrap").style.display = tab === "table" ? "block" : "none";
+      document.getElementById("mol-panel").style.display = tab === "mol" ? "block" : "none";
+    });
   });
-});
+
+  // Session comparison table
+  buildTable();
+
+  function buildTable() {
+    var hypoMap = {};
+    GRAPH.forEach(function(el) {
+      if (el.group !== "nodes") return;
+      var id = el.data.id;
+      if (id === "MOLCRAFT") return;
+      if (!hypoMap[id]) hypoMap[id] = {};
+      hypoMap[id][el.data.run_id || "?"] = el.data;
+    });
+
+    var hypoIds = Object.keys(hypoMap).sort();
+    if (hypoIds.length === 0) return;
+
+    var thead = "<tr><th>Hypothesis</th>";
+    SESSIONS.forEach(function(s) {
+      thead += '<th class="session-col">' + s.substring(5, 17) + '</th>';
+    });
+    thead += "</tr>";
+
+    var tbody = "";
+    hypoIds.forEach(function(hid) {
+      tbody += "<tr><td style='text-align:left;font-family:monospace'>" + hid + "</td>";
+      var prevBe = null;
+      SESSIONS.forEach(function(s) {
+        var d = hypoMap[hid][s];
+        if (d && d.best_be != null) {
+          var be = d.best_be;
+          var cls = "";
+          if (prevBe != null) {
+            cls = be < prevBe ? "be-up" : (be > prevBe ? "be-down" : "");
+          }
+          var icon = d.success ? "&#x2714;" : "&#x2718;";
+          tbody += "<td class='" + cls + "'>" + icon + " " + be.toFixed(2) + "</td>";
+          prevBe = be;
+        } else {
+          tbody += "<td style='color:#555'>-</td>";
+          prevBe = null;
+        }
+      });
+      tbody += "</tr>";
+    });
+
+    document.getElementById("session-table").innerHTML = thead + tbody;
+  }
+
+  // Legend
+  var legendHtml = "";
+  SESSIONS.forEach(function(s, i) {
+    legendHtml += '<div><span class="legend-dot" style="background:' + sessionColors[i % sessionColors.length] + '"></span> ' + s.substring(5,17) + '</div>';
+  });
+  legendHtml += '<div style="margin-top:4px"><span class="legend-dot" style="background:#2ecc71"></span> Accepted</div>';
+  legendHtml += '<div><span class="legend-dot" style="background:#95a5a6"></span> Rejected</div>';
+  document.getElementById("legend").innerHTML = legendHtml;
+
+})();
 </script>
 </body>
 </html>
