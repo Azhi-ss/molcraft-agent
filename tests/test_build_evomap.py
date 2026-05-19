@@ -120,3 +120,42 @@ def test_extract_best_be_from_summary():
     assert _extract_best_be("best BE -8.56 kcal/mol") == -8.56
     assert _extract_best_be("no energy here") is None
     assert _extract_best_be("") is None
+
+
+# --- Task 3: HTML generation tests ---
+
+
+def test_generate_html_writes_valid_file():
+    from tools.build_evomap import generate_html
+
+    tree = [{
+        "hypothesis_id": "BASELINE", "round": 1, "success": True,
+        "parent": None, "best_be": -8.56, "avg_be": -8.06,
+        "trivial_count": 0, "molecule_count": 10,
+        "summary": "baseline",
+        "molecules": [
+            {"smiles": "c1ccccc1", "be": -8.56, "qed": 0.72,
+             "trivial": False, "syn_steps": 1}
+        ]
+    }]
+
+    out = Path(tempfile.mkstemp(suffix=".html")[1])
+    generate_html(tree, out)
+
+    html = out.read_text()
+    assert "<!DOCTYPE html>" in html
+    assert "BASELINE" in html
+    assert "d3js.org" in html or "d3.v7" in html
+    assert "RDKit" in html or "rdkit" in html
+    assert "c1ccccc1" in html
+    out.unlink()
+
+
+def test_generate_html_empty_tree():
+    from tools.build_evomap import generate_html
+
+    out = Path(tempfile.mkstemp(suffix=".html")[1])
+    generate_html([], out)
+    html = out.read_text()
+    assert "<!DOCTYPE html>" in html
+    out.unlink()
