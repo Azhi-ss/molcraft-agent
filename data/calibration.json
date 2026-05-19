@@ -3,8 +3,8 @@
   "binding_score": {
     "function": "clipped_linear",
     "params": {
-      "threshold": 0.0,
-      "range": 48.59
+      "threshold": -2.23,
+      "range": 35.94
     }
   },
   "sa_score": {
