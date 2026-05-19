@@ -617,6 +617,52 @@ def _detect_binding_pocket(residues: list) -> list:
     return [round(float(c), 2) for c in pocket_center]
 
 
+def _estimate_box_size(residues: list, center: list, ligand_atoms: list = None) -> list:
+    """根据口袋/配体几何自动估算对接盒子大小。
+
+    策略：
+    1. 有共晶配体：配体包围盒 + 6 Å margin，下限 18 Å，上限 35 Å
+    2. 无配体（apo）：N 端 1/3 残基 CA 散布范围 + 8 Å margin
+    3. 默认：25 Å（大多数药物靶点的合理值）
+    """
+    min_size, max_size = 18.0, 35.0
+    default_size = [25.0, 25.0, 25.0]
+    center_np = np.array(center)
+
+    if ligand_atoms:
+        # 有配体：以配体包围盒为基础
+        lig_coords = np.array(ligand_atoms)
+        extents = lig_coords.max(axis=0) - lig_coords.min(axis=0)
+        margin = 6.0
+        size = [round(float(max(s + margin * 2, min_size)), 1) for s in extents]
+        # 各维度的上限
+        size = [min(s, max_size) for s in size]
+        return size
+
+    # 无配体：用 N 端 1/3 残基 CA 的空间散布 + margin
+    ca_coords = []
+    for r in residues:
+        for a in r:
+            if a.get_name() == 'CA':
+                ca_coords.append(a.get_coord())
+                break
+
+    if not ca_coords:
+        return default_size
+
+    coords = np.array(ca_coords)
+    n_third = max(len(coords) // 3, 10)
+    n_term = coords[:n_third]
+
+    # N 端域 CA 的散布范围
+    spread = n_term.max(axis=0) - n_term.min(axis=0)
+    # 口袋通常在 N 端域内部，盒子需要覆盖该域的主要部分
+    margin = 8.0
+    size = [round(float(max(s + margin * 2, min_size)), 1) for s in spread]
+    size = [min(s, max_size) for s in size]
+    return size
+
+
 def _identify_target_impl(pdb_path: str) -> dict:
     pdb_path = Path(pdb_path)
     if not pdb_path.exists():
@@ -639,7 +685,7 @@ def _identify_target_impl(pdb_path: str) -> dict:
         'PEG', 'MES', 'HEPES', 'TRS', 'GLC', 'FMT',
         'NA', 'CL', 'K', 'MG', 'CA', 'ZN', 'MN', 'FE', 'CU', 'CD', 'CO', 'NI',
     }
-    ligand_info = {"found": False, "resname": None, "center": None}
+    ligand_info = {"found": False, "resname": None, "center": None, "atoms": None}
     for chain_obj in model.get_chains():
         for residue in chain_obj:
             # HETATM 且不是氨基酸、不是溶剂
@@ -657,6 +703,7 @@ def _identify_target_impl(pdb_path: str) -> dict:
                         "found": True,
                         "resname": residue.resname.strip(),
                         "center": [round(float(c), 2) for c in com],
+                        "atoms": [[float(x) for x in c] for c in coords],
                     }
                     break
         if ligand_info["found"]:
@@ -714,6 +761,40 @@ def _identify_target_impl(pdb_path: str) -> dict:
         except Exception as exc:
             pass
 
+    # 估算推荐盒子大小
+    current_size = config.DOCKING_SIZE
+    suggested_size = _estimate_box_size(
+        residues,
+        suggested_center,
+        ligand_info.get("atoms") if ligand_info["found"] else None,
+    )
+    size_offset = round(
+        float(np.linalg.norm(np.array(current_size) - np.array(suggested_size))), 2
+    )
+
+    # 自动调整盒子大小: 当推荐尺寸与当前值差异 > 10 Å 时自动修正
+    size_auto_adjusted = False
+    if size_offset > 10.0:
+        config_path = Path(__file__).parent.parent / "src" / "config.py"
+        try:
+            old_line = f"DOCKING_SIZE = {current_size}"
+            new_line = f"DOCKING_SIZE = {suggested_size}"
+            with open(config_path) as f:
+                content = f.read()
+            if old_line in content:
+                content = content.replace(old_line, new_line)
+                with open(config_path, "w") as f:
+                    f.write(content)
+                importlib.reload(config)
+                current_size = config.DOCKING_SIZE
+                size_offset = 0.0
+                auto_adjusted = True
+                size_auto_adjusted = True
+        except Exception:
+            pass
+
+    size_verdict = "OK" if size_offset < 8.0 else "NEEDS_ADJUSTMENT"
+
     docking_verdict = "OK" if offset < 8.0 else "NEEDS_ADJUSTMENT"
 
     protein_info = {
@@ -732,8 +813,8 @@ def _identify_target_impl(pdb_path: str) -> dict:
             f"靶点: {protein_info.get('name', 'unknown')} "
             f"({len(seq)} aa), "
             f"活性位点: {center_source}, "
-            f"对接坐标偏移 {offset} Å, "
-            f"状态: {docking_verdict}"
+            f"对接坐标偏移 {offset} Å ({docking_verdict}), "
+            f"盒子偏移 {size_offset} Å ({size_verdict})"
             + (" [已自动更新 config.py]" if auto_adjusted else "")
         ),
         "protein": protein_info,
@@ -748,6 +829,7 @@ def _identify_target_impl(pdb_path: str) -> dict:
             "residues": len(residues),
             "active_site_source": center_source,
             "active_site_cleft": suggested_center,
+            "suggested_box_size": suggested_size,
         },
         "docking_check": {
             "current_center": current_center,
@@ -755,16 +837,20 @@ def _identify_target_impl(pdb_path: str) -> dict:
             "offset_angstrom": offset,
             "auto_adjusted": auto_adjusted,
             "verdict": docking_verdict,
+            "current_size": current_size,
+            "suggested_size": suggested_size,
+            "size_offset_angstrom": size_offset,
+            "size_auto_adjusted": size_auto_adjusted,
+            "size_verdict": size_verdict,
         },
         "next_actions": [
             "1. 对接坐标已自动对齐到共晶配体重心" if auto_adjusted else
-            "1. 对接坐标已验证正确，可直接使用",
-            "2. 用蛋白信息指导文献搜索（SearchWeb 搜索蛋白名 + inhibitor/docking）",
-            "3. 继续正常迭代流程",
-        ] if docking_verdict == "OK" else [
-            f"1. ⚠️ 手动修改 src/config.py 的 DOCKING_CENTER 为 {suggested_center}",
-            "2. 用蛋白信息指导文献搜索",
-            "3. 修改后重新运行 identify_target 验证",
+            f"1. 对接坐标偏差 {offset} Å — 在容差范围内" if docking_verdict == "OK" else
+            f"1. ⚠️ 对接坐标偏差 {offset} Å — 建议手动检查",
+            f"2. 推荐盒子大小: {suggested_size} (当前: {current_size}, 偏差 {size_offset} Å)" if size_verdict == "NEEDS_ADJUSTMENT" else
+            "2. 盒子大小适宜",
+            "3. 用蛋白信息指导文献搜索（SearchWeb 搜索蛋白名 + inhibitor/docking）",
+            "4. 继续正常迭代流程",
         ],
     }
 
