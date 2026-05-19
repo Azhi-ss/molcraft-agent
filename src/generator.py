@@ -108,6 +108,31 @@ SCAFFOLDS = [
     "c1ccc2c(c1)OCC2",      # 2,3-二氢苯并呋喃
     "c1ccc2c(c1)SCC2",      # 2,3-二氢苯并噻吩
     "c1ccc2c(c1)CCO2",      # 苯并二氢吡喃
+
+    # ===== H022 新增: 稠杂环（激酶抑制剂铰链结合核心）=====
+    # 文献: MOOSE-Chem (2025) — diverse initial population avoids convergence
+    # JACS 2024 — scaffold diversity is key for lead optimization
+    "c1nc2c(n1)ncn2",       # 嘌呤（变体）
+    "c1cnc2[nH]ccc2c1",     # 吡咯并[2,3-b]吡啶（7-azaindole, 激酶铰链binder）
+    "c1cc2nccc2n1",         # 咪唑并[1,2-a]吡啶
+    "c1cc2ncnc2n1",         # 吡唑并[1,5-a]嘧啶
+    "c1ccc2nccc2c1",        # 喹啉嗪（indolizine）
+
+    # ===== H022 新增: 桥环骨架（刚性三维结构）=====
+    "C1CC2CCC1C2",           # 降冰片烷 (bicyclo[2.2.1]heptane)
+    "C1CN2CCC1CC2",          # 奎宁环 (quinuclidine)
+    "C1CC2CCC(C1)N2",        # 托烷 (tropane 骨架)
+    "C1C2CC1C2",             # 双环[1.1.1]戊烷 (BCP, 苯环生物电子等排体)
+
+    # ===== H022 新增: 螺环骨架（三维多样性）=====
+    "C1CC2(CCNCC2)NC1",      # 螺哌啶
+    "c1ccc2c(c1)CC3(CCCCC3)N2",  # 螺吲哚啉-环己烷
+    "C1NCC2(COC2)C1",        # 2-氧杂-6-氮杂螺[3.3]庚烷
+
+    # ===== H022 新增: 扩展饱和杂环 ====
+    "C1CCCNCC1",             # 氮杂环庚烷 (azepane)
+    "C1CCCOCC1",             # 氧杂环庚烷 (oxepane)
+    "O=S1(=O)CCNCC1",        # 硫代吗啉 1,1-二氧化物
 ]
 
 LINKERS = [
