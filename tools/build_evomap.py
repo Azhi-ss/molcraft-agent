@@ -231,6 +231,7 @@ def build_tree(
                          key=lambda x: x.get("be") or 999)
             entry["molecules"] = mols[:5]
             entry["molecule_count"] = len(mr["molecules"])
+            entry["run_id"] = mr.get("run_id", "unknown")
 
     last_accepted: dict[int, str] = {}
     for entry in iter_entries:
