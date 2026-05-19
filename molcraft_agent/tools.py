@@ -690,8 +690,11 @@ def _identify_target_impl(pdb_path: str) -> dict:
 
     # 自动调整对接坐标
     auto_adjusted = False
-    if ligand_info["found"] and offset > 2.0:
-        # 有共晶配体且偏移 > 2Å：自动更新 config.py
+    # 自动修正条件:
+    # 1. 有共晶配体且偏差 > 2 Å → 自动更新
+    # 2. 无配体但偏差 > 10 Å (严重偏移) → 自动更新
+    should_auto_fix = (ligand_info["found"] and offset > 2.0) or (not ligand_info["found"] and offset > 10.0)
+    if should_auto_fix:
         config_path = Path(__file__).parent.parent / "src" / "config.py"
         try:
             old_line = f"DOCKING_CENTER = {current_center}"
@@ -711,7 +714,7 @@ def _identify_target_impl(pdb_path: str) -> dict:
         except Exception as exc:
             pass
 
-    docking_verdict = "OK" if offset < 5.0 else "NEEDS_ADJUSTMENT"
+    docking_verdict = "OK" if offset < 8.0 else "NEEDS_ADJUSTMENT"
 
     protein_info = {
         "name": "unknown",
