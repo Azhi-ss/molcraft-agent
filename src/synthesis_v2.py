@@ -36,13 +36,13 @@ def _validate_smiles(smiles: str) -> bool:
 # 格式: (反应物特征子串1, 反应物特征子串2) -> 副产物 SMILES 列表
 # 当两个反应物分别包含两个特征子串时，添加对应的副产物
 REACTION_BYPRODUCTS = {
-    # Suzuki 偶联: Ar-Br + Ar-B(OH)2 → Ar-Ar + B(OH)3 + HBr
-    # 产物侧需要添加: OB(O)O (硼酸) + Br (溴离子) → 共 4 个重原子
-    ("Br", "B(O)"): ["OB(O)O", "Br"],
-    ("B(O)", "Br"): ["OB(O)O", "Br"],
+    # Suzuki 偶联: Ar-Br + Ar-B(OH)2 → Ar-Ar + B(OH)2 + Br
+    # 丢失重原子: B + 2*O + Br = 4 个
+    # B(O)O = B(OH)2 碎片 (3原子) + Br (1原子) = 恰好 4 原子
+    ("Br", "B(O)"): ["B(O)O", "Br"],
+    ("B(O)", "Br"): ["B(O)O", "Br"],
 
     # Friedländer 喹啉合成: 邻氨基苯甲醛 + 丙酮 → 喹啉 + 2H2O
-    # 脱去两分子水（缩合 + 环化脱水）
     ("Nc", "C=O"): ["O", "O"],
     ("C=O", "Nc"): ["O", "O"],
 }
@@ -60,19 +60,26 @@ def _add_byproducts_for_balance(product_smiles: str, reactant_smiles: list) -> l
                          if Chem.MolFromSmiles(r))
 
     # 检查已知反应类型的副产物
+    # H022 fix: 要求反应物含碳，排除单质试剂（Br, Cl, O 等）的误匹配
     if len(reactant_smiles) >= 2:
         r1, r2 = reactant_smiles[0], reactant_smiles[1]
+        r1_has_carbon = "C" in r1 or "c" in r1
+        r2_has_carbon = "C" in r2 or "c" in r2
         for (key1, key2), byproducts in REACTION_BYPRODUCTS.items():
             if (key1 in r1 and key2 in r2) or (key1 in r2 and key2 in r1):
+                # Suzuki: 两个反应物都必须含碳（排除 Br 单质）
+                if key1 in ("Br", "B(O)") and key2 in ("Br", "B(O)"):
+                    if not (r1_has_carbon and r2_has_carbon):
+                        continue
                 return byproducts
 
-    # 默认：如果反应物原子更多，添加占位副产物
+    # 默认：如果反应物原子更多，添加 O 占位副产物
+    # diff=1: 酰胺缩合/卤素置换等丢失 1 个 O (H2O 或 OH)
+    # diff=2: 某些缩合反应丢失 2 分子水
+    # diff>2: 用占位符平衡
     diff = reactant_heavy - product_heavy
-    if diff > 2:
-        # 对于缩合反应，通常是 H2O (1 个重原子)，但这里可能更多
-        # 根据差值添加适量的 O 占位
-        n_water = min(diff // 1, 3)
-        return ["O"] * n_water
+    if diff >= 1:
+        return ["O"] * min(diff, 3)
 
     return []
 
