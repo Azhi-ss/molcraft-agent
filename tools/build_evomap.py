@@ -286,97 +286,291 @@ def build_tree(
 
 # -- HTML generation --
 
-# Cytoscape.js + comparison table template.
-# Two placeholders: __GRAPH_PLACEHOLDER__ (Cytoscape elements JSON)
-# and __SESSIONS_PLACEHOLDER__ (session comparison table data)
-
+# Modern Dashboard Template with Fira fonts and Sky/Slate color scheme.
 HTML_TEMPLATE = r'''<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molecular Evolution Map -- MolCraft Agent</title>
+<title>EvoMap Pro | Molecular Evolution Explorer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Fira+Sans:wght@300;400;500;600;700&display=swap">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#eee;height:100vh;display:flex;flex-direction:column}
-#cy{flex:0 0 60vh;background:#1a1a2e;border-bottom:2px solid #34495e}
-#lower{flex:1;display:flex;flex-direction:column;overflow:hidden}
-#tabs{display:flex;background:#16213e;border-bottom:1px solid #34495e}
-.tab{padding:8px 18px;cursor:pointer;font-size:13px;color:#7f8c8d;border-bottom:2px solid transparent}
-.tab.active{color:#3498db;border-bottom-color:#3498db}
-#table-wrap{flex:1;overflow:auto;padding:8px 12px}
-#mol-panel{flex:1;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:12px 16px;display:none}
-#mol-panel .mol-card{display:inline-block;width:180px;margin-right:12px;background:#243447;border-radius:6px;padding:8px;text-align:center;vertical-align:top}
-.mol-card .be{color:#e74c3c;font-weight:bold}
-.mol-card .qed{color:#bdc3c7;font-size:11px}
-.mol-card .route-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-top:4px}
-.mol-card .route-badge.trivial{background:#7f8c8d;color:#fff}
-.mol-card .route-badge.non-trivial{background:#27ae60;color:#fff}
+:root {
+  --bg: #020617;
+  --card-bg: #0f172a;
+  --panel-bg: #1e293b;
+  --border: #334155;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --primary: #38bdf8;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --accent: #818cf8;
+  --header-h: 56px;
+}
 
-table{border-collapse:collapse;width:100%;font-size:12px}
-th,td{padding:6px 10px;border:1px solid #2c3e50;text-align:center;white-space:nowrap}
-th{background:#16213e;position:sticky;top:0;z-index:1}
-tr:nth-child(even){background:rgba(44,62,80,0.3)}
-.session-col{color:#7f8c8d;font-size:10px}
-.be-up{color:#2ecc71}
-.be-down{color:#e74c3c}
-.empty-state{text-align:center;padding:40px;color:#7f8c8d;font-size:16px}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Fira Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-.tooltip{position:absolute;padding:10px 14px;background:rgba(44,62,80,0.95);border:1px solid #34495e;border-radius:6px;font-size:13px;pointer-events:none;max-width:360px;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:none;z-index:10}
-.tooltip .hid{font-weight:bold;color:#3498db;font-size:15px}
-.tooltip .bebig{color:#e74c3c;font-size:16px;font-weight:bold}
+/* Header */
+header {
+  height: var(--header-h);
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  justify-content: space-between;
+  z-index: 100;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+.logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--primary); }
+.stats { display: flex; gap: 24px; font-size: 13px; color: var(--text-muted); }
+.stat-item b { color: var(--text); margin-right: 4px; }
 
-#legend{position:absolute;top:8px;right:12px;background:rgba(22,33,62,0.9);padding:8px 12px;border-radius:6px;font-size:11px;z-index:10}
-.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+/* Main Layout */
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#cy-wrapper {
+  flex: 0 0 55vh;
+  position: relative;
+  background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+  border-bottom: 1px solid var(--border);
+}
+#cy { width: 100%; height: 100%; }
+
+#bottom-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Tabs */
+.tabs-header {
+  display: flex;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  padding: 0 10px;
+}
+.tab-btn {
+  padding: 14px 24px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.tab-content { flex: 1; overflow: auto; display: none; padding: 20px; }
+.tab-content.active { display: block; }
+
+/* Table Styling */
+table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+th {
+  background: var(--panel-bg);
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--border);
+}
+td { padding: 10px 16px; border-bottom: 1px solid rgba(51, 65, 85, 0.5); }
+tr:hover { background: rgba(56, 189, 248, 0.05); }
+.be-val { font-family: 'Fira Code', monospace; }
+.diff-up { color: var(--success); }
+.diff-down { color: var(--danger); }
+
+/* Molecule Cards */
+.mol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.mol-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.mol-card:hover { transform: translateY(-4px); border-color: var(--primary); }
+.mol-canvas { width: 100%; height: 140px; margin-bottom: 12px; background: white; border-radius: 8px; }
+.mol-info { display: flex; flex-direction: column; gap: 4px; }
+.mol-be { font-size: 18px; font-weight: 700; color: var(--primary); font-family: 'Fira Code', monospace; }
+.mol-meta { font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between; }
+.badge {
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.badge-muted { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+
+/* Tooltip & Legends */
+.tooltip {
+  position: absolute;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+  z-index: 1000;
+  display: none;
+  max-width: 320px;
+}
+.tooltip h4 { color: var(--primary); margin-bottom: 4px; font-size: 14px; }
+.tooltip .be { font-size: 16px; font-weight: 700; color: var(--text); }
+
+#legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(4px);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  z-index: 10;
+}
+.legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  text-align: center;
+}
 </style>
 </head>
 <body>
-<div id="cy"></div>
-<div id="lower">
-  <div id="tabs">
-    <div class="tab active" data-tab="table">Session Compare</div>
-    <div class="tab" data-tab="mol">Molecules</div>
+
+<header>
+  <div class="logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+    EvoMap Pro
   </div>
-  <div id="table-wrap"><table id="session-table"></table></div>
-  <div id="mol-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a graph node to see molecule structures</div></div>
-</div>
-<div id="legend"></div>
-<div class="tooltip"></div>
+  <div class="stats" id="header-stats">
+    <!-- Filled by JS -->
+  </div>
+</header>
+
+<main>
+  <div id="cy-wrapper">
+    <div id="cy"></div>
+    <div id="legend"></div>
+  </div>
+
+  <div id="bottom-panel">
+    <div class="tabs-header">
+      <div class="tab-btn active" data-tab="compare">Evolution History</div>
+      <div class="tab-btn" data-tab="molecules">Molecule Gallery</div>
+    </div>
+    
+    <div id="compare" class="tab-content active">
+      <table id="session-table"></table>
+    </div>
+    
+    <div id="molecules" class="tab-content">
+      <div id="mol-detail-header" style="margin-bottom:16px; font-weight:600; color:var(--primary)">
+        Select a node to view molecules
+      </div>
+      <div class="mol-grid" id="mol-grid">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="tooltip" id="main-tooltip"></div>
 
 <script src="cytoscape.min.js"></script>
 <script>
 (function() {
-  var GRAPH = __GRAPH_PLACEHOLDER__;
-  var SESSIONS = __SESSIONS_PLACEHOLDER__;
+  const GRAPH = __GRAPH_PLACEHOLDER__;
+  const SESSIONS = __SESSIONS_PLACEHOLDER__;
 
   if (!GRAPH || GRAPH.length === 0) {
-    document.getElementById("cy").innerHTML =
-      '<div class="empty-state">No data yet<br><small>Run main.py, then rebuild with build_evomap.py</small></div>';
+    document.querySelector("main").innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:16px; opacity:0.5">
+          <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h3>No Data Available</h3>
+        <p>Run your evolution pipeline first, then rebuild this map.</p>
+      </div>`;
     return;
   }
 
-  var sessionColors = ["#3498db","#e67e22","#2ecc71","#9b59b6","#1abc9c","#f39c12"];
-  var sessionColorMap = {};
-  SESSIONS.forEach(function(s, i) {
-    sessionColorMap[s] = sessionColors[i % sessionColors.length];
-  });
+  // Header Stats
+  const nodesCount = GRAPH.filter(e => e.group === 'nodes').length;
+  const acceptedCount = GRAPH.filter(e => e.group === 'nodes' && e.data.success).length;
+  document.getElementById('header-stats').innerHTML = `
+    <div class="stat-item"><b>${nodesCount}</b> Nodes</div>
+    <div class="stat-item"><b>${acceptedCount}</b> Accepted</div>
+    <div class="stat-item"><b>${SESSIONS.length}</b> Iterations</div>
+  `;
 
-  var cy = cytoscape({
+  const cy = window.cy = cytoscape({
     container: document.getElementById("cy"),
     elements: GRAPH,
     style: [
       { selector: "node", style: {
         "label": "data(id)",
-        "color": "#ecf0f1",
-        "font-size": "11px",
-        "font-family": "monospace",
+        "color": "#fff",
+        "font-size": "10px",
+        "font-family": "Fira Code, monospace",
         "text-valign": "center",
         "text-halign": "center",
         "background-color": "data(bg)",
         "border-color": "data(border)",
-        "border-width": 2.5,
+        "border-width": 2,
         "width": "data(size)",
-        "height": "data(size)"
+        "height": "data(size)",
+        "transition-property": "background-color, border-color, width, height",
+        "transition-duration": "0.2s"
+      }},
+      { selector: "node:selected", style: {
+        "border-color": "#38bdf8",
+        "border-width": 4,
+        "width": 36,
+        "height": 36
       }},
       { selector: "edge", style: {
         "width": 2,
@@ -384,148 +578,185 @@ tr:nth-child(even){background:rgba(44,62,80,0.3)}
         "target-arrow-color": "data(ecolor)",
         "target-arrow-shape": "triangle",
         "curve-style": "bezier",
-        "line-style": "data(estyle)"
+        "line-style": "data(estyle)",
+        "opacity": 0.6
       }}
     ],
-    layout: { name: "breadthfirst", directed: true, spacingFactor: 1.3, avoidOverlap: true },
-    wheelSensitivity: 0.3,
-    maxZoom: 3,
-    minZoom: 0.3
+    layout: { 
+      name: "breadthfirst", 
+      directed: true, 
+      spacingFactor: 1.1, 
+      avoidOverlap: true,
+      padding: 50
+    },
+    wheelSensitivity: 0.2,
+    maxZoom: 2,
+    minZoom: 0.2
   });
 
-  // Tooltip
-  var tooltip = document.querySelector(".tooltip");
-  cy.on("mouseover", "node", function(evt) {
-    var d = evt.target.data();
+  // Tooltip Logic
+  const tooltip = document.getElementById("main-tooltip");
+  cy.on("mouseover", "node", (evt) => {
+    const d = evt.target.data();
     tooltip.style.display = "block";
-    tooltip.innerHTML =
-      '<div class="hid">' + d.id + '</div>' +
-      '<div>Best BE: <span class="bebig">' + (d.best_be != null ? d.best_be.toFixed(3) + " kcal/mol" : "N/A") + '</span></div>' +
-      '<div>Avg BE: ' + (d.avg_be != null ? d.avg_be.toFixed(3) + " kcal/mol" : "N/A") + '</div>' +
-      '<div>Session: ' + (d.run_id || "N/A") + '</div>' +
-      '<div style="margin-top:6px;color:#bdc3c7;font-size:11px;max-height:60px;overflow:hidden">' + (d.summary||"").substring(0,200) + '</div>';
-    tooltip.style.left = (evt.originalEvent.pageX + 12) + "px";
-    tooltip.style.top = (evt.originalEvent.pageY - 28) + "px";
+    tooltip.innerHTML = `
+      <h4>${d.id}</h4>
+      <div class="be">Best BE: ${d.best_be != null ? d.best_be.toFixed(3) : 'N/A'}</div>
+      <div style="font-size:11px; color:var(--text-muted); margin: 4px 0 8px">
+        Session: ${d.run_id}<br>
+        Status: ${d.success ? 'Accepted' : 'Rejected'}
+      </div>
+      <div style="font-size:11px; max-height:80px; overflow:hidden; border-top: 1px solid var(--border); padding-top:8px">
+        ${d.summary || 'No summary available.'}
+      </div>
+    `;
   });
-  cy.on("mouseout", "node", function() { tooltip.style.display = "none"; });
-
-  // Click node -> show molecules
-  cy.on("click", "node", function(evt) {
-    var d = evt.target.data();
-    showMolecules(d);
-    document.querySelector(".tab[data-tab='mol']").click();
+  
+  cy.on("mousemove", (evt) => {
+    if (tooltip.style.display === "block") {
+      tooltip.style.left = (evt.renderedPosition.x + 20) + "px";
+      tooltip.style.top = (evt.renderedPosition.y - 20) + "px";
+    }
   });
 
-  function showMolecules(data) {
-    var mols = data.molecules || [];
-    var panel = document.getElementById("mol-panel");
-    if (mols.length === 0) {
-      panel.innerHTML = '<div style="padding:12px;color:#7f8c8d">' + data.id + ': no molecule data</div>';
+  cy.on("mouseout", "node", () => { tooltip.style.display = "none"; });
+
+  // Click Interaction
+  cy.on("click", "node", (evt) => {
+    const d = evt.target.data();
+    updateMoleculeGallery(d);
+    switchTab('molecules');
+  });
+
+  function updateMoleculeGallery(nodeData) {
+    const grid = document.getElementById("mol-grid");
+    const header = document.getElementById("mol-detail-header");
+    header.innerText = `Molecules for ${nodeData.id} (${nodeData.run_id})`;
+    
+    if (!nodeData.molecules || nodeData.molecules.length === 0) {
+      grid.innerHTML = `<div class="empty-state" style="grid-column: 1/-1; padding:40px">No molecules found for this node.</div>`;
       return;
     }
-    var cards = '<div style="padding:4px 0;color:#bdc3c7;font-size:12px">' + data.id + '</div>';
-    mols.forEach(function(m) {
-      var isTriv = m.trivial;
-      cards += '<div class="mol-card">' +
-        '<div id="mol-' + m.smiles.replace(/[^a-zA-Z0-9]/g,'') + '" style="width:160px;height:100px;margin:0 auto"></div>' +
-        '<div class="be">BE: ' + (m.be != null ? m.be.toFixed(2) : "N/A") + '</div>' +
-        '<div class="qed">QED: ' + (m.qed != null ? m.qed.toFixed(2) : "N/A") + ' | Steps: ' + (m.syn_steps || "?") + '</div>' +
-        '<span class="route-badge ' + (isTriv?"trivial":"non-trivial") + '">' + (isTriv?"trivial":"valid route") + '</span>' +
-        '</div>';
-    });
-    panel.innerHTML = cards;
 
-    if (typeof initRDKit === "undefined") {
-      var s = document.createElement("script");
-      s.src = "https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js";
-      s.onload = function() { initRDKit().then(function() { renderMols(mols); }); };
-      document.head.appendChild(s);
+    grid.innerHTML = nodeData.molecules.map(m => `
+      <div class="mol-card">
+        <canvas class="mol-canvas" id="mol-${m.smiles.replace(/[^a-zA-Z0-9]/g,'')}"></canvas>
+        <div class="mol-info">
+          <div class="mol-be">${m.be != null ? m.be.toFixed(2) : 'N/A'} <span style="font-size:10px; font-weight:normal; color:var(--text-muted)">kcal/mol</span></div>
+          <div class="mol-meta">
+            <span>QED: ${m.qed != null ? m.qed.toFixed(2) : '?'}</span>
+            <span>Steps: ${m.syn_steps || '?'}</span>
+          </div>
+          <div style="margin-top:8px">
+            <span class="badge ${m.trivial ? 'badge-muted' : 'badge-success'}">
+              ${m.trivial ? 'Trivial' : 'Valid Route'}
+            </span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    renderMolsWithRDKit(nodeData.molecules);
+  }
+
+  function renderMolsWithRDKit(mols) {
+    if (window.RDKitModule) {
+      mols.forEach(m => {
+        const id = `mol-${m.smiles.replace(/[^a-zA-Z0-9]/g,'')}`;
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        try {
+          const mol = RDKitModule.get_mol(m.smiles);
+          mol.draw_to_canvas(canvas, canvas.width, canvas.height);
+          mol.delete();
+        } catch(e) { console.error("RDKit error", e); }
+      });
     } else {
-      initRDKit().then(function() { renderMols(mols); });
+      const s = document.createElement("script");
+      s.src = "https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js";
+      s.onload = () => {
+        window.initRDKit().then(module => {
+          window.RDKitModule = module;
+          renderMolsWithRDKit(mols);
+        });
+      };
+      document.head.appendChild(s);
     }
   }
-  function renderMols(mols) {
-    mols.forEach(function(m) {
-      var divId = "mol-" + m.smiles.replace(/[^a-zA-Z0-9]/g,"");
-      var el = document.getElementById(divId);
-      if (!el) return;
-      try {
-        var mol = RDKitModule.get_mol(m.smiles);
-        if (!mol) return;
-        mol.draw_to_canvas(el, 160, 100);
-        mol.delete();
-      } catch(e) {
-        el.innerHTML = '<span style="color:#e74c3c;font-size:10px">render error</span>';
-      }
+
+  // Tab Navigation
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tabId);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => {
+      c.classList.toggle('active', c.id === tabId);
     });
   }
 
-  // Tab switching
-  document.querySelectorAll(".tab").forEach(function(t) {
-    t.addEventListener("click", function() {
-      document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
-      t.classList.add("active");
-      var tab = t.dataset.tab;
-      document.getElementById("table-wrap").style.display = tab === "table" ? "block" : "none";
-      document.getElementById("mol-panel").style.display = tab === "mol" ? "block" : "none";
-    });
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Session comparison table
-  buildTable();
-
-  function buildTable() {
-    var hypoMap = {};
-    GRAPH.forEach(function(el) {
-      if (el.group !== "nodes") return;
-      var id = el.data.id;
-      if (id === "MOLCRAFT") return;
+  // Build History Table
+  (function buildTable() {
+    const hypoMap = {};
+    GRAPH.filter(e => e.group === 'nodes' && e.data.id !== 'MOLCRAFT').forEach(el => {
+      const id = el.data.id;
       if (!hypoMap[id]) hypoMap[id] = {};
-      hypoMap[id][el.data.run_id || "?"] = el.data;
+      hypoMap[id][el.data.run_id] = el.data;
     });
 
-    var hypoIds = Object.keys(hypoMap).sort();
+    const hypoIds = Object.keys(hypoMap).sort();
     if (hypoIds.length === 0) return;
 
-    var thead = "<tr><th>Hypothesis</th>";
-    SESSIONS.forEach(function(s) {
-      thead += '<th class="session-col">' + s.substring(5, 17) + '</th>';
+    let html = `<thead><tr><th>Hypothesis</th>`;
+    SESSIONS.forEach(s => {
+      html += `<th>${s.substring(5, 17)}</th>`;
     });
-    thead += "</tr>";
+    html += `</tr></thead><tbody>`;
 
-    var tbody = "";
-    hypoIds.forEach(function(hid) {
-      tbody += "<tr><td style='text-align:left;font-family:monospace'>" + hid + "</td>";
-      var prevBe = null;
-      SESSIONS.forEach(function(s) {
-        var d = hypoMap[hid][s];
+    hypoIds.forEach(hid => {
+      html += `<tr><td style="font-weight:600">${hid}</td>`;
+      let lastBe = null;
+      SESSIONS.forEach(s => {
+        const d = hypoMap[hid][s];
         if (d && d.best_be != null) {
-          var be = d.best_be;
-          var cls = "";
-          if (prevBe != null) {
-            cls = be < prevBe ? "be-up" : (be > prevBe ? "be-down" : "");
+          const be = d.best_be;
+          let diffCls = "";
+          if (lastBe !== null) {
+            diffCls = be < lastBe ? "diff-up" : (be > lastBe ? "diff-down" : "");
           }
-          var icon = d.success ? "&#x2714;" : "&#x2718;";
-          tbody += "<td class='" + cls + "'>" + icon + " " + be.toFixed(2) + "</td>";
-          prevBe = be;
+          const icon = d.success ? "✓" : "✗";
+          html += `<td class="be-val ${diffCls}">${icon} ${be.toFixed(2)}</td>`;
+          lastBe = be;
         } else {
-          tbody += "<td style='color:#555'>-</td>";
-          prevBe = null;
+          html += `<td style="color:var(--border)">-</td>`;
+          lastBe = null;
         }
       });
-      tbody += "</tr>";
+      html += `</tr>`;
     });
-
-    document.getElementById("session-table").innerHTML = thead + tbody;
-  }
+    html += `</tbody>`;
+    document.getElementById("session-table").innerHTML = html;
+  })();
 
   // Legend
-  var legendHtml = "";
-  SESSIONS.forEach(function(s, i) {
-    legendHtml += '<div><span class="legend-dot" style="background:' + sessionColors[i % sessionColors.length] + '"></span> ' + s.substring(5,17) + '</div>';
-  });
-  legendHtml += '<div style="margin-top:4px"><span class="legend-dot" style="background:#2ecc71"></span> Accepted</div>';
-  legendHtml += '<div><span class="legend-dot" style="background:#95a5a6"></span> Rejected</div>';
+  const sessionColors = ["#38bdf8", "#fbbf24", "#34d399", "#a78bfa", "#f472b6", "#fb923c"];
+  let legendHtml = SESSIONS.map((s, i) => `
+    <div class="legend-item">
+      <div class="dot" style="background:${sessionColors[i % sessionColors.length]}"></div>
+      ${s.substring(5, 17)}
+    </div>
+  `).join('');
+  legendHtml += `
+    <div class="legend-item" style="margin-top:8px">
+      <div class="dot" style="background:#22c55e"></div> Accepted
+    </div>
+    <div class="legend-item">
+      <div class="dot" style="background:#475569"></div> Rejected
+    </div>
+  `;
   document.getElementById("legend").innerHTML = legendHtml;
 
 })();
@@ -551,22 +782,24 @@ def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
             sessions_set.add(rid)
 
     sessions = sorted(sessions_set, reverse=True)
-    session_colors = ["#3498db", "#e67e22", "#2ecc71", "#9b59b6", "#1abc9c", "#f39c12"]
+    # Slate/Sky inspired palette
+    session_colors = ["#38bdf8", "#fbbf24", "#34d399", "#a78bfa", "#f472b6", "#fb923c"]
     session_color_map = {s: session_colors[i % len(session_colors)] for i, s in enumerate(sessions)}
 
     for n in tree:
         hid = n["hypothesis_id"]
         success = n.get("success", False)
         run_id = n.get("run_id", "unknown")
-        border = session_color_map.get(run_id, "#34495e")
-        bg = "#2ecc71" if success else "#95a5a6"
+        border = session_color_map.get(run_id, "#475569")
+        # Accepted nodes are green, others are slate
+        bg = "#22c55e" if success else "#475569"
 
         node = {
             "data": {
                 "id": hid,
                 "bg": bg,
                 "border": border,
-                "size": 14 if hid == "MOLCRAFT" else 12,
+                "size": 32 if hid == "MOLCRAFT" else 28,
                 "best_be": n.get("best_be"),
                 "avg_be": n.get("avg_be"),
                 "summary": n.get("summary", ""),
@@ -574,6 +807,7 @@ def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
                 "run_id": run_id,
                 "molecules": n.get("molecules", []),
             },
+            "group": "nodes"
         }
         elements.append(node)
 
@@ -581,12 +815,13 @@ def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
         if parent:
             edge = {
                 "data": {
-                    "id": parent + "_to_" + hid,
+                    "id": f"{parent}_to_{hid}",
                     "source": parent,
                     "target": hid,
-                    "ecolor": "#27ae60" if success else "#7f8c8d",
+                    "ecolor": "#22c55e" if success else "#475569",
                     "estyle": "solid" if success else "dashed",
-                }
+                },
+                "group": "edges"
             }
             elements.append(edge)
 
@@ -604,6 +839,7 @@ def _copy_cytoscape(output_path: Path) -> None:
     if src.exists() and src != dst:
         import shutil
         shutil.copy2(src, dst)
+
 
 
 

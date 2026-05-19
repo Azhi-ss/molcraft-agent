@@ -636,13 +636,166 @@ def _crossover_mol(mol1, mol2):
         return None
 
 
-def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None):
+def _brics_decompose_pool(smiles_list):
+    """对分子池做 BRICS 分解，收集唯一片段（H018）。
+
+    文献依据:
+    - JACS 2024: BRICS 16种可断裂键是分子碎片化的标准工具
+    - MOOSE-Chem (Yang et al., 2025): 片段重组是进化的核心操作
+
+    Args:
+        smiles_list: SMILES 字符串列表
+
+    Returns:
+        list[str]: 唯一的 BRICS 片段 SMILES（含 attachment point 标记如 [1*]）
+    """
+    all_frags = set()
+    for smi in smiles_list:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is None:
+            continue
+        try:
+            frags = BRICS.BRICSDecompose(mol)
+            for f in frags:
+                # 过滤掉太小或纯 attachment point 的片段
+                f_mol = Chem.MolFromSmiles(f)
+                if f_mol is None:
+                    continue
+                n_heavy = f_mol.GetNumHeavyAtoms()
+                if n_heavy >= 2:
+                    all_frags.add(f)
+        except Exception:
+            continue
+    return list(all_frags)
+
+
+def _brics_recombine(fragment_smiles_list, n_molecules, max_attempts=500):
+    """BRICS 片段重组生成新分子（H018）。
+
+    从 BRICS 片段库中随机采样 2-4 个片段，用 BRICS Build 组合成新分子。
+    这实现了真正的化学片段重组（fragment recombination），而非字符串拼接。
+
+    文献依据:
+    - MOOSE-Chem (Yang et al., 2025): 重组(recombination)算子是进化核心驱动力
+    - MolLEO (Wang et al., 2024b): 多进化算子组合比单一算子更有效
+    - JACS 2024: BRICS 分解→重组是 Fragment Replacement 标准方法
+
+    Args:
+        fragment_smiles_list: BRICS 片段 SMILES 列表（含 attachment points）
+        n_molecules: 目标生成分子数
+        max_attempts: 最大尝试次数
+
+    Returns:
+        list[str]: 生成的唯一有效 SMILES 列表
+    """
+    if len(fragment_smiles_list) < 2:
+        return []
+
+    # 预解析片段为 Mol 对象
+    frag_mols = []
+    for f_smi in fragment_smiles_list:
+        m = Chem.MolFromSmiles(f_smi)
+        if m is not None:
+            frag_mols.append(m)
+
+    if len(frag_mols) < 2:
+        return []
+
+    molecules = set()
+    attempts = 0
+
+    while len(molecules) < n_molecules and attempts < max_attempts:
+        attempts += 1
+
+        # 随机选 2-4 个片段
+        n_frags = random.randint(2, min(4, len(frag_mols)))
+        selected = random.sample(frag_mols, n_frags)
+
+        # BRICS Build 生成所有可能的组合
+        try:
+            built = BRICS.BRICSBuild(selected)
+        except Exception:
+            continue
+
+        # 取前几个有效分子（避免组合爆炸）
+        n_taken = 0
+        for bmol in built:
+            if bmol is None:
+                continue
+            if n_taken >= 3:
+                break
+            try:
+                Chem.SanitizeMol(bmol)
+                smi = Chem.MolToSmiles(bmol, canonical=True)
+                # 排除仅由单个小片段组成的分子（无实际重组）
+                if smi in molecules:
+                    continue
+                # 过滤无效 SMILES
+                check_mol = Chem.MolFromSmiles(smi)
+                if check_mol is None or check_mol.GetNumHeavyAtoms() < 8:
+                    continue
+                # 类药性质过滤
+                props = evaluate_molecule(smi)
+                if passes_filters(props):
+                    molecules.add(smi)
+                    n_taken += 1
+            except Exception:
+                continue
+
+    return list(molecules)
+
+
+def _build_fragment_db_from_scaffolds():
+    """从 SCAFFOLDS 库构建 BRICS 片段库（H018 回退方案）。
+
+    当没有对接成功的分子池时，从硬编码骨架库 BRICS 分解得到片段。
+
+    Returns:
+        list[str]: BRICS 片段 SMILES 列表
+    """
+    all_frags = set()
+    for s_smi in SCAFFOLDS:
+        mol = Chem.MolFromSmiles(s_smi)
+        if mol is None:
+            continue
+        try:
+            # 先变异增加多样性再分解
+            for _ in range(3):
+                mutated = _mutate_mol(mol)
+                if mutated is not None:
+                    try:
+                        Chem.SanitizeMol(mutated)
+                        frags = BRICS.BRICSDecompose(mutated)
+                        for f in frags:
+                            f_mol = Chem.MolFromSmiles(f)
+                            if f_mol and f_mol.GetNumHeavyAtoms() >= 2:
+                                all_frags.add(f)
+                    except Exception:
+                        pass
+        except Exception:
+            continue
+    return list(all_frags)
+
+
+def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
+                       fragment_pool=None):
     """生成候选药物分子。
 
     策略:
         - "mutate": 从种子骨架变异
-        - "combine": 用连接子组合骨架
+        - "combine": BRICS 片段重组（H018 修复：不再字符串拼接）
         - "random": 随机 SMILES 生成（非常基础）
+
+    H018 改进:
+        combine 策略从字符串拼接改为 BRICS 片段重组。
+        当提供 fragment_pool 时，从对接成功的分子池取片段（已验证化学型）；
+        否则从 SCAFFOLDS 库的变异产物中提取片段。
+
+    Args:
+        strategy: 生成策略
+        n_molecules: 目标分子数
+        scaffold: 可选种子骨架
+        fragment_pool: 可选的 SMILES 列表，用于 BRICS 分解（combine 策略使用）
     """
     molecules = set()
     attempts = 0
@@ -661,27 +814,30 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None):
                     molecules.add(new_smiles)
 
     elif strategy == "combine":
-        while len(molecules) < n_molecules and attempts < max_attempts:
-            attempts += 1
-            n_frag = random.randint(2, 3)
-            frags = random.sample(SCAFFOLDS, n_frag)
-            linkers = random.sample(LINKERS, n_frag - 1)
+        # H018 修复: 不再字符串拼接，使用 BRICS 片段重组
+        if fragment_pool and len(fragment_pool) >= 2:
+            # 从对接分子池提取 BRICS 片段 → 重组
+            frag_smiles = _brics_decompose_pool(fragment_pool)
+        else:
+            # 回退: 从 SCAFFOLDS 库构建片段库
+            frag_smiles = _build_fragment_db_from_scaffolds()
 
-            # 用连接子将片段拼接成 SMILES
-            parts = []
-            for i, frag in enumerate(frags):
-                parts.append(frag)
-                if i < len(linkers):
-                    parts.append(linkers[i])
-            combined = "".join(parts)
+        if len(frag_smiles) >= 2:
+            recombined = _brics_recombine(frag_smiles, n_molecules)
+            molecules.update(recombined)
 
-            mol = Chem.MolFromSmiles(combined)
-            if mol is not None:
-                smiles = Chem.MolToSmiles(mol, canonical=True)
-                if smiles not in molecules:
-                    props = evaluate_molecule(smiles)
+        # 如果 BRICS 重组产量不足，补充变异分子
+        if len(molecules) < n_molecules:
+            seeds = SCAFFOLDS if scaffold is None else [scaffold]
+            while len(molecules) < n_molecules and attempts < max_attempts:
+                attempts += 1
+                seed = random.choice(seeds)
+                n_mut = random.randint(1, 4)
+                new_smiles = random_mutate_smiles(seed, n_mut)
+                if new_smiles and new_smiles not in molecules:
+                    props = evaluate_molecule(new_smiles)
                     if passes_filters(props):
-                        molecules.add(smiles)
+                        molecules.add(new_smiles)
 
     elif strategy == "random":
         # 非常基础：随机组合片段
@@ -794,7 +950,7 @@ def generate_with_docking_guidance(
     strategy="mutate",
     scaffold=None,
 ):
-    """对接引导的分子生成（H002 + H011 多样性保持）。
+    """对接引导的分子生成（H002 + H011 多样性保持 + H018 BRICS 重组）。
 
     核心思想：将分子对接作为适应度函数，嵌入生成循环中。
     每批生成少量分子 → 对接评估 → 多样性保持选择 → 变异产生下一代。
@@ -802,6 +958,11 @@ def generate_with_docking_guidance(
 
     H011 改进：种子选择加入多样性保持（贪心 MMD 算法），
     避免纯结合能选择导致的过早收敛。
+
+    H018 改进：
+    - combine 策略使用 BRICS 片段重组（非字符串拼接）
+    - crossover 概率从 15% 提升到 25%（MOOSE-Chem: 重组是核心进化算子）
+    - 后续代加入 BRICS 片段重组变体（从当前种子池取片段重组）
 
     Args:
         docking_fn: 对接函数，接收 SMILES 字符串，返回 dict 包含 "binding_energy"
@@ -826,25 +987,41 @@ def generate_with_docking_guidance(
         max_attempts = batch_size * 30
 
         if gen == 0:
-            # 初始代：用传统策略生成
-            seeds = SCAFFOLDS if scaffold is None else [scaffold]
-            while len(batch_mols) < batch_size and attempts < max_attempts:
-                attempts += 1
-                seed = random.choice(seeds)
-                n_mut = random.randint(1, 4)
-                new_smiles = random_mutate_smiles(seed, n_mut)
-                if new_smiles and new_smiles not in {m["smiles"] for m in batch_mols}:
-                    props = evaluate_molecule(new_smiles)
-                    if passes_filters(props):
-                        batch_mols.append(props)
+            # 初始代：用指定策略生成
+            if strategy == "combine":
+                # H018: BRICS 片段重组 — 从 SCAFFOLDS 库构建片段库
+                frag_smiles = _build_fragment_db_from_scaffolds()
+                if len(frag_smiles) >= 2:
+                    recombined = _brics_recombine(frag_smiles, batch_size * 2)
+                    for smi in recombined:
+                        if smi not in {m["smiles"] for m in batch_mols}:
+                            props = evaluate_molecule(smi)
+                            if passes_filters(props):
+                                batch_mols.append(props)
+                                if len(batch_mols) >= batch_size:
+                                    break
+            
+            # 如果 combine 产量不足或非 combine 策略，用 mutate 补充
+            if len(batch_mols) < batch_size:
+                seeds = SCAFFOLDS if scaffold is None else [scaffold]
+                while len(batch_mols) < batch_size and attempts < max_attempts:
+                    attempts += 1
+                    seed = random.choice(seeds)
+                    n_mut = random.randint(1, 4)
+                    new_smiles = random_mutate_smiles(seed, n_mut)
+                    if new_smiles and new_smiles not in {m["smiles"] for m in batch_mols}:
+                        props = evaluate_molecule(new_smiles)
+                        if passes_filters(props):
+                            batch_mols.append(props)
         else:
-            # H013: 后续代：变异（85%）或 Crossover 重组（15%）
+            # H018: 后续代三种算子 — 变异（60%）/ Crossover（25%）/ BRICS 重组（15%）
             seed_smiles_list = [s["smiles"] for s in current_seeds]
             while len(batch_mols) < batch_size and attempts < max_attempts:
                 attempts += 1
+                rand_val = random.random()
 
-                if random.random() < 0.15 and len(seed_smiles_list) >= 2:
-                    # H013: Crossover — 双亲片段交换重组
+                if rand_val < 0.25 and len(seed_smiles_list) >= 2:
+                    # H013+H018: Crossover — 双亲片段交换重组（25%，原 15%）
                     s1, s2 = random.sample(seed_smiles_list, 2)
                     mol1 = Chem.MolFromSmiles(s1)
                     mol2 = Chem.MolFromSmiles(s2)
@@ -855,6 +1032,19 @@ def generate_with_docking_guidance(
                         else:
                             continue
                     else:
+                        continue
+                elif rand_val < 0.40 and len(seed_smiles_list) >= 3:
+                    # H018: BRICS 片段重组 — 从种子池取片段重新组合（15%）
+                    # 体现 MOOSE-Chem "recombination from population" 思想
+                    frag_smiles = _brics_decompose_pool(
+                        random.sample(seed_smiles_list, min(5, len(seed_smiles_list)))
+                    )
+                    if len(frag_smiles) >= 2:
+                        recombined = _brics_recombine(frag_smiles, 1)
+                        new_smiles = recombined[0] if recombined else None
+                    else:
+                        new_smiles = None
+                    if new_smiles is None:
                         continue
                 else:
                     seed_smiles = random.choice(seed_smiles_list)
