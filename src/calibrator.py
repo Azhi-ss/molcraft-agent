@@ -30,14 +30,15 @@ def fit_binding_score(points: list[dict], function: str = "clipped_linear") -> C
     # Default calibration
     default_params = {"threshold": 0.0, "range": 15.0}
 
+    _NO_FIT = float('inf')
+
     if not points:
-        return CalibrationResult(function=function, params=default_params, residuals=[], rms_error=0.0)
+        return CalibrationResult(function=function, params=default_params, residuals=[], rms_error=_NO_FIT)
 
     # Filter points where score is in [0, 1] — boundary points constrain threshold
     active = [(p["vina_raw"], p["actual_score"]) for p in points if 0 <= p["actual_score"] <= 1]
 
     if len(active) == 1:
-        # Single point: assume threshold=0, solve for range = (0 - vina) / score
         vina, score = active[0]
         if score > 0:
             range_ = (0.0 - vina) / score
@@ -46,12 +47,10 @@ def fit_binding_score(points: list[dict], function: str = "clipped_linear") -> C
         threshold = 0.0
         params = {"threshold": round(threshold, 6), "range": round(range_, 6)}
         residuals = []
-        rms_error = 0.0
-        return CalibrationResult(function=function, params=params, residuals=residuals, rms_error=rms_error)
+        return CalibrationResult(function=function, params=params, residuals=residuals, rms_error=_NO_FIT)
 
     if len(active) < 2:
-        # Fall back to defaults
-        return CalibrationResult(function=function, params=default_params, residuals=[], rms_error=0.0)
+        return CalibrationResult(function=function, params=default_params, residuals=[], rms_error=_NO_FIT)
 
     # Least-squares fit: vina = a + b * score
     n = len(active)
@@ -159,15 +158,19 @@ def calibrate_from_submission(
     Returns:
         Updated calibration dict suitable for save_calibration()
     """
-    # Build (vina_raw, actual_score) points from vina_scores
+    # Build (vina_raw, actual_score) points — skip molecules missing from any dict
+    common_smiles = set(vina_scores) & set(actual_scores)
     vina_points = [
-        {"vina_raw": v, "actual_score": actual_scores.get(smiles, 0.0)}
-        for smiles, v in vina_scores.items()
+        {"vina_raw": vina_scores[s], "actual_score": actual_scores[s]}
+        for s in common_smiles
     ]
+    sa_common = set(vina_scores) & set(sa_raws) & set(actual_scores)
     sa_points = [
-        {"sa_raw": sa_raws.get(smiles, 10.0), "actual_score": actual_scores.get(smiles, 0.0)}
-        for smiles in vina_scores
+        {"sa_raw": sa_raws[s], "actual_score": actual_scores[s]}
+        for s in sa_common
     ]
+    if not vina_points and not sa_points:
+        return load_calibration()  # no data to calibrate from
 
     binding_result = fit_binding_score(vina_points)
     sa_result = fit_sa_score(sa_points)
