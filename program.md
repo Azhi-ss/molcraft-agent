@@ -17,6 +17,12 @@
    - `papers/autonomous_agents_survey.md` — 自主科研Agent综述
    - `papers/coscientist.md` — Coscientist经典案例
 5. `agent.yaml` 配置正确
+6. 检查 `docs/knowledge_base.md` 是否存在：
+   - 若**不存在** → 这是首次运行，进入完整的文献解析流程（阶段一）
+   - 若**已存在** → 跳过论文全文阅读，读取 `docs/knowledge_base.md` 作为策略起点。仅在以下情况才回原文查找：
+     - 当前瓶颈在策略库中无匹配方案
+     - 连续两个假设失败后触发强制恢复（见第 5 节）
+     - 需要核对某条策略的原始文献出处
 
 确认无误后，**不要等待人类指令**，直接进入科研流程。
 
@@ -28,9 +34,11 @@
 
 **目标**：从参考论文中提取可落地的架构设计思路，形成本项目的"知识库"。
 
+**关键规则：第一次运行必须完整解析论文并持久化到 `docs/knowledge_base.md`。后续轮次直接读取策略库，除非陷入瓶颈。**
+
 ### 操作步骤
 
-1. **读取综述论文**：
+1. **读取综述论文（仅首次运行）**：
    ```
    identify_target()               # 必须先调用：识别靶点蛋白，验证对接坐标
    ReadFile: papers/autonomous_agents_survey.md
@@ -45,15 +53,23 @@
    - 哪些架构可以直接改进 `src/synthesis_v2.py`？（如LARC的Agent-as-a-Judge）
    - 哪些架构可以改进整体Agent workflow？（如ChemAgents的分层Manager+Specialist）
 
-3. **输出文献分析报告**：
+3. **输出文献分析报告 + 策略库（必须）**：
    ```
    WriteFile: docs/literature_analysis_round_X.md
+   WriteFile: docs/knowledge_base.md       ← 必须！后续轮次的策略中心
    ```
-   报告应包含：
+   文献分析报告应包含：
    - 论文核心方法摘要（3-5个关键案例）
    - 每个方法的技术要点
    - 与本项目现有代码的映射关系
    - 按「影响大+易实现」排序的改进机会列表
+
+   **`knowledge_base.md` 格式要求**：
+   - 每条策略：标题 + 来源论文 + 技术要点 + 适用场景 + 已尝试/未尝试标记
+   - Agent 每轮验证后更新标记（VERIFIED / REJECTED / PENDING）
+   - 后续轮次直接读此文件，不必重读论文全文
+
+**非首次运行时**：跳过步骤 1-2，读取 `docs/knowledge_base.md` 作为策略起点，直接进入阶段二诊断。
 
 ---
 
@@ -288,8 +304,12 @@ REJECTED = []    # 被证伪的假设
 
 WHILE ROUND <= 3:
     
-    IF ROUND == 1 或 literature_analysis 过期:
-        → 阶段一：文献解析（可选重读，深化理解）
+    IF ROUND == 1 且 knowledge_base.md 不存在:
+        → 阶段一：完整文献解析 + 输出 knowledge_base.md
+    ELSE IF 陷入困境且策略库无匹配:
+        → 回原文查找特定章节（不是重读全文）
+    ELSE:
+        → 读取 knowledge_base.md，直接进入阶段二
     
     IF 没有待验证假设 或 上一假设已得出结论:
         → 阶段二：瓶颈诊断与假设提出
@@ -366,10 +386,14 @@ WHILE ROUND <= 3:
 
 ## 8. 如果陷入困境
 
-如果连续两轮没有有效进展：
-1. 重新阅读 `papers/autonomous_agents_survey.md`，换一个章节深入分析
-2. 阅读 `papers/coscientist.md`，从经典案例中找灵感
-3. 用 `SearchWeb` 搜索该瓶颈的最新解决方案
+如果连续两轮没有有效进展，按以下顺序尝试：
+
+1. 重读 `docs/knowledge_base.md`，检查是否有被忽略的策略
+2. 用 `SearchWeb` 搜索该瓶颈的最新解决方案
+3. 若策略库无匹配方案，回原文查找：
+   - 阅读 `papers/autonomous_agents_survey.md` 中之前忽略的章节
+   - 阅读 `papers/coscientist.md`，从经典案例中找灵感
 4. 尝试换一个完全不同的瓶颈方向（如从"逆合成"转向"分子生成"）
+5. 将新发现更新到 `docs/knowledge_base.md`，避免下次重复查找
 
 记住：**科学研究就是不断试错的过程。一个被拒绝的假设同样有价值——它排除了一个错误方向。**
