@@ -284,177 +284,173 @@ def build_tree(
     return iter_entries
 
 
-# ── HTML generation ──────────────────────────────────────────────────────────
+# -- HTML generation --
 
+# Cytoscape.js + comparison table template.
+# Two placeholders: __GRAPH_PLACEHOLDER__ (Cytoscape elements JSON)
+# and __SESSIONS_PLACEHOLDER__ (session comparison table data)
 
 HTML_TEMPLATE = r'''<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Molecular Evolution Map --- MolCraft Agent</title>
+<title>Molecular Evolution Map -- MolCraft Agent</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#eee;overflow:hidden;height:100vh}
-#tree-container{width:100%;height:100%;position:relative}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#1a1a2e;color:#eee;height:100vh;display:flex;flex-direction:column}
+#cy{flex:0 0 60vh;background:#1a1a2e;border-bottom:2px solid #34495e}
+#lower{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#tabs{display:flex;background:#16213e;border-bottom:1px solid #34495e}
+.tab{padding:8px 18px;cursor:pointer;font-size:13px;color:#7f8c8d;border-bottom:2px solid transparent}
+.tab.active{color:#3498db;border-bottom-color:#3498db}
+#table-wrap{flex:1;overflow:auto;padding:8px 12px}
+#mol-panel{flex:1;overflow-x:auto;overflow-y:hidden;white-space:nowrap;padding:12px 16px;display:none}
+#mol-panel .mol-card{display:inline-block;width:180px;margin-right:12px;background:#243447;border-radius:6px;padding:8px;text-align:center;vertical-align:top}
+.mol-card .be{color:#e74c3c;font-weight:bold}
+.mol-card .qed{color:#bdc3c7;font-size:11px}
+.mol-card .route-badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-top:4px}
+.mol-card .route-badge.trivial{background:#7f8c8d;color:#fff}
+.mol-card .route-badge.non-trivial{background:#27ae60;color:#fff}
 
-.node circle{stroke-width:2px}
-.node.success circle{fill:#2ecc71;stroke:#27ae60}
-.node.failure circle{fill:#95a5a6;stroke:#7f8c8d}
-.node text{font-size:12px;fill:#ecf0f1;font-family:monospace}
-.node .be-label{font-size:10px;fill:#bdc3c7}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{padding:6px 10px;border:1px solid #2c3e50;text-align:center;white-space:nowrap}
+th{background:#16213e;position:sticky;top:0;z-index:1}
+tr:nth-child(even){background:rgba(44,62,80,0.3)}
+.session-col{color:#7f8c8d;font-size:10px}
+.be-up{color:#2ecc71}
+.be-down{color:#e74c3c}
+.empty-state{text-align:center;padding:40px;color:#7f8c8d;font-size:16px}
 
-.link{fill:none;stroke-width:2px}
-.link.success{stroke:#27ae60}
-.link.failure{stroke:#7f8c8d;stroke-dasharray:6,4}
-
-.tooltip{
-  position:absolute;padding:10px 14px;background:rgba(44,62,80,0.95);
-  border:1px solid #34495e;border-radius:6px;font-size:13px;
-  pointer-events:none;max-width:360px;line-height:1.5;
-  box-shadow:0 4px 12px rgba(0,0,0,0.4)
-}
+.tooltip{position:absolute;padding:10px 14px;background:rgba(44,62,80,0.95);border:1px solid #34495e;border-radius:6px;font-size:13px;pointer-events:none;max-width:360px;line-height:1.5;box-shadow:0 4px 12px rgba(0,0,0,0.4);display:none;z-index:10}
 .tooltip .hid{font-weight:bold;color:#3498db;font-size:15px}
 .tooltip .bebig{color:#e74c3c;font-size:16px;font-weight:bold}
 
-#detail-panel{
-  position:absolute;bottom:0;left:0;right:0;height:200px;
-  background:rgba(30,39,56,0.97);border-top:1px solid #34495e;
-  overflow-x:auto;overflow-y:hidden;white-space:nowrap;
-  padding:12px 16px;display:none
-}
-#detail-panel .mol-card{
-  display:inline-block;width:180px;margin-right:12px;
-  background:#243447;border-radius:6px;padding:8px;
-  text-align:center;vertical-align:top
-}
-.mol-card .be{color:#e74c3c;font-weight:bold}
-.mol-card .qed{color:#bdc3c7;font-size:11px}
-.mol-card .route-badge{
-  display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;margin-top:4px
-}
-.mol-card .route-badge.trivial{background:#7f8c8d;color:#fff}
-.mol-card .route-badge.non-trivial{background:#27ae60;color:#fff}
-.empty-state{text-align:center;padding:40px;color:#7f8c8d;font-size:16px}
+#legend{position:absolute;top:8px;right:12px;background:rgba(22,33,62,0.9);padding:8px 12px;border-radius:6px;font-size:11px;z-index:10}
+.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
 </style>
 </head>
 <body>
-<div id="tree-container">
-  <svg width="100%" height="100%"></svg>
-  <div class="tooltip" style="display:none"></div>
+<div id="cy"></div>
+<div id="lower">
+  <div id="tabs">
+    <div class="tab active" data-tab="table">Session Compare</div>
+    <div class="tab" data-tab="mol">Molecules</div>
+  </div>
+  <div id="table-wrap"><table id="session-table"></table></div>
+  <div id="mol-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a graph node to see molecule structures</div></div>
 </div>
-<div id="detail-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a node to see molecule details</div></div>
+<div id="legend"></div>
+<div class="tooltip"></div>
 
-<script src="d3.v7.min.js"></script>
+<script src="cytoscape.min.js"></script>
 <script>
-  const DATA = __DATA_PLACEHOLDER__;
+(function() {
+  var GRAPH = __GRAPH_PLACEHOLDER__;
+  var SESSIONS = __SESSIONS_PLACEHOLDER__;
 
-  if (!DATA || DATA.length === 0) {
-    document.getElementById("tree-container").innerHTML =
-      '<div class="empty-state">No evolution data yet<br><small>Run main.py first, then rebuild with build_evomap.py</small></div>';
-  } else {
-
-  const svg = d3.select("#tree-container svg");
-  svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
-  const tooltip = d3.select(".tooltip");
-  const detailPanel = d3.select("#detail-panel");
-  const margin = {top:40, right:120, bottom:40, left:160};
-
-  const rootData = DATA.find(d => d.parent === null) || DATA[0];
-  const stratify = d3.stratify()
-    .id(d => d.hypothesis_id)
-    .parentId(d => d.parent);
-  const root = stratify(DATA);
-  root.each(d => { d._children = d.children; });
-
-  const width = window.innerWidth;
-  const height = window.innerHeight - 200;
-  const treeLayout = d3.tree()
-    .size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
-  treeLayout(root);
-
-  const g = svg.append("g").attr("transform",`translate(${margin.left},${margin.top})`);
-
-  // Edges
-  g.selectAll(".link")
-    .data(root.links())
-    .join("path")
-    .attr("class", d => `link ${d.target.data.success ? "success" : "failure"}`)
-    .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x))
-    .append("title")
-    .text(d => `best BE: ${d.target.data.best_be != null ? d.target.data.best_be.toFixed(2) : "N/A"}`);
-
-  // Nodes
-  const node = g.selectAll(".node")
-    .data(root.descendants())
-    .join("g")
-    .attr("class", d => `node ${d.data.success ? "success" : "failure"}`)
-    .attr("transform", d => `translate(${d.y},${d.x})`)
-    .on("mouseover", (event, d) => {
-      const dd = d.data;
-      tooltip.style("display","block")
-        .html(`<div class="hid">${dd.hypothesis_id}</div>
-               <div>Best BE: <span class="bebig">${dd.best_be != null ? dd.best_be.toFixed(3) + " kcal/mol" : "N/A"}</span></div>
-               <div>Avg BE: ${dd.avg_be != null ? dd.avg_be.toFixed(3) + " kcal/mol" : "N/A"}</div>
-               <div>Mols: ${dd.molecule_count || "N/A"} | Trivial: ${dd.trivial_count}</div>
-               <div style="margin-top:6px;color:#bdc3c7;font-size:11px;max-height:60px;overflow:hidden">${(dd.summary||"").substring(0,200)}</div>`);
-    })
-    .on("mousemove", (event) => {
-      tooltip.style("left",(event.pageX+12)+"px").style("top",(event.pageY-28)+"px");
-    })
-    .on("mouseout", () => tooltip.style("display","none"))
-    .on("click", (event, d) => showMolecules(d.data));
-
-  node.append("circle")
-    .attr("r", d => d.data.hypothesis_id === "BASELINE" ? 8 : 6);
-
-  node.append("text")
-    .attr("dy", -12)
-    .attr("text-anchor","middle")
-    .text(d => d.data.hypothesis_id);
-
-  node.filter(d => d.data.best_be != null).append("text")
-    .attr("dy", 20)
-    .attr("text-anchor","middle")
-    .attr("class","be-label")
-    .text(d => d.data.best_be.toFixed(1));
-
-  function showMolecules(data) {
-    const mols = data.molecules || [];
-    if (mols.length === 0) {
-      detailPanel.style("display","block")
-        .html(`<div style="padding:12px;color:#7f8c8d">${data.hypothesis_id}: no molecule data saved</div>`);
-      return;
-    }
-    let cards = `<div style="padding:4px 0 4px 12px;color:#bdc3c7;font-size:12px">${data.hypothesis_id} --- ${(data.summary||"").substring(0,120)}</div>`;
-    mols.forEach(m => {
-      const isTriv = m.trivial;
-      cards += `<div class="mol-card">
-        <div id="mol-${m.smiles.replace(/[^a-zA-Z0-9]/g,'')}" style="width:160px;height:100px;margin:0 auto"></div>
-        <div class="be">BE: ${m.be != null ? m.be.toFixed(2) : "N/A"}</div>
-        <div class="qed">QED: ${m.qed != null ? m.qed.toFixed(2) : "N/A"} | Steps: ${m.syn_steps || "?"}</div>
-        <span class="route-badge ${isTriv?'trivial':'non-trivial'}">${isTriv?'trivial':'valid route'}</span>
-      </div>`;
-    });
-    detailPanel.style("display","block").html(cards);
-
-    if (typeof initRDKit === "undefined") {
-      const s = document.createElement("script");
-      s.src = "https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js";
-      s.onload = () => initRDKit().then(() => renderMols(mols));
-      document.head.appendChild(s);
-    } else {
-      initRDKit().then(() => renderMols(mols));
-    }
+  if (!GRAPH || GRAPH.length === 0) {
+    document.getElementById("cy").innerHTML =
+      '<div class="empty-state">No data yet<br><small>Run main.py, then rebuild with build_evomap.py</small></div>';
+    return;
   }
 
+  var sessionColors = ["#3498db","#e67e22","#2ecc71","#9b59b6","#1abc9c","#f39c12"];
+  var sessionColorMap = {};
+  SESSIONS.forEach(function(s, i) {
+    sessionColorMap[s] = sessionColors[i % sessionColors.length];
+  });
+
+  var cy = cytoscape({
+    container: document.getElementById("cy"),
+    elements: GRAPH,
+    style: [
+      { selector: "node", style: {
+        "label": "data(id)",
+        "color": "#ecf0f1",
+        "font-size": "11px",
+        "font-family": "monospace",
+        "text-valign": "center",
+        "text-halign": "center",
+        "background-color": "data(bg)",
+        "border-color": "data(border)",
+        "border-width": 2.5,
+        "width": "data(size)",
+        "height": "data(size)"
+      }},
+      { selector: "edge", style: {
+        "width": 2,
+        "line-color": "data(ecolor)",
+        "target-arrow-color": "data(ecolor)",
+        "target-arrow-shape": "triangle",
+        "curve-style": "bezier",
+        "line-style": "data(estyle)"
+      }}
+    ],
+    layout: { name: "breadthfirst", directed: true, spacingFactor: 1.3, avoidOverlap: true },
+    wheelSensitivity: 0.3,
+    maxZoom: 3,
+    minZoom: 0.3
+  });
+
+  // Tooltip
+  var tooltip = document.querySelector(".tooltip");
+  cy.on("mouseover", "node", function(evt) {
+    var d = evt.target.data();
+    tooltip.style.display = "block";
+    tooltip.innerHTML =
+      '<div class="hid">' + d.id + '</div>' +
+      '<div>Best BE: <span class="bebig">' + (d.best_be != null ? d.best_be.toFixed(3) + " kcal/mol" : "N/A") + '</span></div>' +
+      '<div>Avg BE: ' + (d.avg_be != null ? d.avg_be.toFixed(3) + " kcal/mol" : "N/A") + '</div>' +
+      '<div>Session: ' + (d.run_id || "N/A") + '</div>' +
+      '<div style="margin-top:6px;color:#bdc3c7;font-size:11px;max-height:60px;overflow:hidden">' + (d.summary||"").substring(0,200) + '</div>';
+    tooltip.style.left = (evt.originalEvent.pageX + 12) + "px";
+    tooltip.style.top = (evt.originalEvent.pageY - 28) + "px";
+  });
+  cy.on("mouseout", "node", function() { tooltip.style.display = "none"; });
+
+  // Click node -> show molecules
+  cy.on("click", "node", function(evt) {
+    var d = evt.target.data();
+    showMolecules(d);
+    document.querySelector(".tab[data-tab='mol']").click();
+  });
+
+  function showMolecules(data) {
+    var mols = data.molecules || [];
+    var panel = document.getElementById("mol-panel");
+    if (mols.length === 0) {
+      panel.innerHTML = '<div style="padding:12px;color:#7f8c8d">' + data.id + ': no molecule data</div>';
+      return;
+    }
+    var cards = '<div style="padding:4px 0;color:#bdc3c7;font-size:12px">' + data.id + '</div>';
+    mols.forEach(function(m) {
+      var isTriv = m.trivial;
+      cards += '<div class="mol-card">' +
+        '<div id="mol-' + m.smiles.replace(/[^a-zA-Z0-9]/g,'') + '" style="width:160px;height:100px;margin:0 auto"></div>' +
+        '<div class="be">BE: ' + (m.be != null ? m.be.toFixed(2) : "N/A") + '</div>' +
+        '<div class="qed">QED: ' + (m.qed != null ? m.qed.toFixed(2) : "N/A") + ' | Steps: ' + (m.syn_steps || "?") + '</div>' +
+        '<span class="route-badge ' + (isTriv?"trivial":"non-trivial") + '">' + (isTriv?"trivial":"valid route") + '</span>' +
+        '</div>';
+    });
+    panel.innerHTML = cards;
+
+    if (typeof initRDKit === "undefined") {
+      var s = document.createElement("script");
+      s.src = "https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js";
+      s.onload = function() { initRDKit().then(function() { renderMols(mols); }); };
+      document.head.appendChild(s);
+    } else {
+      initRDKit().then(function() { renderMols(mols); });
+    }
+  }
   function renderMols(mols) {
-    mols.forEach(m => {
-      const divId = "mol-" + m.smiles.replace(/[^a-zA-Z0-9]/g,'');
-      const el = document.getElementById(divId);
+    mols.forEach(function(m) {
+      var divId = "mol-" + m.smiles.replace(/[^a-zA-Z0-9]/g,"");
+      var el = document.getElementById(divId);
       if (!el) return;
       try {
-        const mol = RDKitModule.get_mol(m.smiles);
+        var mol = RDKitModule.get_mol(m.smiles);
         if (!mol) return;
         mol.draw_to_canvas(el, 160, 100);
         mol.delete();
@@ -464,10 +460,75 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     });
   }
 
-  window.addEventListener("resize", () => {
-    svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+  // Tab switching
+  document.querySelectorAll(".tab").forEach(function(t) {
+    t.addEventListener("click", function() {
+      document.querySelectorAll(".tab").forEach(function(x) { x.classList.remove("active"); });
+      t.classList.add("active");
+      var tab = t.dataset.tab;
+      document.getElementById("table-wrap").style.display = tab === "table" ? "block" : "none";
+      document.getElementById("mol-panel").style.display = tab === "mol" ? "block" : "none";
+    });
   });
+
+  // Session comparison table
+  buildTable();
+
+  function buildTable() {
+    var hypoMap = {};
+    GRAPH.forEach(function(el) {
+      if (el.group !== "nodes") return;
+      var id = el.data.id;
+      if (id === "MOLCRAFT") return;
+      if (!hypoMap[id]) hypoMap[id] = {};
+      hypoMap[id][el.data.run_id || "?"] = el.data;
+    });
+
+    var hypoIds = Object.keys(hypoMap).sort();
+    if (hypoIds.length === 0) return;
+
+    var thead = "<tr><th>Hypothesis</th>";
+    SESSIONS.forEach(function(s) {
+      thead += '<th class="session-col">' + s.substring(5, 17) + '</th>';
+    });
+    thead += "</tr>";
+
+    var tbody = "";
+    hypoIds.forEach(function(hid) {
+      tbody += "<tr><td style='text-align:left;font-family:monospace'>" + hid + "</td>";
+      var prevBe = null;
+      SESSIONS.forEach(function(s) {
+        var d = hypoMap[hid][s];
+        if (d && d.best_be != null) {
+          var be = d.best_be;
+          var cls = "";
+          if (prevBe != null) {
+            cls = be < prevBe ? "be-up" : (be > prevBe ? "be-down" : "");
+          }
+          var icon = d.success ? "&#x2714;" : "&#x2718;";
+          tbody += "<td class='" + cls + "'>" + icon + " " + be.toFixed(2) + "</td>";
+          prevBe = be;
+        } else {
+          tbody += "<td style='color:#555'>-</td>";
+          prevBe = null;
+        }
+      });
+      tbody += "</tr>";
+    });
+
+    document.getElementById("session-table").innerHTML = thead + tbody;
   }
+
+  // Legend
+  var legendHtml = "";
+  SESSIONS.forEach(function(s, i) {
+    legendHtml += '<div><span class="legend-dot" style="background:' + sessionColors[i % sessionColors.length] + '"></span> ' + s.substring(5,17) + '</div>';
+  });
+  legendHtml += '<div style="margin-top:4px"><span class="legend-dot" style="background:#2ecc71"></span> Accepted</div>';
+  legendHtml += '<div><span class="legend-dot" style="background:#95a5a6"></span> Rejected</div>';
+  document.getElementById("legend").innerHTML = legendHtml;
+
+})();
 </script>
 </body>
 </html>
@@ -475,32 +536,76 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 
 
 def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
-    """Embed tree data as JSON into the HTML template and write to output_path."""
-    data_json = json.dumps(
-        [{
-            "hypothesis_id": node["hypothesis_id"],
-            "round": node["round"],
-            "success": node["success"],
-            "parent": node["parent"],
-            "best_be": node.get("best_be"),
-            "avg_be": node.get("avg_be"),
-            "trivial_count": node.get("trivial_count", 0),
-            "molecule_count": node.get("molecule_count", 0),
-            "summary": node.get("summary", ""),
-            "molecules": node.get("molecules", []),
-        } for node in tree],
-        ensure_ascii=False,
-        allow_nan=False,
-    )
-    html = HTML_TEMPLATE.replace("__DATA_PLACEHOLDER__", data_json)
-    output_path.write_text(html, encoding="utf-8")
+    """Convert tree data to Cytoscape graph elements + session table, write HTML."""
+    if not tree:
+        html = HTML_TEMPLATE.replace("__GRAPH_PLACEHOLDER__", "[]").replace("__SESSIONS_PLACEHOLDER__", "[]")
+        output_path.write_text(html, encoding="utf-8")
+        _copy_cytoscape(output_path)
+        return
 
-    # Copy D3.js alongside the HTML for offline local loading
-    _d3_src = Path(__file__).resolve().parent.parent / "output" / "d3.v7.min.js"
-    _d3_dst = output_path.parent / "d3.v7.min.js"
-    if _d3_src.exists() and _d3_src != _d3_dst:
+    elements: list[dict] = []
+    sessions_set: set[str] = set()
+    for n in tree:
+        rid = n.get("run_id", "")
+        if rid:
+            sessions_set.add(rid)
+
+    sessions = sorted(sessions_set, reverse=True)
+    session_colors = ["#3498db", "#e67e22", "#2ecc71", "#9b59b6", "#1abc9c", "#f39c12"]
+    session_color_map = {s: session_colors[i % len(session_colors)] for i, s in enumerate(sessions)}
+
+    for n in tree:
+        hid = n["hypothesis_id"]
+        success = n.get("success", False)
+        run_id = n.get("run_id", "unknown")
+        border = session_color_map.get(run_id, "#34495e")
+        bg = "#2ecc71" if success else "#95a5a6"
+
+        node = {
+            "data": {
+                "id": hid,
+                "bg": bg,
+                "border": border,
+                "size": 14 if hid == "MOLCRAFT" else 12,
+                "best_be": n.get("best_be"),
+                "avg_be": n.get("avg_be"),
+                "summary": n.get("summary", ""),
+                "success": success,
+                "run_id": run_id,
+                "molecules": n.get("molecules", []),
+            },
+        }
+        elements.append(node)
+
+        parent = n.get("parent")
+        if parent:
+            edge = {
+                "data": {
+                    "id": parent + "_to_" + hid,
+                    "source": parent,
+                    "target": hid,
+                    "ecolor": "#27ae60" if success else "#7f8c8d",
+                    "estyle": "solid" if success else "dashed",
+                }
+            }
+            elements.append(edge)
+
+    graph_json = json.dumps(elements, ensure_ascii=False, allow_nan=False)
+    sessions_json = json.dumps(list(sessions), ensure_ascii=False) if sessions else "[]"
+    html = HTML_TEMPLATE.replace("__GRAPH_PLACEHOLDER__", graph_json).replace("__SESSIONS_PLACEHOLDER__", sessions_json)
+    output_path.write_text(html, encoding="utf-8")
+    _copy_cytoscape(output_path)
+
+
+def _copy_cytoscape(output_path: Path) -> None:
+    """Copy Cytoscape.js to output dir for local loading."""
+    src = Path(__file__).resolve().parent.parent / "output" / "cytoscape.min.js"
+    dst = output_path.parent / "cytoscape.min.js"
+    if src.exists() and src != dst:
         import shutil
-        shutil.copy2(_d3_src, _d3_dst)
+        shutil.copy2(src, dst)
+
+
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────

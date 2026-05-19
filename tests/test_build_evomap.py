@@ -145,7 +145,7 @@ def test_generate_html_writes_valid_file():
     html = out.read_text()
     assert "<!DOCTYPE html>" in html
     assert "BASELINE" in html
-    assert "d3.v7.min.js" in html
+    assert "cytoscape.min.js" in html
     assert "RDKit" in html or "rdkit" in html
     assert "c1ccccc1" in html
     out.unlink()
