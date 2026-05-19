@@ -228,6 +228,18 @@ async def main() -> None:
         default=1000,
         help="每轮最大步数。默认 1000 步。",
     )
+    parser.add_argument(
+        "--thinking",
+        action="store_true",
+        default=True,
+        help="启用 DeepSeek reasoning 模式（默认开启）。",
+    )
+    parser.add_argument(
+        "--no-thinking",
+        action="store_false",
+        dest="thinking",
+        help="禁用 DeepSeek reasoning 模式。",
+    )
     args = parser.parse_args()
 
     # 记录本次运行开始时间，用于检测新生成的产物
@@ -287,7 +299,7 @@ async def main() -> None:
             config=llm_config,
             agent_file=AGENT_YAML,
             yolo=True,
-            thinking=False,
+            thinking=args.thinking,
             max_steps_per_turn=args.max_steps,
             model=llm_model_key,
         ):
