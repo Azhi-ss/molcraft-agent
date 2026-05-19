@@ -165,6 +165,31 @@ Agent 读取 src/ 全部代码，对比文献找差距，提出具体、可验�
 | 合成路线经济性 | 低 | 步骤多少，是否简洁 |
 | Agent 自主能力 | 高 | 读论文、诊断、改代码、迭代的能力 |
 
+### 赛事评分细则（FAQ 摘要）
+
+**分子评分（占比 0.7）**
+- 0.8 × binding_score（AutoDock Vina）
+- 0.1 × validity_score（结构是否“明显不合理”，0 或 1）
+- 0.1 × sa_score（SAScore > 4 记 0；< 4 越低越好）
+
+**合成路线评分（占比 0.3）**
+- 0.55 × route_validity_score（路线内分子是否合理）
+- 0.30 × starting_material_availability_score（起始原料数据库命中，否则用 SAScore 兜底）
+- 0.05 × step_penalty_score（步骤越多分数越低）
+- 0.05 × convergence_score（中间体汇合奖励）
+- 0.05 × balance_score（反应平衡，产物原子需由反应物覆盖）
+
+**硬性归零规则**
+1) 若 validity_score = 0，则分子整体得分归零。
+2) 若路线最终产物不是设计分子，路线得分归零。
+3) 若 balance_score = 0，路线得分归零。
+
+**Q：为什么 route_validity_score = 1.0 但 route_score = 0？**
+A：route_validity_score 只保证路线中分子合法，仍可能因以下原因被判 0：
+- 最终产物不是设计分子
+- 任一步产物出现反应物中不存在的元素（凭空出现）
+- 任一步产物与反应物相同（A → A）
+
 Agent 能力评分依据有 6 项：result.log 里的时间戳和步骤记录；docs/literature_analysis_round_X.md 是否读了论文并提取有价值方法；docs/diagnosis_round_X.md 的假设是否具体、可验证、有文献支撑；docs/code_evolution_round_X.md 的代码修改是否精准、有注释、保留接口；docs/experiment_round_X.md 的实验设计是否严谨、对比是否清晰、决策是否合理；docs/iteration_log.jsonl 的完整结构化实验历史。
 
 ---
