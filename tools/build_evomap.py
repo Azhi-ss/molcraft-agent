@@ -233,6 +233,7 @@ def build_tree(
             entry["molecule_count"] = len(mr["molecules"])
             entry["run_id"] = mr.get("run_id", "unknown")
 
+    # Assign parentage BEFORE run_id propagation
     last_accepted: dict[int, str] = {}
     for entry in iter_entries:
         rn = entry["round"]
@@ -245,22 +246,19 @@ def build_tree(
         if entry["success"]:
             last_accepted[rn] = entry["hypothesis_id"]
 
-    # Unique IDs: d3.stratify requires unique ids.
-    id_counts: dict[str, int] = {}
-    for e in iter_entries:
-        hid = e["hypothesis_id"]
-        id_counts[hid] = id_counts.get(hid, 0) + 1
-    id_counter: dict[str, int] = {}
-    for e in iter_entries:
-        hid = e["hypothesis_id"]
-        if id_counts[hid] > 1:
-            id_counter[hid] = id_counter.get(hid, 0) + 1
-            new_id = f"{hid}.{id_counter[hid]}"
-            # Update parent refs that pointed to this (original) id
-            for other in iter_entries:
-                if other.get("parent") == hid:
-                    other["parent"] = new_id
-            e["hypothesis_id"] = new_id
+    # Propagate run_id up parent chain AFTER parentage is assigned
+    id_to_entry = {e["hypothesis_id"]: e for e in iter_entries}
+    for entry in iter_entries:
+        rid = entry.get("run_id", "unknown")
+        if rid == "unknown":
+            continue
+        cur = entry
+        while cur.get("parent") and cur["parent"] in id_to_entry:
+            parent = id_to_entry[cur["parent"]]
+            if parent.get("run_id", "unknown") != "unknown":
+                break
+            parent["run_id"] = rid
+            cur = parent
 
     # Ensure single root for D3 tree: nodes with parent=null → virtual root
     root_count = sum(1 for e in iter_entries if e["parent"] is None)
