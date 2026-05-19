@@ -364,14 +364,52 @@ def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict
     # Use route_validity_flags directly (True = non-trivial = valid route)
     route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
 
-    # Use placeholders for convergence and balance
+    # Compute balance scores from actual route atom counts
+    balance_scores = []
+    for row in rows:
+        mol_smiles = row.get("mol_smiles", "").strip()
+        route = row.get("route", "").strip()
+        if ">>" not in route or _is_trivial_route(route, mol_smiles):
+            balance_scores.append(0.0)
+            continue
+        step_scores = []
+        for step in route.split("|"):
+            step = step.strip()
+            if ">>" not in step:
+                continue
+            left, right = step.split(">>", 1)
+            reactants = [r.strip() for r in left.split(".") if r.strip()]
+            products = [p.strip() for p in right.split(".") if p.strip()]
+            r_heavy = 0
+            p_heavy = 0
+            for r in reactants:
+                m = Chem.MolFromSmiles(r)
+                if m:
+                    r_heavy += m.GetNumHeavyAtoms()
+            for p in products:
+                m = Chem.MolFromSmiles(p)
+                if m:
+                    p_heavy += m.GetNumHeavyAtoms()
+            step_scores.append(compute_balance_score(r_heavy, p_heavy))
+        if step_scores:
+            balance_scores.append(sum(step_scores) / len(step_scores))
+        else:
+            balance_scores.append(0.0)
+    avg_balance = sum(balance_scores) / len(balance_scores) if balance_scores else 0.0
+
+    # Route validity: non-trivial AND all steps have non-zero balance
+    for i, row in enumerate(rows):
+        if balance_scores[i] == 0.0 and route_validity_flags[i]:
+            route_validity_flags[i] = False
+    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+
+    # Use placeholder for convergence (route convergence not easy to compute)
     convergence = 1.0
-    balance = 0.9
 
     # Compute sub-scores
     mol_score = compute_mol_score(avg_binding, avg_validity, avg_sa)
     route_score = compute_route_score(
-        route_validity, avg_sm_avail, avg_step_penalty, convergence, balance
+        route_validity, avg_sm_avail, avg_step_penalty, convergence, avg_balance
     )
     total_score = compute_total_score(mol_score, route_score)
 
