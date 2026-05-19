@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "binding_score": {
+    "function": "clipped_linear",
+    "params": {
+      "threshold": 0.0,
+      "range": 48.59
+    }
+  },
+  "sa_score": {
+    "function": "inverted",
+    "params": {
+      "max_sa": 10.0,
+      "scale": 10.0
+    }
+  }
+}

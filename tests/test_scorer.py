@@ -41,46 +41,51 @@ class TestValidityScore:
 class TestSAScoreNormalized:
     """Test SA score normalization."""
 
-    def test_sa_above_cutoff(self):
-        """SA >= cutoff returns 0.0."""
-        assert compute_sa_score_normalized(5.0) == 0.0
-        assert compute_sa_score_normalized(4.0) == 0.0
+    STEP_CAL = {"sa_score": {"function": "step", "params": {"cutoff": 4.0, "scale": 4.0}}}
+    INVERTED_CAL = {"sa_score": {"function": "inverted", "params": {"max_sa": 10.0, "scale": 10.0}}}
 
-    def test_sa_at_cutoff(self):
-        """SA at cutoff returns 0.0."""
-        assert compute_sa_score_normalized(4.0) == 0.0
+    def test_sa_above_cutoff_step(self):
+        """Step: SA >= cutoff returns 0.0."""
+        assert compute_sa_score_normalized(5.0, self.STEP_CAL) == 0.0
+        assert compute_sa_score_normalized(4.0, self.STEP_CAL) == 0.0
 
-    def test_sa_midpoint(self):
-        """SA at midpoint (2.0) returns 0.5."""
-        assert compute_sa_score_normalized(2.0) == 0.5
+    def test_sa_at_cutoff_step(self):
+        """Step: SA at cutoff returns 0.0."""
+        assert compute_sa_score_normalized(4.0, self.STEP_CAL) == 0.0
 
-    def test_sa_zero(self):
-        """SA = 0 returns 1.0."""
-        assert compute_sa_score_normalized(0.0) == 1.0
+    def test_sa_midpoint_step(self):
+        """Step: SA at midpoint (2.0) returns 0.5."""
+        assert compute_sa_score_normalized(2.0, self.STEP_CAL) == 0.5
+
+    def test_sa_zero_step(self):
+        """Step: SA = 0 returns 1.0."""
+        assert compute_sa_score_normalized(0.0, self.STEP_CAL) == 1.0
 
     def test_sa_negative_clamped(self):
         """SA < 0 is clamped to 1.0."""
-        assert compute_sa_score_normalized(-1.0) == 1.0
+        assert compute_sa_score_normalized(-1.0, self.STEP_CAL) == 1.0
 
 
 class TestBindingScore:
     """Test binding score (Vina) normalization."""
 
+    DEFAULT_CAL = {"binding_score": {"function": "clipped_linear", "params": {"threshold": 0.0, "range": 15.0}}}
+
     def test_vina_negative_nine(self):
         """vina=-9, threshold=0, range=15: (0-(-9))/15 = 0.6."""
-        assert compute_binding_score(-9.0) == 0.6
+        assert compute_binding_score(-9.0, self.DEFAULT_CAL) == 0.6
 
     def test_vina_zero(self):
         """vina=0 returns 0.0."""
-        assert compute_binding_score(0.0) == 0.0
+        assert compute_binding_score(0.0, self.DEFAULT_CAL) == 0.0
 
     def test_vina_minus_fifteen(self):
         """vina=-15: (0-(-15))/15 = 1.0."""
-        assert compute_binding_score(-15.0) == 1.0
+        assert compute_binding_score(-15.0, self.DEFAULT_CAL) == 1.0
 
     def test_vina_positive_clamped(self):
         """vina > threshold is clamped to 0.0."""
-        assert compute_binding_score(5.0) == 0.0
+        assert compute_binding_score(5.0, self.DEFAULT_CAL) == 0.0
 
 
 class TestRouteValidityScore:

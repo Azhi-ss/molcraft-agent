@@ -87,28 +87,32 @@ def compute_validity_score(smiles: str) -> float:
 
 
 def compute_sa_score_normalized(sa_raw: float, cal: dict = None) -> float:
-    """Normalize SA score using step function.
+    """Normalize SA score to 0-1 (lower SA = higher score).
 
-    Args:
-        sa_raw: Raw SA score (0-10, lower=better).
-        cal: Optional calibration dict. Defaults to loaded calibration.
-
-    Returns:
-        Normalized score: 0.0 if sa_raw >= cutoff, else (cutoff - sa_raw) / scale,
-        clamped to [0, 1].
+    Supports:
+    - step: SA >= cutoff → 0, else (cutoff - sa) / scale
+    - inverted: (max_sa - sa) / scale
     """
     if cal is None:
         cal = load_calibration()
 
     sa_cal = cal.get("sa_score", DEFAULT_CALIBRATION["sa_score"])
-    params = sa_cal.get("params", sa_cal)  # support both nested and flat
-    cutoff = params.get("cutoff", 4.0)
-    scale = params.get("scale", 4.0)
+    func = sa_cal.get("function", "step")
+    params = sa_cal.get("params", sa_cal)
 
-    if sa_raw >= cutoff:
-        return 0.0
+    if func == "step":
+        cutoff = params.get("cutoff", 4.0)
+        scale = params.get("scale", 4.0)
+        if sa_raw >= cutoff:
+            return 0.0
+        score = (cutoff - sa_raw) / scale
+    elif func == "inverted":
+        max_sa = params.get("max_sa", 10.0)
+        scale = params.get("scale", 10.0)
+        score = (max_sa - sa_raw) / scale
+    else:
+        raise ValueError(f"Unknown sa_score function: {func}")
 
-    score = (cutoff - sa_raw) / scale
     return max(0.0, min(1.0, score))
 
 
