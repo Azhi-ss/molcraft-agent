@@ -40,6 +40,7 @@ def parse_iteration_log(path: Path) -> list[dict[str, Any]]:
                 "success": obj.get("success", False),
                 "summary": obj.get("summary", ""),
                 "timestamp": obj.get("timestamp", ""),
+                "run_id": obj.get("run_id", "unknown"),
                 "best_be": None,
                 "avg_be": None,
                 "trivial_count": 0,
@@ -712,7 +713,7 @@ tr:hover { background: rgba(56, 189, 248, 0.05); }
 
     let html = `<thead><tr><th>Hypothesis</th>`;
     SESSIONS.forEach(s => {
-      html += `<th>${s.substring(5, 17)}</th>`;
+      html += `<th>${s.substring(0, 15)}</th>`;
     });
     html += `</tr></thead><tbody>`;
 
@@ -746,7 +747,7 @@ tr:hover { background: rgba(56, 189, 248, 0.05); }
   let legendHtml = SESSIONS.map((s, i) => `
     <div class="legend-item">
       <div class="dot" style="background:${sessionColors[i % sessionColors.length]}"></div>
-      ${s.substring(5, 17)}
+      ${s.substring(0, 15)}
     </div>
   `).join('');
   legendHtml += `

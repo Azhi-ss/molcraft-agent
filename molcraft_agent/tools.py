@@ -499,6 +499,7 @@ class ReportIteration(CallableTool2):
         try:
             record = {
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                "run_id": os.environ.get("MOLCRAFT_RUN_ID", "unknown"),
                 "round": params.round_num,
                 "hypothesis_id": params.hypothesis_id,
                 "success": params.success,
