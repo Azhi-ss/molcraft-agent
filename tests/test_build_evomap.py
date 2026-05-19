@@ -159,3 +159,33 @@ def test_generate_html_empty_tree():
     html = out.read_text()
     assert "<!DOCTYPE html>" in html
     out.unlink()
+
+
+# --- Task 4: Integration test ---
+
+
+def test_end_to_end_with_real_files():
+    """Build evomap from actual project data. Skips if sources missing."""
+    from tools.build_evomap import parse_iteration_log, parse_result_log, build_tree, generate_html
+
+    project_root = Path(__file__).parent.parent
+    iter_log = project_root / "docs" / "iteration_log.jsonl"
+    result_log = project_root / "output" / "result.log"
+
+    if not iter_log.exists():
+        pytest.skip("iteration_log.jsonl not found")
+
+    entries = parse_iteration_log(iter_log)
+    assert len(entries) >= 1
+
+    runs = parse_result_log(result_log) if result_log.exists() else []
+    tree = build_tree(entries, runs)
+    assert len(tree) >= 1
+    assert tree[0]["hypothesis_id"] is not None
+
+    with tempfile.TemporaryDirectory() as td:
+        out = Path(td) / "evomap.html"
+        generate_html(tree, out)
+        assert out.exists()
+        html = out.read_text()
+        assert "H015" in html or "BASELINE" in html

@@ -170,6 +170,30 @@ def build_tree(
         else:
             entry["best_be"] = _extract_best_be(entry["summary"])
 
+    # Fallback: assign unmatched runs to entries lacking molecule data
+    all_consumed = sum(run_consumed.values())
+    all_available = sum(len(v) for v in run_by_round.values())
+    if all_consumed < all_available:
+        unmatched = []
+        for rn, lst in run_by_round.items():
+            used = run_consumed.get(rn, 0)
+            unmatched.extend(lst[used:])
+        unmatched.sort(key=lambda r: r.get("start_ts", ""))
+        entries_need = [e for e in iter_entries if not e["molecules"]]
+        entries_need.reverse()
+        for i, run in enumerate(unmatched):
+            if i >= len(entries_need):
+                break
+            entry = entries_need[i]
+            m = run.get("metrics", {})
+            entry["best_be"] = m.get("min_binding_energy") or entry.get("best_be") or _extract_best_be(entry["summary"])
+            entry["avg_be"] = m.get("avg_binding_energy") or entry.get("avg_be")
+            entry["trivial_count"] = m.get("trivial_count", 0)
+            entry["molecule_count"] = m.get("molecule_count", 0)
+            mols = sorted(run.get("molecules", []),
+                         key=lambda x: x.get("be") or 999)
+            entry["molecules"] = mols[:5]
+
     last_accepted: dict[int, str] = {}
     for entry in iter_entries:
         rn = entry["round"]
@@ -396,3 +420,65 @@ def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
     )
     html = HTML_TEMPLATE.replace("__DATA_PLACEHOLDER__", data_json)
     output_path.write_text(html, encoding="utf-8")
+
+
+# ── CLI ──────────────────────────────────────────────────────────────────────
+
+
+def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Build Molecular Evolution Map HTML"
+    )
+    parser.add_argument(
+        "--iteration-log", type=Path, default=Path("docs/iteration_log.jsonl"),
+        help="Path to iteration_log.jsonl",
+    )
+    parser.add_argument(
+        "--result-log", type=Path, default=Path("output/result.log"),
+        help="Path to result.log",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=Path("output/evomap.html"),
+        help="Output HTML path",
+    )
+    args = parser.parse_args()
+
+    project_root = Path(__file__).resolve().parent.parent
+    iter_log = args.iteration_log if args.iteration_log.is_absolute() else project_root / args.iteration_log
+    result_log = args.result_log if args.result_log.is_absolute() else project_root / args.result_log
+    output_path = args.output if args.output.is_absolute() else project_root / args.output
+
+    if not iter_log.exists():
+        print(f"iteration_log not found: {iter_log}")
+        raise SystemExit(1)
+
+    print(f"Reading iteration log: {iter_log}")
+    iter_entries = parse_iteration_log(iter_log)
+    print(f"  {len(iter_entries)} entries")
+
+    runs: list[dict[str, Any]] = []
+    if result_log.exists():
+        print(f"Reading result log: {result_log}")
+        runs = parse_result_log(result_log)
+        print(f"  {len(runs)} pipeline runs")
+    else:
+        print("result.log not found, tree nodes will lack molecule details")
+
+    print("Building tree...")
+    tree = build_tree(iter_entries, runs)
+
+    print(f"Generating HTML: {output_path}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    generate_html(tree, output_path)
+
+    n_success = sum(1 for n in tree if n["success"])
+    n_fail = sum(1 for n in tree if not n["success"])
+    print(f"\nDone! Open in browser: {output_path}")
+    print(f"  Nodes: {len(tree)}")
+    print(f"  Accepted: {n_success} | Rejected: {n_fail}")
+
+
+if __name__ == "__main__":
+    main()
