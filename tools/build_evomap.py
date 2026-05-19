@@ -107,3 +107,79 @@ def parse_result_log(path: Path) -> list[dict[str, Any]]:
         runs.append(current_run)
 
     return runs
+
+
+# ── Tree construction ────────────────────────────────────────────────────────
+
+
+def _extract_best_be(summary: str) -> float | None:
+    """Extract best binding energy from summary text.
+
+    Finds all negative floats in BE-adjacent contexts and returns
+    the most negative (best) value.
+    """
+    # Collect candidates from kcal/mol contexts and all negative floats
+    candidates: list[float] = []
+
+    # Floats directly followed by "kcal/mol"
+    for v in re.findall(r'([-]?\d+\.\d+)\s*kcal/mol', summary):
+        candidates.append(float(v))
+
+    # All negative floats (BE is always negative for Vina)
+    if not candidates:
+        for v in re.findall(r'-(\d+\.\d+)', summary):
+            candidates.append(-float(v))
+
+    if candidates:
+        return min(candidates)
+    return None
+
+
+def build_tree(
+    iter_entries: list[dict[str, Any]],
+    runs: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge iteration log entries with run metrics and assign parentage.
+
+    Matching: runs aligned to iter entries by round number + chronological order.
+    Parentage: each entry's parent is the most recent ACCEPTED hypothesis before it.
+    Root entries have parent=None.
+    """
+    run_by_round: dict[int, list[dict[str, Any]]] = {}
+    for run in runs:
+        rn = run["round"]
+        run_by_round.setdefault(rn, []).append(run)
+
+    run_consumed: dict[int, int] = {}
+
+    for entry in iter_entries:
+        rn = entry["round"]
+        candidates = run_by_round.get(rn, [])
+        idx = run_consumed.get(rn, 0)
+        if idx < len(candidates):
+            run = candidates[idx]
+            run_consumed[rn] = idx + 1
+            m = run.get("metrics", {})
+            entry["best_be"] = m.get("min_binding_energy") or _extract_best_be(entry["summary"])
+            entry["avg_be"] = m.get("avg_binding_energy")
+            entry["trivial_count"] = m.get("trivial_count", 0)
+            entry["molecule_count"] = m.get("molecule_count", 0)
+            mols = sorted(run.get("molecules", []),
+                         key=lambda x: x.get("be") or 999)
+            entry["molecules"] = mols[:5]
+        else:
+            entry["best_be"] = _extract_best_be(entry["summary"])
+
+    last_accepted: dict[int, str] = {}
+    for entry in iter_entries:
+        rn = entry["round"]
+        parent = None
+        for pr in sorted(last_accepted.keys(), reverse=True):
+            if pr < rn or (pr == rn and last_accepted[pr] != entry["hypothesis_id"]):
+                parent = last_accepted[pr]
+                break
+        entry["parent"] = parent
+        if entry["success"]:
+            last_accepted[rn] = entry["hypothesis_id"]
+
+    return iter_entries

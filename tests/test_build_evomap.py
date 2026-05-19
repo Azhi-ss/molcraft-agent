@@ -62,3 +62,61 @@ def test_parse_result_log_filters_non_events():
     runs = parse_result_log(tmp)
     assert len(runs) == 1
     tmp.unlink()
+
+
+# --- Task 2: Tree construction tests ---
+
+
+def test_merge_builds_tree():
+    from tools.build_evomap import build_tree
+
+    iter_entries = [
+        {"round": 1, "hypothesis_id": "BASELINE", "success": True,
+         "summary": "base", "timestamp": "2026-05-17T10:00:00",
+         "best_be": None, "avg_be": None, "trivial_count": 0, "molecule_count": 0, "molecules": []},
+        {"round": 1, "hypothesis_id": "H001", "success": True,
+         "summary": "first hypothesis", "timestamp": "2026-05-17T11:00:00",
+         "best_be": None, "avg_be": None, "trivial_count": 0, "molecule_count": 0, "molecules": []},
+        {"round": 2, "hypothesis_id": "H002", "success": False,
+         "summary": "failed one", "timestamp": "2026-05-17T12:00:00",
+         "best_be": None, "avg_be": None, "trivial_count": 0, "molecule_count": 0, "molecules": []},
+    ]
+    runs = [
+        {"round": 1, "start_ts": "2026-05-17T10:00:00",
+         "metrics": {"min_binding_energy": -8.56, "avg_binding_energy": -8.06,
+                     "molecule_count": 10, "trivial_count": 0, "trivial_ratio": 0.0},
+         "molecules": [
+             {"smiles": "c1ccccc1", "be": -8.56, "qed": 0.8, "trivial": False, "syn_steps": 1}
+         ]},
+    ]
+
+    tree = build_tree(iter_entries, runs)
+    assert len(tree) == 3
+    assert tree[0]["best_be"] == -8.56
+    assert tree[0]["avg_be"] == -8.06
+    assert len(tree[0]["molecules"]) == 1
+    assert tree[1]["best_be"] is None  # no matching run
+    assert tree[0]["parent"] is None   # root
+    assert tree[1]["parent"] == "BASELINE"
+    assert tree[2]["parent"] == "H001"
+
+
+def test_merge_no_result_log():
+    from tools.build_evomap import build_tree
+
+    iter_entries = [
+        {"round": 1, "hypothesis_id": "BASELINE", "success": True,
+         "summary": "base", "timestamp": "2026-05-17T10:00:00",
+         "best_be": None, "avg_be": None, "trivial_count": 0, "molecule_count": 0, "molecules": []},
+    ]
+    tree = build_tree(iter_entries, [])
+    assert len(tree) == 1
+    assert tree[0]["best_be"] is None
+
+
+def test_extract_best_be_from_summary():
+    from tools.build_evomap import _extract_best_be
+    assert _extract_best_be("最佳结合能从 -8.335 提升至 -9.941") == -9.941
+    assert _extract_best_be("best BE -8.56 kcal/mol") == -8.56
+    assert _extract_best_be("no energy here") is None
+    assert _extract_best_be("") is None
