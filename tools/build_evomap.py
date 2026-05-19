@@ -328,9 +328,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 <div id="detail-panel"><div style="padding:8px;color:#bdc3c7;font-size:12px">Click a node to see molecule details</div></div>
 
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="d3.v7.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded",() => {
   const DATA = __DATA_PLACEHOLDER__;
 
   if (!DATA || DATA.length === 0) {
@@ -340,6 +339,7 @@ document.addEventListener("DOMContentLoaded",() => {
   }
 
   const svg = d3.select("#tree-container svg");
+  svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
   const tooltip = d3.select(".tooltip");
   const detailPanel = d3.select("#detail-panel");
   const margin = {top:40, right:120, bottom:40, left:160};
@@ -451,7 +451,6 @@ document.addEventListener("DOMContentLoaded",() => {
   window.addEventListener("resize", () => {
     svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
   });
-});
 </script>
 </body>
 </html>
@@ -478,6 +477,13 @@ def generate_html(tree: list[dict[str, Any]], output_path: Path) -> None:
     )
     html = HTML_TEMPLATE.replace("__DATA_PLACEHOLDER__", data_json)
     output_path.write_text(html, encoding="utf-8")
+
+    # Copy D3.js alongside the HTML for offline local loading
+    _d3_src = Path(__file__).resolve().parent.parent / "output" / "d3.v7.min.js"
+    _d3_dst = output_path.parent / "d3.v7.min.js"
+    if _d3_src.exists() and _d3_src != _d3_dst:
+        import shutil
+        shutil.copy2(_d3_src, _d3_dst)
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
