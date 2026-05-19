@@ -243,6 +243,23 @@ def build_tree(
         if entry["success"]:
             last_accepted[rn] = entry["hypothesis_id"]
 
+    # Unique IDs: d3.stratify requires unique ids.
+    id_counts: dict[str, int] = {}
+    for e in iter_entries:
+        hid = e["hypothesis_id"]
+        id_counts[hid] = id_counts.get(hid, 0) + 1
+    id_counter: dict[str, int] = {}
+    for e in iter_entries:
+        hid = e["hypothesis_id"]
+        if id_counts[hid] > 1:
+            id_counter[hid] = id_counter.get(hid, 0) + 1
+            new_id = f"{hid}.{id_counter[hid]}"
+            # Update parent refs that pointed to this (original) id
+            for other in iter_entries:
+                if other.get("parent") == hid:
+                    other["parent"] = new_id
+            e["hypothesis_id"] = new_id
+
     # Ensure single root for D3 tree: nodes with parent=null → virtual root
     root_count = sum(1 for e in iter_entries if e["parent"] is None)
     if root_count > 1:
