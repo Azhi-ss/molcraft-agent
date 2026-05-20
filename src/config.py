@@ -81,5 +81,13 @@ MAX_TPSA = 140
 MIN_QED = 0.3
 
 # ==========================================
+# 扩散模型配置（PocketXMol）
+# ==========================================
+DIFFUSION_API_URL = os.getenv("DIFFUSION_API_URL", "")
+DIFFUSION_ENABLED = bool(DIFFUSION_API_URL)
+DIFFUSION_TIMEOUT = int(os.getenv("DIFFUSION_TIMEOUT", "1800"))  # 30 min
+DIFFUSION_DEFAULT_N = int(os.getenv("DIFFUSION_DEFAULT_N", "20"))
+
+# ==========================================
 # 合成规划配置
 # ==========================================

@@ -33,6 +33,7 @@ from docking import batch_dock
 from synthesis_v2 import plan_synthesis_v2
 from evaluator import evaluate_molecule
 from receptor import prepare_receptor
+from src import config as _config
 from molcraft_agent.experiments import (
     append_experiment,
     get_latest_round,

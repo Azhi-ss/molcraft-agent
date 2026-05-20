@@ -92,13 +92,18 @@ def estimate_sa_score(mol):
 
 
 def passes_filters(props: dict, min_qed=0.3, max_mw=500, min_mw=150, max_logp=5.0,
-                   max_sa=6.0, max_rings=7):
+                   max_sa=7.0, max_rings=9):
     """检查分子是否通过基础类药性质过滤。
 
     H001 改进：
     - SA score 阈值从 8.0 收紧至 6.0
     - 新增 max_rings=7 环数上限
     - 文献依据：Deep Lead Optimization (JACS, 2024)
+
+    H027 改进：
+    - max_rings 7→9, max_sa 6.0→7.0
+    - 基于 Round 18-19 实验验证：Vina 评分偏向疏水芳香体系，
+      更宽松的过滤器允许更大的π体系通过（MW仍<500约束）
 
     """
     if not props.get("valid"):
