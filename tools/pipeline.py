@@ -52,6 +52,7 @@ def run_evolutionary_pipeline(
     n_offspring_per_seed=3,
     output_dir="output",
     use_docking_guidance=True,
+    generator="mutate",
     logger=None,  # Optional EventLogger instance
 ):
     """运行进化式迭代药物研发流程。
@@ -64,6 +65,7 @@ def run_evolutionary_pipeline(
         n_offspring_per_seed: 每个种子产生的变异体数量
         output_dir: 输出目录
         use_docking_guidance: 是否使用 H002 对接引导生成
+        generator: 生成器选择 - "mutate"(RDKit), "diffusion"(PocketXMol), "hybrid"(混合)
         logger: 可选的 EventLogger 实例，用于结构化日志输出
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -73,7 +75,7 @@ def run_evolutionary_pipeline(
     log("MolCraft Agent 进化迭代版开始执行", log_lines)
     log(f"配置: n_generate={n_generate}, n_generations={n_generations}, "
         f"n_offspring={n_offspring_per_seed}, strategy={strategy}, "
-        f"docking_guidance={use_docking_guidance}", log_lines)
+        f"docking_guidance={use_docking_guidance}, generator={generator}", log_lines)
     log("=" * 60, log_lines)
 
     # 步骤 1: 准备受体
@@ -92,7 +94,24 @@ def run_evolutionary_pipeline(
 
         if gen == 0:
             # 初始代
-            if use_docking_guidance:
+            if generator in ("diffusion", "hybrid"):
+                diffusion_mols = _generate_diffusion(n_generate, log_lines)
+                if diffusion_mols:
+                    log(f"扩散模型生成了 {len(diffusion_mols)} 个分子", log_lines)
+                else:
+                    log("扩散模型生成失败或不可用", log_lines)
+
+                if generator == "diffusion":
+                    mols = diffusion_mols if diffusion_mols else generate_molecules(
+                        strategy=strategy, n_molecules=n_generate,
+                    )
+                else:  # hybrid
+                    n_diffusion = len(diffusion_mols) if diffusion_mols else 0
+                    n_rdkit = max(n_generate - n_diffusion, n_generate // 2)
+                    rdkit_mols = generate_molecules(strategy=strategy, n_molecules=n_rdkit)
+                    mols = (diffusion_mols or []) + rdkit_mols
+                    log(f"混合模式: 扩散 {n_diffusion} + RDKit {len(rdkit_mols)}", log_lines)
+            elif use_docking_guidance:
                 # H002: 使用对接引导生成
                 log(f"初始代: 使用对接引导生成 (batch_size=10, n_generations=3)", log_lines)
                 mols = generate_with_docking_guidance(
@@ -321,6 +340,77 @@ def run_evolutionary_pipeline(
     return results
 
 
+def _generate_diffusion(n_molecules, log_lines):
+    """调用 PocketXMol 扩散模型 HTTP API 生成口袋感知分子。
+
+    Returns:
+        list[dict] | None: 生成的分子列表（格式与 generate_molecules 兼容），失败返回 None
+    """
+    import urllib.request
+    import urllib.error
+    from src import config as _config
+
+    api_url = _config.DIFFUSION_API_URL
+    if not api_url:
+        log("DIFFUSION_API_URL 未配置，跳过扩散模型生成", log_lines)
+        return None
+
+    try:
+        pdb_path = _config.TARGET_PDB
+        if not os.path.exists(pdb_path):
+            log(f"PDB 文件不存在: {pdb_path}", log_lines)
+            return None
+        pdb_content = open(pdb_path).read()
+
+        request_body = json.dumps({
+            "pdb_content": pdb_content,
+            "n_molecules": n_molecules,
+            "pocket_center": _config.DOCKING_CENTER,
+            "pocket_radius": max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0,
+        }, ensure_ascii=False).encode("utf-8")
+
+        url = f"{api_url.rstrip('/')}/generate"
+        req = urllib.request.Request(
+            url, data=request_body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+
+        log(f"调用扩散模型 API: {url} (n={n_molecules})", log_lines)
+        with urllib.request.urlopen(req, timeout=_config.DIFFUSION_TIMEOUT) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+
+        molecules = result.get("molecules", [])
+        gen_time = result.get("generation_time_seconds", 0)
+        log(f"扩散模型返回 {len(molecules)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
+
+        # 转换为与 generate_molecules 兼容的格式
+        converted = []
+        for m in molecules:
+            smiles = m.get("smiles", "")
+            if not smiles:
+                continue
+            mol = Chem.MolFromSmiles(smiles)
+            if mol is None or len(Chem.GetMolFrags(mol)) > 1:
+                continue
+            converted.append({
+                "smiles": smiles,
+                "qed": m.get("qed"),
+                "mw": m.get("mw"),
+                "logp": m.get("logp"),
+                "sa_score": m.get("sa_score"),
+            })
+
+        return converted if converted else None
+
+    except urllib.error.URLError as e:
+        log(f"扩散模型 API 连接失败: {e}", log_lines)
+        return None
+    except Exception as e:
+        log(f"扩散模型生成异常: {e}", log_lines)
+        return None
+
+
 def _generate_offspring(seeds, n_offspring_per_seed):
     """从种子分子生成变异后代。
 
@@ -368,6 +458,8 @@ def main():
     parser.add_argument("--output-dir", type=str, default="output", help="输出目录")
     parser.add_argument("--no-docking-guidance", action="store_false", dest="use_docking_guidance",
                         help="禁用 H002 对接引导（不推荐，已验证会退化 0.4~0.8 kcal/mol）")
+    parser.add_argument("--generator", choices=["mutate", "diffusion", "hybrid"], default="mutate",
+                        help="生成器选择: mutate(RDKit变异), diffusion(PocketXMol扩散), hybrid(混合) (默认: mutate)")
     args = parser.parse_args()
 
     run_evolutionary_pipeline(
@@ -378,6 +470,7 @@ def main():
         n_offspring_per_seed=args.n_offspring,
         output_dir=args.output_dir,
         use_docking_guidance=args.use_docking_guidance,
+        generator=args.generator,
     )
 
 

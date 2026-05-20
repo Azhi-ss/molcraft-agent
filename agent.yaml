@@ -25,6 +25,9 @@ agent:
     # 迭代报告工具（Agent 主动报告迭代完成）
     - "molcraft_agent.tools:ReportIteration"
 
+    # 扩散模型生成工具（PocketXMol，需 GPU 服务器）
+    - "molcraft_agent.tools:DiffusionGenerate"
+
     # 阶段标记工具（Agent 四阶段：诊断、代码演进、实验验证、复盘）
     - "molcraft_agent.tools:BeginStage"
     - "molcraft_agent.tools:EndStage"

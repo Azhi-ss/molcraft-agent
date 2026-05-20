@@ -388,6 +388,10 @@ class RunPipelineParams(BaseModel):
         default=True,
         description="⚡ 铁律：必须保持 True。H002 已验证将结合能从 -7.7~-8.1 提升至 -8.56~-8.80 kcal/mol。关闭它来做'对照实验'是错误的——关闭后基线自然退化 0.5 kcal/mol，无法判断新改动的净效应。正确的 A/B 测试：始终开 docking guidance，在其他变量上做对照。",
     )
+    generator: str = Field(
+        default="mutate",
+        description="生成器选择: mutate(RDKit变异,默认), diffusion(PocketXMol扩散模型,需GPU), hybrid(扩散+RDKit混合)",
+    )
 
 
 class RunPipeline(CallableTool2):
@@ -410,6 +414,7 @@ class RunPipeline(CallableTool2):
                 strategy=params.strategy,
                 n_generations=params.n_generations,
                 use_docking_guidance=params.use_docking_guidance,
+                generator=params.generator,
                 output_dir="output",
             )
             energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]
@@ -452,6 +457,7 @@ class RunPipeline(CallableTool2):
                     "strategy": params.strategy,
                     "n_generations": params.n_generations,
                     "docking_guidance": params.use_docking_guidance,
+                    "generator": params.generator,
                 },
                 result={
                     "molecule_count": len(results),
@@ -908,3 +914,146 @@ def _search_blast(seq: str) -> dict | None:
     except Exception:
         pass
     return None
+
+
+# ── Diffusion model (PocketXMol) via HTTP API ──
+
+
+class DiffusionGenerateParams(BaseModel):
+    pdb_path: str = Field(
+        default="data/target.pdb",
+        description="靶点蛋白 PDB 文件路径",
+    )
+    n_molecules: int = Field(
+        default=20,
+        description="生成分子数量，建议 10-50",
+    )
+    pocket_center: list[float] | None = Field(
+        default=None,
+        description="口袋中心坐标 [x, y, z]，留空则自动检测",
+    )
+
+
+class DiffusionGenerate(CallableTool2):
+    name: str = "diffusion_generate"
+    description: str = (
+        "用 PocketXMol 扩散模型生成口袋感知分子（需要 GPU 服务器）。"
+        "输入蛋白 PDB 和口袋位置，返回 SMILES 列表及药物性质。"
+        "输出格式与 generate_molecules 兼容，可直接送入 dock_molecules 或 run_pipeline。"
+        "如果 GPU 服务器不可用，会返回错误提示，请改用 generate_molecules。"
+    )
+    params: type[BaseModel] = DiffusionGenerateParams
+
+    async def __call__(self, params: DiffusionGenerateParams) -> ToolReturnValue:
+        api_url = _config.DIFFUSION_API_URL
+        if not api_url:
+            return ToolError(
+                output="",
+                message="DIFFUSION_API_URL 未配置。请在 .env 中设置 GPU 服务器地址，或改用 generate_molecules。",
+                brief="扩散模型未启用",
+            )
+
+        try:
+            pdb_path = Path(params.pdb_path)
+            if not pdb_path.exists():
+                return ToolError(
+                    output="",
+                    message=f"PDB 文件不存在: {params.pdb_path}",
+                    brief="PDB 文件缺失",
+                )
+            pdb_content = pdb_path.read_text()
+
+            # Build pocket_center from config if not provided
+            pocket_center = params.pocket_center
+            if pocket_center is None:
+                pocket_center = _config.DOCKING_CENTER
+
+            request_body = json.dumps({
+                "pdb_content": pdb_content,
+                "n_molecules": params.n_molecules,
+                "pocket_center": pocket_center,
+                "pocket_radius": max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0,
+            }, ensure_ascii=False).encode("utf-8")
+
+            url = f"{api_url.rstrip('/')}/generate"
+            req = urllib.request.Request(
+                url,
+                data=request_body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+
+            timeout = _config.DIFFUSION_TIMEOUT
+            result_data = await asyncio.to_thread(
+                _http_request_with_retry, req, timeout, max_retries=2
+            )
+
+            molecules = result_data.get("molecules", [])
+            gen_time = result_data.get("generation_time_seconds", 0)
+
+            output = {
+                "status": "success",
+                "summary": f"扩散模型生成了 {len(molecules)} 个口袋感知分子（耗时 {gen_time:.0f}s）",
+                "count": len(molecules),
+                "molecules": [
+                    {
+                        "smiles": m["smiles"],
+                        "qed": m.get("qed"),
+                        "mw": m.get("mw"),
+                        "logp": m.get("logp"),
+                        "sa_score": m.get("sa_score"),
+                        "score": m.get("score"),
+                    }
+                    for m in molecules
+                ],
+                "next_actions": [
+                    "下一步: 调用 dock_molecules 对这批分子进行对接评估",
+                    "或: 直接调用 run_pipeline(generator='hybrid') 混合模式",
+                ],
+            }
+            append_experiment(
+                tool="diffusion_generate",
+                round_num=get_latest_round() + 1,
+                params={"n_molecules": params.n_molecules, "pocket_center": pocket_center},
+                result={"output_count": len(molecules), "gen_time": gen_time},
+            )
+            return ToolOk(output=json.dumps(output, ensure_ascii=False))
+
+        except urllib.error.URLError as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "GPU 服务器连接失败。检查 DIFFUSION_API_URL 是否正确，服务器是否运行。",
+                    "fallback": "改用 generate_molecules(strategy='mutate') 生成分子",
+                }),
+                message=str(exc),
+                brief="GPU 服务器不可达",
+            )
+        except Exception as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "扩散模型推理失败，可能是 PDB 格式或参数问题",
+                    "fallback": "改用 generate_molecules 生成分子",
+                }),
+                message=str(exc),
+                brief="扩散模型推理失败",
+            )
+
+
+def _http_request_with_retry(
+    req: urllib.request.Request, timeout: int, max_retries: int = 2
+) -> dict:
+    """Send HTTP request with retry. Raises on final failure."""
+    last_exc = None
+    for attempt in range(max_retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                time.sleep(5 * (attempt + 1))
+    raise last_exc

@@ -79,6 +79,13 @@
 
 ### 操作步骤
 
+0. **搜索外部新知识（每轮必做，不完成不得进入下一步）**：
+   ```
+   SearchWeb: "TYK2 JAK1 inhibitor binding affinity improvement 2024 2025"
+   SearchWeb: "protein ligand docking scoring function optimization"
+   ```
+   从搜索结果中提炼至少 1 个潜在改进方向，与 `docs/knowledge_base.md` 中已有策略对比，避免重复尝试。发现高相关性论文时必须调用 `FetchURL` 深入阅读。
+
 1. **全面阅读现有代码**：
    ```
    ReadFile: src/generator.py      # 分子生成
@@ -364,10 +371,9 @@ WHILE ROUND <= 3:
     
     IF ROUND == 1 且 knowledge_base.md 不存在:
         → 阶段一：完整文献解析 + 输出 knowledge_base.md
-    ELSE IF 陷入困境且策略库无匹配:
-        → 回原文查找特定章节（不是重读全文）
     ELSE:
-        → 读取 knowledge_base.md，直接进入阶段二
+        → 读取 knowledge_base.md，直接进入阶段二诊断
+        → 阶段二开头会强制搜索外部新知识，不再重读旧论文
     
     IF 没有待验证假设 或 上一假设已得出结论:
         → 阶段二：瓶颈诊断与假设提出
@@ -394,11 +400,22 @@ WHILE ROUND <= 3:
 - 不要在一个已经证明无效的假设上反复尝试
 
 **⚡ 陷入困境时的强制恢复机制：**
-连续两个假设验证失败后，禁止继续提出假设。必须先执行以下至少一项：
-1. 使用 `SearchWeb` 搜索当前瓶颈的最新解决方案（如 "improving Vina docking binding energy"、"reducing trivial synthesis routes"）
-2. 重新阅读 `papers/` 中之前忽略的相关章节
-3. 换一个完全不同的瓶颈方向（如从「结合能」转向「路线质量」或「分子多样性」）
-执行完成后才可提出新假设。
+连续两个假设验证失败后，禁止继续提出假设。**必须严格按顺序完成以下全部步骤：**
+
+1. **（强制）** 调用 `SearchWeb` 搜索当前瓶颈的 **2024-2026 年最新进展**，至少搜索 3 个不同关键词：
+   - "TYK2 inhibitor binding affinity improvement 2024 2025"
+   - "JAK family inhibitor scaffold design recent advances"
+   - "Vina docking scoring function limitations"
+
+2. **（强制）** 对搜索结果中最相关的 1-2 篇论文调用 `FetchURL`，**提取至少 2 个可落地的具体策略**。
+
+3. **（强制）** 将新发现的策略写入 `docs/knowledge_base.md`，标注来源为外部搜索。
+
+4. **（可选，步骤 1-3 完成后才允许）** 重新阅读 `papers/` 中与新策略相关的章节，**不得全文重读**。
+
+5. **（可选，步骤 1-3 完成后才允许）** 换一个完全不同的瓶颈方向。
+
+**不完成步骤 1-3，不得提出新假设。**
 
 ---
 

@@ -108,18 +108,24 @@
 - **When to use**: When molecules lack hydrogen bond features
 - **Status**: ❌ REJECTED — Best BE -9.153→-8.972, Avg -8.453→-8.325. Vina scoring favors hydrophobic/flat aromatics over polar hinge binders.
 
+### H027 — Relaxed Molecular Filters
+- **Source**: Empirical (Round 18-19) — Vina rewards hydrophobic packing
+- **Tech**: max_rings 7→9, max_sa 6.0→7.0 in passes_filters(); allows larger hydrophobic aromatics
+- **When to use**: When current filters exclude >7-ring molecules that could pack better in Vina
+- **Status**: ✅ VERIFIED — Best BE +2.0% (-9.153→-9.332), Avg +4.2% (-8.453→-8.810)
+
 ---
 
 ## Current Baseline (TYK2 5C01 — CORRECTED DOCKING COORDINATES)
 
-> Established Round 18 baseline.
+> Updated Round 20 (H027 VERIFIED).
 
 | Metric | Value |
 |--------|-------|
-| Best BE | -9.153 |
-| Avg BE | -8.453 |
+| Best BE | -9.332 |
+| Avg BE | -8.810 |
 | Trivial ratio | 0/10 |
-| Dominant chemistry | Suzuki biaryl coupling (90%) |
+| Dominant chemistry | Suzuki biaryl + imidazopyridine scaffolds |
 
 ---
 
@@ -131,4 +137,4 @@
 | H023 | Multi-step route chemical validation (check intermediate stability) | MEDIUM |
 | H024 | Fix docking coordinates to geometric pocket (now done) | ✅ DONE |
 | H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | HIGH — Vina favors flat hydrophobic aromatics |
-| H027 | Enhanced scaffold hopping (20%→30% probability + improved side-chain transfer) | HIGH — diversity bottleneck |
+| H027 | Relaxed molecular filters (max_rings 7→9, max_sa 6.0→7.0) | ✅ VERIFIED — Best BE +2.0%, Avg +4.2% |
