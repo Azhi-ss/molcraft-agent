@@ -68,10 +68,32 @@ class EventLogger:
 
     # ── Terminal passthrough (human-readable) ──
 
+    # Thresholds for truncating verbose agent output in the log
+    _MAX_LOG_LINE_CHARS = 2_000  # keep log lines under 2KB
+    _MAX_FILE_READ_LINES = 3    # keep only first N lines of ReadFile output
+
+    def _is_file_read_dump(self, message: str) -> bool:
+        """Detect ReadFile output: starts with <system>N lines read from file."""
+        return message.startswith("<system>") and "lines read from file" in message.split("\n")[0]
+
+    def _truncate_file_read(self, message: str) -> str:
+        """Keep only the <system> summary line + first few content lines."""
+        lines = message.split("\n")
+        kept = lines[:1 + self._MAX_FILE_READ_LINES]  # system line + N content lines
+        if len(lines) > len(kept):
+            kept.append(f"    [... truncated {len(lines) - len(kept)} lines of file content]")
+        return "\n".join(kept)
+
     def write(self, message: str) -> None:
         self.terminal.write(message)
-        if message.strip():
-            self._write_event("stdout", {"content": message})
+        if not message.strip():
+            return
+        # Truncate large file-read dumps to keep log compact
+        if len(message) > self._MAX_LOG_LINE_CHARS and self._is_file_read_dump(message):
+            message = self._truncate_file_read(message)
+        elif len(message) > self._MAX_LOG_LINE_CHARS:
+            message = message[:self._MAX_LOG_LINE_CHARS] + "\n[...truncated]"
+        self._write_event("stdout", {"content": message})
 
     # ── Structured events ──
 

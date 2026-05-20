@@ -1,46 +1,105 @@
-# 文献分析报告 — 第1轮
+# Literature Analysis Report — Round 1
 
-## 靶点蛋白
-- **名称**: TYK2 (Non-receptor Tyrosine-protein Kinase) — PDB: 5C01 Chain A
-- **结构**: 257个氨基酸, 1条链, 激酶催化域
-- **活性位点**: [19.7, 1.18, 24.76] (clft), 对接坐标偏移 3.78 Å（OK）
+## Papers Analyzed
 
-## 论文核心方法摘要
+1. **Autonomous Agents for Scientific Discovery (Zhou et al., 2025)** — Comprehensive survey
+2. **Coscientist (Boiko et al., 2023)** — Emergent autonomous scientific research
+3. **Deep Lead Optimization (JACS 2024, Zhang et al.)** — Generative AI for structural modification
 
-### 1. LARC — Agent-as-a-Judge 逆合成框架 (Baker et al., 2025)
-- **技术要点**: 规则覆盖率是逆合成质量的核心决定因素；Agent 评审路线质量
-- **映射到本项目**: 直接影响 `synthesis_v2.py` 的 `REACTION_RULES` 数量和 `score_route_quality()` 函数
-- **已实现**: H012 路线质量评分、H014 质量守恒验证
+---
 
-### 2. ChemCrow — 18工具集成化学Agent (Bran et al., 2024)
-- **技术要点**: 工具/知识库的丰富度直接决定Agent能力边界
-- **映射到本项目**: REACTION_RULES 规则库大小、SCAFFOLDS 骨架库大小
-- **已实现**: SCAFFOLDS 已扩充至 55 个骨架（H007）、RETRO_RULES 已扩充至 35+ 条（H012/H016）
+## Key Insights Mapped to This Project
 
-### 3. MOOSE-Chem — 进化算法假设生成 (Yang et al., 2025)
-- **技术要点**: 进化搜索导航组合空间；多样化初始种群防止过早收敛
-- **映射到本项目**: `generate_with_docking_guidance()` 的进化循环、H011 多样性选择
-- **已实现**: H002 对接引导生成、H011 MMD 多样性保持、H013 Crossover 重组
+### 1. Evolutionary Algorithm-Based Hypothesis Generation (MOOSE-Chem)
 
-### 4. Coscientist — 多LLM自主实验 (Boiko et al., 2023)
-- **技术要点**: Planner→Web Searcher→Code Execution 管道；多次实验取共识
-- **映射到本项目**: H009 共识对接（3次独立对接取中位数）
-- **已实现**: dock_molecule_consensus()
+| Aspect | Detail |
+|--------|--------|
+| Source | Autonomous Agents Survey §3.2 |
+| Core Idea | Treat hypothesis generation as optimization: population → mutation → fitness evaluation → selection |
+| Mapping | Our `generate_with_docking_guidance()` already implements this cycle |
+| Status | ✅ IMPLEMENTED (H002) |
 
-### 5. Deep Lead Optimization — 先导化合物优化四子任务 (JACS 2024)
-- **技术要点**: Scaffold Hopping, Linker Design, Fragment Replacement, Side-chain Decoration
-- **映射到本项目**: H010 Scaffold Hopping 算子、evaluator.py 的 SA score 阈值
-- **已实现**: H001 SA 阈值收紧（8.0→6.0）、H010 骨架替换算子
+### 2. Agent-as-a-Judge for Retrosynthesis (LARC)
 
-## 改进机会列表（按影响×实现难度排序）
+| Aspect | Detail |
+|--------|--------|
+| Source | Autonomous Agents Survey §4.2 / Chemistry Agents |
+| Core Idea | LLM evaluates retrosynthetic routes for feasibility; rule coverage determines quality |
+| Mapping | Our `score_route_quality()` implements route scoring |
+| Status | ✅ IMPLEMENTED (H012) |
 
-| 优先级 | 方向 | 影响 | 难度 | 状态 |
-|--------|------|------|------|------|
-| 1 | 扩充逆合成规则库（稀疏键类型） | 高 | 低-中 | ⬜ 本轮 |
-| 2 | 引入 Enamine REAL 等商业库做起始原料验证 | 中 | 中 | ⬜ |
-| 3 | 多步路线中引入保护基策略识别 | 中 | 高 | ⬜ |
-| 4 | 对接盒子微调（向活性位点 cleft 偏移） | 低-中 | 低 | ⬜ |
-| 5 | 引入 ChemAgents 分层架构 | 高 | 高 | ⬜ |
+### 3. Tool Augmentation Pattern (ChemCrow)
 
-## 本轮重点
-**扩充逆合成规则库**：当前 REACTION_RULES 约 35+ 条，但 lactone 开环、sp3C-sp3C 断键、环氧开环等常见转化仍缺失。本轮将基于 result.csv 中的 trivial route 分子分析断键缺口，设计 5-10 条新规则。
+| Aspect | Detail |
+|--------|--------|
+| Source | Autonomous Agents Survey §4.2 / Coscientist |
+| Core Idea | 18+ specialized chemistry tools integrated under LLM orchestration |
+| Mapping | Our tool suite: identify_target, generate, dock, plan_synthesis, evaluate, run_pipeline |
+| Status | ✅ IMPLEMENTED |
+
+### 4. Self-Correction / Iterative Refinement (Coscientist)
+
+| Aspect | Detail |
+|--------|--------|
+| Source | Coscientist §Main |
+| Core Idea | Agent detects errors in code output, consults documentation, fixes itself |
+| Mapping | Our consensus docking (H009) implements "multiple experimental runs" pattern |
+| Status | ✅ PARTIAL — Could extend to synthesis route self-validation |
+
+### 5. BRICS Fragmentation + Fragment Recombination
+
+| Aspect | Detail |
+|--------|--------|
+| Source | JACS 2024 §Fragment and Linker Breaking |
+| Core Idea | BRICS defines 16 breakable bonds for molecular decomposition; fragments recombine |
+| Mapping | Our `_brics_recombine()` + `_brics_decompose_pool()` |
+| Status | ✅ IMPLEMENTED (H018) |
+
+### 6. Lead Optimization: 4 Core Sub-Tasks
+
+| Aspect | Detail |
+|--------|--------|
+| Source | JACS 2024 §Lead Optimization |
+| Core Idea | Scaffold Hopping, Linker Design, Fragment Replacement, Side-Chain Decoration |
+| Mapping | Scaffold Hopping = H010; BRICS recombination covers Fragment Replacement |
+| Status | ✅ PARTIAL — Linker Design and explicit Side-Chain Decoration not implemented |
+
+### 7. Deep Learning-Based Linker Design (DeLinker, SyntaLinker, DiffLinker)
+
+| Aspect | Detail |
+|--------|--------|
+| Source | JACS 2024 §Linker Design |
+| Core Idea | Learn p(Linker|Fragments) distribution; RL-based property optimization |
+| Mapping | Not currently implemented — our linker insertion is random |
+| Status | ❌ NOT IMPLEMENTED — Potential improvement area |
+
+### 8. Hierarchical Multi-Agent (ChemAgents, TAIS)
+
+| Aspect | Detail |
+|--------|--------|
+| Source | Autonomous Agents Survey §4.2 |
+| Core Idea | Planner → Specialist (Literature Reader, Data Handler, Analyst, Robot Operator) |
+| Mapping | Our single-agent approach |
+| Status | ❌ NOT IMPLEMENTED — Beyond current scope |
+
+---
+
+## Improvement Opportunities (Ranked by Impact × Ease)
+
+| Priority | Opportunity | Impact | Ease | Status |
+|----------|-------------|--------|------|--------|
+| P1 | Expand retrosynthesis SMARTS rules for missing scaffold types | HIGH | MEDIUM | Partially done (H015-H020) |
+| P2 | Add explicit Side-Chain Decoration generator | MEDIUM | MEDIUM | Not started |
+| P3 | BRICS rule coverage expansion (linker design, heterocycle synthesis) | MEDIUM | LOW | Partially done |
+| P4 | Route self-validation (check if reagents are commercially available) | MEDIUM | HARD | Not started |
+| P5 | Multi-agent architecture (Literature Reader + Generator + Evaluator) | LOW | HARD | Not started |
+
+---
+
+## Target-Specific Note
+
+Target: TYK2 (PDB 5C01) — Non-receptor Tyrosine-Protein Kinase
+- Active site detected at [21.86, -0.41, 29.93] (geometric pocket detection)
+- Previous docking center [18.28, 2.31, 21.44] was 9.61 Å off — NOW CORRECTED
+- TYK2 is a well-validated kinase target for autoimmune diseases
+- Kinase hinge-binding scaffolds (purines, pyrazolopyrimidines, azaindoles) should be prioritized

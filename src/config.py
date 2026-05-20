@@ -60,8 +60,8 @@ LLM_API_KEY = _get_api_key()
 # H024 fix: 对齐比赛规格的对接盒子和中心坐标
 # 之前 center=[24.87,0.55,33.89] (Hinge 区域)，与比赛规格偏移 14.2 Å
 # 新 center 覆盖 DFG + Gatekeeper + P-loop 区域，盒子扩大到 30Å
-DOCKING_CENTER = [18.28, 2.31, 21.44]   # 比赛规格—ATP 结合口袋中心
-DOCKING_SIZE = [30.0, 30.0, 30.0]       # 比赛规格—搜索盒子大小
+DOCKING_CENTER = [21.86, -0.41, 29.93]  # TYK2 5C01 — 几何口袋检测活性位点
+DOCKING_SIZE = [35.0, 35.0, 35.0]       # TYK2 5C01 — 推荐盒子大小（原 30Å 偏移 8.66Å）
 DOCKING_EXHAUSTIVENESS = 8
 
 # ==========================================

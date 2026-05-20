@@ -1,82 +1,92 @@
-# 诊断报告 — 第1轮
+# Bottleneck Diagnosis — Round 1 (TYK2 5C01 Corrected Coordinates)
 
-## 基线实验数据
-- **最佳结合能**: -9.591 kcal/mol
-- **Top-10 平均结合能**: -8.853 kcal/mol
-- **Trivial route 比例**: 0/10 (0%)
-- **配置**: n_generate=50, n_generations=2, strategy=mutate, docking_guidance=True
+## Baseline Results (Corrected Docking)
 
-## 当前指标评估
-| 维度 | 基线 | 天花板 | 余量 |
-|------|------|--------|------|
-| 结合能 | -8.853 avg, -9.591 best | ~-10.0 | 小 |
-| Trivial route | 0% | — | 0% 但需保持 |
-| 路线步数 | 1-2步 | 3-5步 | 路线深度可提升 |
-| QED | 未统计 | >0.7 | 中等 |
+| Metric | Value |
+|--------|-------|
+| Best BE | -10.119 kcal/mol |
+| Avg BE | -9.417 kcal/mol |
+| Trivial ratio | 0/10 |
+| Strategy | mutate, docking_guidance=on |
 
-## 现有规则覆盖缺口分析
+## Molecular Analysis
 
-尽管 0/10 trivial 表现优异，但逆合成规则库仍存在以下结构缺口：
+Top 10 molecules:
+1. Diaryl benzophenone (BE=-10.119) — Suzuki + Friedel-Crafts, 2-step
+2. Imino-biaryl benzophenone (BE=-9.762) — Imine + Suzuki
+3. Amino-biaryl benzophenone (BE=-9.725) — Suzuki + F-C
+4. Styrenyl biaryl (BE=-9.704) — Wittig + Suzuki
+5. Biaryl benzophenone (BE=-9.537) — F-C + Suzuki
+6. Amino-biaryl benzophenone (BE=-9.509) — F-C + Suzuki
+7. Aminopyridine-biaryl (BE=-9.351) — Suzuki + F-C
+8. Sulfonamide-biaryl (BE=-9.085) — Amide + Suzuki
+9. Thienyl-biaryl (BE=-9.027) — F-C + Suzuki
+10. Benzoxazole-phenyl (BE=-8.354) — Halogenation + Suzuki
 
-### 缺口1: 内酯（Lactone）开环 — 影响等级：中
-- **现状**: 酯规则 `[C](=[O])O[!H0]` 仅匹配链状酯，不匹配环内酯
-- **缺失**: 药物中常见的内酯（如他汀类、大环内酯类）无法正确断键
-- **设计**: 匹配环内酯 O=C-O-C 子结构 → 逆水解为羟酸
+## Bottleneck Identified: Scaffold Homogeneity
 
-### 缺口2: 环氧（Epoxide）开环 — 影响等级：中
-- **现状**: 无环氧开环规则
-- **缺失**: 环氧是常见的活性官能团和合成中间体
-- **设计**: 三员环氧环 → 1,2-二醇
+**Observation**: 9/10 molecules are benzophenone/biaryl chemotypes. Despite the SCAFFOLDS library containing 90+ entries including kinase-specific heterocycles (purines, pyrazolopyrimidines, azaindoles, imidazopyridines), none appeared in the top results.
 
-### 缺口3: 吡唑（Pyrazole）N-N 断键 — 影响等级：中
-- **现状**: 无吡唑/吡唑啉酮等 N-N 键断裂规则
-- **缺失**: 吡唑是激酶抑制剂（特别是 TYK2 这类靶点）的常见骨架
-- **设计**: 吡唑环 → 1,3-二酮 + 肼
+**Root Cause**: `random.choice(seeds)` in `generate_molecules()` treats all scaffolds uniformly. With 90+ scaffolds, kinase-privileged entries (~8 entries: purine, azaindole, pyrazolopyrimidine, imidazopyridine, pyrazolopyrimidine, indolizine, quinazoline, benzimidazole) each have only ~1% selection probability per seed. The benzophenone/biaryl scaffolds produce better initial docking scores, so they dominate the evolutionary process.
 
-### 缺口4: sp3-sp3 C-C 键断裂 — 影响等级：低-中
-- **现状**: 仅匹配芳基 C-C 键（Suzuki），无烷基链断键
-- **缺失**: 长烷基链或非芳环 C-C 键无法断键
-- **设计**: 烷基 C-C → 卤代烷 + 格氏试剂
+**Impact**: 
+- Limited chemical diversity in output
+- Misses TYK2 hinge-binding pharmacophore (NH...O=C hydrogen bonds with hinge residues Glu979/Met981)
+- All molecules bind through similar interactions (mostly hydrophobic + polar contacts in the DFG-out pocket)
 
-### 缺口5: 环醚开环 — 影响等级：低
-- **现状**: 醚规则 `[#6;!c]O[#6;!c]` 仅匹配链状醚
-- **缺失**: 四氢呋喃/四氢吡喃等环醚
-- **设计**: 环醚 C-O 断键 → 卤代醇
+---
 
-## 改进假设
+## Proposed Hypothesis: H021
 
-### 假设ID: H017
-**瓶颈**: synthesis_v2.py REACTION_RULES 缺少内酯开环、环氧开环、吡唑 N-N 断键、sp3-sp3 烷基链断键、环醚开环规则
-**文献支撑**: 
-- LARC (Baker et al., 2025): 规则覆盖率决定逆合成质量
-- JACS 2024: 稠环/杂环体系需要专门断键策略
-- Coscientist: 逆合成规划质量取决于可用的反应模板库
+```
+假设ID: H021
+瓶颈: 分子骨架同质化——90%+输出为二苯甲酮/联芳基类型，激酶铰链结合杂环骨架完全缺失
+文献支撑: 
+  - Deep Lead Optimization (JACS 2024, §3.1 Scaffold Hopping): 
+    "替换核心骨架同时保留有利取代基"是先导化合物优化的核心子任务
+  - MOOSE-Chem (Yang et al., 2025): 
+    "Diverse initial population is essential for evolutionary search to avoid premature convergence"
+  - Coscientist (Boiko et al., 2023):
+    正确的化学空间导航需要靶点知识指导骨架选择
 
-### 推理链
-| 步骤 | 内容 | 置信度 | 推理方式 | 依据来源 |
-|------|------|--------|----------|----------|
-| S1 | 当前规则虽覆盖 35+ 条，但缺少内酯/环氧/吡唑/烷基链断键 | 高 | 静态分析 | 代码审查 |
-| S2 | 药物分子中内酯、环氧、吡唑骨架常见 | 高 | 领域知识 | JACS 2024 |
-| S3 | 添加这些规则将减少依赖 BRICS fallback | 高 | 演绎 | LARC 2025 |
-| S4 | Trivial route 比例将保持在 0/10 或更低 | 中 | 归纳 | 基线 0/10 |
+───────────────── 推理链 ─────────────────
+步骤 | 内容                                  | 置信度 | 推理方式 | 依据来源
+S1   | TYK2 是激酶，铰链结合是经典药效团   | 高     | 文献     | TYK2 晶体结构文献
+S2   | 激酶铰链结合杂环（嘌呤/氮杂吲哚等）  | 高     | 文献     | 激酶抑制剂化学综述
+      | 在 SCAFFOLDS 中已存在但概率稀释     |         |          |
+S3   | 对激酶骨架加权采样会增加其出现概率   | 高     | 演绎     | 从 S1,S2
+S4   | 增加激酶骨架多样性可能发现更高        | 中     | 演绎     | 从 S2,S3
+      | 亲和力的铰链结合分子                   |         |          |
+S5   | 加权采样不破坏现有成功路径            | 中     | 演绎     | 从 S3
 
-**综合置信度**: 中
+综合置信度 = 中
+S4 为"中"——激酶骨架是否在 TYK2 口袋中真的有更好亲和力，需实验验证
+S5 为"中"——过度加权可能挤出已验证的高分路径
 
-### 验证标准
-- **Q1**: 如果核心指标提升 < 5%，是否保留？
-  - **答**: 是。trivial route 比例保持在 0/10 即可接受。
-- **Q2**: 如果指标下降，最可能原因？
-  - **答**: 新规则产生不合理的逆合成路线（如化学上不可行的断键）。
-- **Q3**: 最低可接受结果？
-  - **答**: 结合能不低于 -9.0，trivial ≤ 1/10。
+───────────────── 验证标准 ─────────────────
+Q1 如果核心指标提升 < 5%，是否仍保留？
+答：是
+理由：即使 BE 不提升，化学多样性改善本身有价值（探索新的化学空间）
 
-### 改进方案
-**改动文件**: `src/synthesis_v2.py`
-**改动内容**: 在 REACTION_RULES 列表中添加 5 条新规则：
-1. 内酯开环（环内酯逆水解）
-2. 环氧开环（三员环氧→二醇）
-3. 吡唑 N-N 断裂（吡唑→1,3-二酮+肼）
-4. sp3-sp3 C-C 断键（烷基链逆格氏）
-5. 环醚开环（THF/THP 类逆 Williamson）
+Q2 如果指标下降，最可能的原因是什么？
+答：激酶杂环骨架在本口袋中亲和力不如二苯甲酮类型
+理由：TYK2 的 ATP 口袋可能对此类骨架不敏感，或铰链区构象不适合经典铰链结合
 
-**验证指标**: pipeline 跑 50 分子, 比较 trivial 比例和结合能
+Q3 本假设的最低可接受结果是什么？
+答：top10 中出现 ≥2 个含激酶杂环骨架的分子，且 avg BE > -8.5
+（允许 BE 轻微下降换取化学多样性）
+
+───────────────── 改进方案 ─────────────────
+改动文件: src/generator.py
+改动内容: 
+  1. 将 SCAFFOLDS 分为 KINASE_SCAFFOLDS (激酶铰链结合杂环) 和 GENERAL_SCAFFOLDS 两层
+  2. 在 generate_molecules() 种子选择中，50% 概率从 KINASE 层采样
+  3. 维持所有其他变异算子不变
+验证指标: pipeline 跑 50 分子，对比改前改后的激酶骨架出现率 + 结合能 + trivial 比例
+```
+
+---
+
+## Decision
+
+Move to Stage 3 (Code Evolution) to implement H021.
