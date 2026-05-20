@@ -3949,3 +3949,22 @@ options:
   --best-be BEST_BE     本轮最佳结合能
   --status {keep,discard,crash}
                         keep=保留 commit, discard=回退到上一轮, crash=回退并记录失败
+My manual revert already removed the H026 scaffolds while keeping the 5 SMILES fixes. Let me commit the clean state:<system>Command executed successfully.</system>[main b506b84] round-22: H026 REJECTED (large aromatics -9.6% BE regression). Reverted H026 scaffolds, retained 5 SMILES fixes (quinazoline, benzimidazole, indoline, purine, indolizine). Best BE -8.434 vs baseline -9.332
+ 8 files changed, 939 insertions(+), 194 deletions(-)
+ create mode 100644 docs/code_evolution_round_22.md
+ create mode 100644 docs/experiment_round_22.md
+Now ending experimental validation, updating knowledge base, and entering review.{"stage": "实验验证", "duration_seconds": 603.3, "message": "阶段「实验验证」完成，耗时 603.3s"}{"stage": "复盘", "message": "阶段「复盘」开始"}
+
+============================================================
+[2026-05-20T23:58:12.105622] MolCraft Agent 执行结束
+请检查:
+  - output/result.csv（最终候选分子与合成路线）
+  - /home/dministrator/Lab/clones/molcraft-agent/output/result.log（详细结果日志）
+  - /home/dministrator/Lab/clones/molcraft-agent/docs/iteration_log.jsonl（迭代记录）
+============================================================
+
+result.csv 验证通过，共 10 个分子
+
+JSONL 格式验证通过
+
+[打包完成] /home/dministrator/Lab/clones/molcraft-agent/output/result.zip

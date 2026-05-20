@@ -156,9 +156,15 @@ def _write_task_config(
     pocket_radius: float,
     task: str,
 ) -> str:
-    """Generate a PocketXMol task YAML config dynamically."""
+    """Generate a PocketXMol task YAML config dynamically.
+
+    For de novo molecule design (no ligand input), use sbdd_simple template.
+    For docking (with known ligand), use dock_smallmol template.
+    """
+    # Use sbdd_simple for de novo generation (no input ligand required)
+    template_name = "sbdd_simple" if task in ("dock_smallmol", "sbdd") else task
     pxm_config_dir = os.path.join(_PXM_DIR, "configs", "sample", "examples")
-    template_path = os.path.join(pxm_config_dir, f"{task}.yml")
+    template_path = os.path.join(pxm_config_dir, f"{template_name}.yml")
 
     # Load template if exists, otherwise use minimal config
     if os.path.exists(template_path):
@@ -175,6 +181,8 @@ def _write_task_config(
     config.setdefault("data", {})
     config["data"]["protein_path"] = pdb_path
     config["data"]["is_pep"] = False
+    # Remove input_ligand — we're doing de novo generation
+    config["data"].pop("input_ligand", None)
 
     config["data"].setdefault("pocket_args", {})
     config["data"]["pocket_args"]["pocket_coord"] = pocket_center
@@ -187,9 +195,25 @@ def _write_task_config(
     config["transforms"].setdefault("featurizer_pocket", {})
     config["transforms"]["featurizer_pocket"]["center"] = pocket_center
 
-    # Set task type
+    # Ensure variable_mol_size for sbdd (controls generated molecule size)
+    if "variable_mol_size" not in config["transforms"]:
+        config["transforms"]["variable_mol_size"] = {
+            "name": "variable_mol_size",
+            "num_atoms_distri": {
+                "strategy": "mol_atoms_based",
+                "mean": {"coef": 0, "bias": 28},
+                "std": {"coef": 0, "bias": 2},
+                "min": 5,
+            },
+        }
+
+    # Set task type and noise
     config.setdefault("task", {})
-    config["task"]["name"] = "dock" if "dock" in task else "sbdd"
+    config["task"]["name"] = "sbdd"
+    config["task"]["transform"] = {"name": "sbdd"}
+
+    config.setdefault("noise", {})
+    config["noise"]["name"] = "sbdd"
 
     # Write to temp file
     config_out = os.path.join(outdir, "task_config.yml")
