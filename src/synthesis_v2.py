@@ -451,13 +451,14 @@ RETRO_RULES = [
     ("c1cn[nH]c1",
      "c1cn[nH]c1>>O=CC=O.NN"),
 
-    # -- sp3-sp3 C-C 键断裂（逆格氏/逆 Wurtz）--
+    # -- sp3-sp3 C-C 键断裂（逆 Wurtz 偶联）--
     # 匹配: 非环烷基链中的 C-C 单键（至少一侧为 sp3 C）
-    # 逆反应: C-C → C-Br + C-MgBr（格氏试剂偶联逆反应）
+    # 逆反应: C-C → C-Br + C-Cl（Wurtz 偶联逆反应）
     # 适用于: 长烷基链断键、非芳环体系的 C-C 键切割
     # 注意: ;!R 确保不匹配环内 C-C（优先由其他专门规则处理）
+    # H017-fix: MgBr → Cl（Grignard 试剂不可表示为有效 SMILES）
     ("[C;!R;!$(C=*);!$(C#*)][C;!R;!$(C=*);!$(C#*)]",
-     "[C:1][C:2]>>[C:1]Br.[C:2]MgBr"),
+     "[C:1][C:2]>>[C:1]Br.[C:2]Cl"),
 
     # -- 环醚开环（THF/THP 逆 Williamson 醚合成）--
     # 匹配: 四氢呋喃/四氢吡喃/氧杂环丁烷/二氧戊环等饱和环醚中的 C-O-C

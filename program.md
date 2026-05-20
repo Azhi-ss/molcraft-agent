@@ -181,6 +181,57 @@
 
 ---
 
+### 工具链基础设施审查
+
+在分析代码瓶颈时，顺便检查**工具本身**是否存在天花板：
+
+1. **审查 IdentifyTarget 输出**：看 `docking_check.verdict`
+   - 若为 `NEEDS_ADJUSTMENT` → 阅读 `molcraft_agent/tools.py` 中 `_detect_binding_pocket()` 和 `_identify_target_impl()` 的算法
+   - 评估：这个启发式算法在当前的靶点上是否可靠？有更好的开源替代吗？
+
+2. **搜索替代工具**：
+   ```bash
+   SearchWeb: "<problem> tool alternative open source"
+   # 例如: SearchWeb: "protein pocket detection fpocket vs geometric"
+   # 例如: SearchWeb: "GPU docking unidock vs vina comparison"
+   ```
+
+3. **自问**：如果换一个工具，预期提升多少？值不值得花一轮试验？
+
+---
+
+### 独立环境工具测试规范
+
+如果判断需要测试某个外部工具（如 FPocket、Uni-Dock、DeepSite 等），必须在**独立的临时 conda 环境**中执行，不能污染项目 `.venv/`。
+
+**操作流程：**
+
+```bash
+# 步骤 1：创建独立临时环境（用完即毁）
+# 命名规则：molcraft-tools-<日期> （避免冲突）
+conda create -n molcraft-tools-$(date +%Y%m%d) -c conda-forge fpocket -y
+
+# 步骤 2：在独立环境中运行工具
+# 用 conda run 直接执行，不需要手动 activate
+conda run -n molcraft-tools-$(date +%Y%m%d) fpocket -f data/target.pdb
+# 或
+conda run -n molcraft-tools-$(date +%Y%m%d) python3 -c "import fpocket; ..."
+
+# 步骤 3：对比实验结果
+# 在宿主机 (正常 pipeline) 和新工具之间，跑同一批分子做对照
+# 对比例：结合能、口袋中心坐标、运行时间
+
+# 步骤 4：销毁环境（用完必删）
+conda env remove -n molcraft-tools-$(date +%Y%m%d) -y
+```
+
+**重要规则：**
+- 每次测试都新建环境，测试完立刻删除
+- 如需长期保留（替换了工具），不要用临时环境命名，另外建一个 `molcraft-tools` 固定环境
+- 不要往 `.venv/` 或 conda base 里装任何工具测试相关的包
+
+---
+
 ## 3. 阶段三：自主设计与代码演进（Self-Code Evolution）
 
 > ⚡ 阶段标记：在进入此阶段时调用 `begin_stage(name="代码演进")`，完成后调用 `end_stage()` 结束。
@@ -216,6 +267,13 @@
    WriteFile: docs/code_evolution_round_X.md
    ```
    包含：假设ID、修改文件、修改内容摘要、文献依据。
+
+6. **工具替换后的集成（如果是工具替换假设）**：
+   若本轮假设涉及用外部新工具替换现有模块（如用 FPocket 定位口袋、用 Uni-Dock 替换 Vina）：
+   - **不改动原有工具的 import**：新工具封装为新模块（如 `tools/fpocket_helper.py`），不要直接修改 `molcraft_agent/tools.py`
+   - **CondA 环境解耦**：新工具留在独立 conda 环境内，通过 `conda run -n molcraft-tools ...` 调用，不污染 `.venv/`
+   - **接口对齐**：让新模块的输出格式与原有模块兼容（同样的返回值结构）
+   - **默认保留原有工具**：新模块作为可选路径，验证确实更好再考虑切换默认
 
 ---
 

@@ -152,6 +152,57 @@ class TestEventLoggerLifecycle:
         assert "Hello world" in events[0]["content"]
 
 
+class TestTruncation:
+    """Test that verbose agent output is truncated in log but not terminal."""
+
+    def test_file_read_dump_truncated(self, logger, log_path):
+        """ReadFile output: keep only system line + first 3 content lines."""
+        msg = (
+            "<system>300 lines read from file starting from line 1. End of file reached.</system>\n"
+            + "\n".join(f"     {i}\tcontent line {i}" for i in range(1, 301))
+        )
+        logger.write(msg)
+        logger.commit()
+        events = _read_log_content(log_path)
+        content = events[0]["content"]
+        assert "lines read from file" in content
+        assert "content line 1" in content
+        assert "content line 3" in content
+        assert "content line 4" not in content  # truncated after line 3
+        assert "truncated" in content.lower()
+        assert len(content) < 1000  # was thousands of chars
+
+    def test_normal_output_passes_through(self, logger, log_path):
+        """Short agent messages are NOT truncated."""
+        msg = "Pipeline completed: 10 molecules, best BE=-10.1 kcal/mol\n"
+        logger.write(msg)
+        logger.commit()
+        events = _read_log_content(log_path)
+        assert "Pipeline completed" in events[0]["content"]
+        assert "truncated" not in events[0]["content"].lower()
+
+    def test_code_file_read_truncated(self, logger, log_path):
+        """ReadFile of long code files is also truncated."""
+        lines = ["<system>200 lines read from file. End of file reached.</system>"]
+        lines.extend(f"     {i}\tdef long_function_{i}(): pass  # line {i}" for i in range(1, 201))
+        msg = "\n".join(lines)
+        logger.write(msg)
+        logger.commit()
+        events = _read_log_content(log_path)
+        content = events[0]["content"]
+        assert "lines read from file" in content
+        assert "long_function_1" in content
+        assert "long_function_4" not in content  # truncated
+
+    def test_generic_long_output_truncated(self, logger, log_path):
+        """Any stdout line > 2000 chars that isn't ReadFile gets hard-truncated."""
+        msg = "x" * 3000
+        logger.write(msg)
+        logger.commit()
+        events = _read_log_content(log_path)
+        assert len(events[0]["content"]) <= 2100  # 2000 + "...[truncated]"
+
+
 class TestEdgeCases:
     def test_nan_rejected(self, logger, log_path):
         ev = MoleculeEvent(
