@@ -135,6 +135,32 @@ SCAFFOLDS = [
     "O=S1(=O)CCNCC1",        # 硫代吗啉 1,1-二氧化物
 ]
 
+# H021: 激酶铰链结合骨架 — 在突变生成中以 40% 概率优先采样
+# 文献依据: MOOSE-Chem (2025) — 靶向初始种群设计改善进化收敛;
+#           JACS 2024 — 骨架多样性+靶点特异性偏置提升命中率
+#           Coscientist (2023) — 基于领域知识的定向探索优于随机搜索
+# 
+# TYK2 (5C01) 的铰链区 Met978 主链 NH 和 CO 是经典 hinge binder 靶点，
+# 以下骨架含氢键供体/受体可同时与 hinge 形成双齿氢键：
+KINASE_HINGE_SCAFFOLDS = [
+    # 吡咯并[2,3-b]吡啶 (7-azaindole) — 激酶铰链双齿氢键
+    "c1cnc2[nH]ccc2c1",
+    # 嘌呤 — 腺嘌呤模拟物，经典 hinge binder
+    "c1ncnc2c1ncn2",
+    # 吡唑并[1,5-a]嘧啶 — 铰链区双齿氢键（N1+C2-H）
+    "c1cc2ncnc2n1",
+    # 咪唑并[1,2-a]吡啶 — hinge binder 变体
+    "c1cc2nccc2n1",
+    # 喹唑啉 — EGFR/TYK2 常见 hinge 骨架
+    "c1ccc2c(c1)ncnc2",
+    # 吲哚 — NH 作 hinge 氢键供体
+    "c1ccc2c(c1)cccn2",
+    # 嘧啶 — 基础铰链binder（最小 hinge 识别单元）
+    "c1cncnc1",
+    # 嘌呤变体
+    "c1nc2c(n1)ncn2",
+]
+
 LINKERS = [
     "",                     # 直接连接
     "C",                    # 亚甲基
@@ -828,9 +854,19 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
 
     if strategy == "mutate":
         seeds = SCAFFOLDS if scaffold is None else [scaffold]
+        # H021: 40% 概率从激酶铰链骨架采样，提升 TYK2 hinge 探索
+        # 仅在无显式 scaffold 参数时生效（保留 scaffold 参数的精确控制）
+        _use_kinase_bias = (scaffold is None and random.random() < 0.4)
         while len(molecules) < n_molecules and attempts < max_attempts:
             attempts += 1
-            seed = random.choice(seeds)
+            if _use_kinase_bias:
+                # 每次迭代重新随机决定是否使用激酶偏置（保持多样性）
+                if random.random() < 0.4:
+                    seed = random.choice(KINASE_HINGE_SCAFFOLDS)
+                else:
+                    seed = random.choice(seeds)
+            else:
+                seed = random.choice(seeds)
             n_mut = random.randint(1, 4)
             new_smiles = random_mutate_smiles(seed, n_mut)
             if new_smiles and new_smiles not in molecules:
@@ -851,12 +887,16 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
             recombined = _brics_recombine(frag_smiles, n_molecules)
             molecules.update(recombined)
 
-        # 如果 BRICS 重组产量不足，补充变异分子
+        # 如果 BRICS 重组产量不足，补充变异分子（H021: 激酶偏置）
         if len(molecules) < n_molecules:
             seeds = SCAFFOLDS if scaffold is None else [scaffold]
             while len(molecules) < n_molecules and attempts < max_attempts:
                 attempts += 1
-                seed = random.choice(seeds)
+                # H021: 40% 概率从激酶铰链骨架采样
+                if scaffold is None and random.random() < 0.4:
+                    seed = random.choice(KINASE_HINGE_SCAFFOLDS)
+                else:
+                    seed = random.choice(seeds)
                 n_mut = random.randint(1, 4)
                 new_smiles = random_mutate_smiles(seed, n_mut)
                 if new_smiles and new_smiles not in molecules:
@@ -865,10 +905,14 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
                         molecules.add(new_smiles)
 
     elif strategy == "random":
-        # 非常基础：随机组合片段
+        # 非常基础：随机组合片段（H021: 激酶偏置）
         while len(molecules) < n_molecules and attempts < max_attempts:
             attempts += 1
-            frag = random.choice(SCAFFOLDS)
+            # H021: 40% 概率从激酶铰链骨架采样
+            if scaffold is None and random.random() < 0.4:
+                frag = random.choice(KINASE_HINGE_SCAFFOLDS)
+            else:
+                frag = random.choice(SCAFFOLDS)
             new_smiles = random_mutate_smiles(frag, random.randint(2, 5))
             if new_smiles and new_smiles not in molecules:
                 props = evaluate_molecule(new_smiles)

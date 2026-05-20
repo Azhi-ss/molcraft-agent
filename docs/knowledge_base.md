@@ -102,17 +102,24 @@
 - **When to use**: Always in SCAFFOLDS
 - **Status**: ✅ VERIFIED
 
+### H025 — Expanded Substituent Library (Polar Pharmacophores)
+- **Source**: Deep Lead Optimization (JACS 2024) + Coscientist (2023)
+- **Tech**: Added 5 polar substituents (C=O, CN, CH2OH, CH2NH2, SO2CH3) to _add_substituent
+- **When to use**: When molecules lack hydrogen bond features
+- **Status**: ❌ REJECTED — Best BE -9.153→-8.972, Avg -8.453→-8.325. Vina scoring favors hydrophobic/flat aromatics over polar hinge binders.
+
 ---
 
 ## Current Baseline (TYK2 5C01 — CORRECTED DOCKING COORDINATES)
 
-> ⚠️ Previous baseline was on wrong coordinates (9.61 Å offset). New baseline TBD after first run.
+> Established Round 18 baseline.
 
 | Metric | Value |
 |--------|-------|
-| Best BE (wrong coords) | -10.359 |
-| Avg BE (wrong coords) | -9.495 |
-| Trivial ratio (wrong coords) | 0/10 |
+| Best BE | -9.153 |
+| Avg BE | -8.453 |
+| Trivial ratio | 0/10 |
+| Dominant chemistry | Suzuki biaryl coupling (90%) |
 
 ---
 
@@ -120,6 +127,8 @@
 
 | ID | Description | Priority |
 |----|-------------|----------|
-| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | HIGH |
+| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
 | H023 | Multi-step route chemical validation (check intermediate stability) | MEDIUM |
 | H024 | Fix docking coordinates to geometric pocket (now done) | ✅ DONE |
+| H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | HIGH — Vina favors flat hydrophobic aromatics |
+| H027 | Enhanced scaffold hopping (20%→30% probability + improved side-chain transfer) | HIGH — diversity bottleneck |
