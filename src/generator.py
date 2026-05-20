@@ -65,21 +65,21 @@ SCAFFOLDS = [
     "C1CNC1",               # 氮杂环丁烷
 
     # ===== 含氮稠环（12个）=====
-    "c1ccc2c(c1)Ncnc2",     # 喹唑啉
-    "c1ccc2c(c1)ncn2",      # 苯并咪唑
+    "c1ccc2cncnc2c1",       # 喹唑啉
+    "c1ccc2nc[nH]c2c1",      # 苯并咪唑
     "c1ccc2c(c1)cccn2",     # 吲哚
     "c1ccc2c(c1)ocn2",      # 苯并噁唑
     "c1ccc2c(c1)scn2",      # 苯并噻唑
     "c1ccc2ncccc2c1",       # 喹啉
     "c1ccc2ccncc2c1",       # 异喹啉
-    "c1ccc2c(c1)[nH]c2",    # 吲哚啉（二氢吲哚）
+    "c1ccc2CCNc2c1",         # 吲哚啉（二氢吲哚）
     "c1ccc2c(c1)CCN2",      # 二氢吲哚（含N）
     "c1ccc2c(c1)CCNC2",     # 四氢异喹啉
     "c1ccc2c(c1)N=CN2",     # 苯并咪唑啉
     "c1nc2c([nH]1)cccc2",   # 苯并咪唑变体
 
     # ===== 药物常见骨架（6个）=====
-    "c1ncnc2c1ncn2",        # 嘌呤
+    "c1[nH]cnc2ncnc12",      # 嘌呤
     "c1cnc2ncncc2n1",       # 蝶啶
     "c1ccc2c(c1)cncn2",     # 喹唑啉变体
     "c1ccc2c(c1)ncnc2",     # 喹唑啉（另一表示）
@@ -116,7 +116,7 @@ SCAFFOLDS = [
     "c1cnc2[nH]ccc2c1",     # 吡咯并[2,3-b]吡啶（7-azaindole, 激酶铰链binder）
     "c1cc2nccc2n1",         # 咪唑并[1,2-a]吡啶
     "c1cc2ncnc2n1",         # 吡唑并[1,5-a]嘧啶
-    "c1ccc2nccc2c1",        # 喹啉嗪（indolizine）
+    "c1ccc2cccn2c1",         # 吲哚嗪 (indolizine)
 
     # ===== H022 新增: 桥环骨架（刚性三维结构）=====
     "C1CC2CCC1C2",           # 降冰片烷 (bicyclo[2.2.1]heptane)
@@ -146,7 +146,7 @@ KINASE_HINGE_SCAFFOLDS = [
     # 吡咯并[2,3-b]吡啶 (7-azaindole) — 激酶铰链双齿氢键
     "c1cnc2[nH]ccc2c1",
     # 嘌呤 — 腺嘌呤模拟物，经典 hinge binder
-    "c1ncnc2c1ncn2",
+    "c1[nH]cnc2ncnc12",
     # 吡唑并[1,5-a]嘧啶 — 铰链区双齿氢键（N1+C2-H）
     "c1cc2ncnc2n1",
     # 咪唑并[1,2-a]吡啶 — hinge binder 变体

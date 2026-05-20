@@ -5,8 +5,9 @@ FastAPI service that exposes PocketXMol molecule generation via HTTP API.
 Deploy on a GPU server and set DIFFUSION_API_URL on the Agent machine.
 
 Usage:
-    pip install -r requirements.txt
-    python main.py --host 0.0.0.0 --port 8000 --model-dir /path/to/model_weights
+    cd /root/PocketXMol
+    pip install fastapi uvicorn
+    python /path/to/server/main.py --pxm-dir /root/PocketXMol --port 8000
 
 Endpoints:
     GET  /health  - Health check
@@ -15,22 +16,23 @@ Endpoints:
 import argparse
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import time
+import yaml
 from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 app = FastAPI(title="PocketXMol Inference Server")
 
-# Global model reference (loaded once at startup)
-_model = None
-_device = None
-_model_dir = None
+# Configured at startup
+_PXM_DIR: str = ""
+_DEVICE: str = "cuda:0"
+_CHECKPOINT_EXISTS: bool = False
 
 
 class GenerateRequest(BaseModel):
@@ -65,44 +67,58 @@ class HealthResponse(BaseModel):
     model_loaded: bool
     gpu_available: bool
     device: str = ""
+    pxm_dir: str = ""
 
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     import torch
     return HealthResponse(
-        status="ok" if _model is not None else "model_not_loaded",
-        model_loaded=_model is not None,
+        status="ok" if _CHECKPOINT_EXISTS else "checkpoint_missing",
+        model_loaded=_CHECKPOINT_EXISTS,
         gpu_available=torch.cuda.is_available(),
-        device=_device or "",
+        device=_DEVICE,
+        pxm_dir=_PXM_DIR,
     )
 
 
 @app.post("/generate", response_model=GenerateResponse)
 def generate_molecules(request: GenerateRequest):
-    if _model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+    if not _CHECKPOINT_EXISTS:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Model checkpoint not found at {_PXM_DIR}/data/trained_models/pxm/checkpoints/pocketxmol.ckpt",
+        )
 
     start_time = time.time()
+    outdir = None
 
     try:
-        # Write PDB content to temp file (PocketXMol reads from file)
+        # Write PDB to temp file
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".pdb", delete=False, prefix="pxm_input_"
         ) as f:
             f.write(request.pdb_content)
             pdb_path = f.name
 
-        try:
-            molecules = _run_pocketxmol(
-                pdb_path=pdb_path,
-                n_molecules=request.n_molecules,
-                pocket_center=request.pocket_center,
-                pocket_radius=request.pocket_radius,
-                task=request.task,
-            )
-        finally:
-            os.unlink(pdb_path)
+        # Create temp output dir
+        outdir = tempfile.mkdtemp(prefix="pxm_output_")
+
+        # Generate task-specific YAML config
+        config_path = _write_task_config(
+            pdb_path=pdb_path,
+            outdir=outdir,
+            n_molecules=request.n_molecules,
+            pocket_center=request.pocket_center,
+            pocket_radius=request.pocket_radius,
+            task=request.task,
+        )
+
+        # Run PocketXMol via subprocess
+        _run_sample_use(config_path, outdir)
+
+        # Read SDF outputs → SMILES
+        molecules = _parse_sdf_outputs(outdir)
 
         gen_time = time.time() - start_time
         return GenerateResponse(
@@ -120,206 +136,198 @@ def generate_molecules(request: GenerateRequest):
             message=str(e),
         )
 
-
-def _run_pocketxmol(
-    pdb_path: str,
-    n_molecules: int,
-    pocket_center: list[float],
-    pocket_radius: float,
-    task: str,
-) -> list[MoleculeResult]:
-    """Run PocketXMol inference and convert results to SMILES."""
-    import torch
-    from rdkit import Chem
-    from rdkit.Chem import QED, Descriptors
-
-    # PocketXMol inference
-    with tempfile.TemporaryDirectory(prefix="pxm_output_") as outdir:
-        _sample_molecules(
-            model=_model,
-            pdb_path=pdb_path,
-            outdir=outdir,
-            n_molecules=n_molecules,
-            pocket_center=pocket_center,
-            pocket_radius=pocket_radius,
-            device=_device,
-        )
-
-        # Read generated SDF files and convert to SMILES
-        molecules = []
-        sdf_dir = Path(outdir)
-        for sdf_file in sorted(sdf_dir.glob("**/*.sdf")):
-            supplier = Chem.SDMolSupplier(str(sdf_file))
-            for mol in supplier:
-                if mol is None:
-                    continue
-                smiles = Chem.MolToSmiles(mol, canonical=True)
-                if not smiles:
-                    continue
-
-                # Compute drug-likeness properties
-                qed_val = None
-                mw_val = None
-                logp_val = None
-                sa_val = None
-                try:
-                    qed_val = round(QED.qed(mol), 3)
-                    mw_val = round(Descriptors.MolWt(mol), 1)
-                    logp_val = round(Descriptors.MolLogP(mol), 2)
-                except Exception:
-                    pass
-                try:
-                    from rdkit.Chem import RDConfig
-                    sys.path.append(os.path.join(RDConfig.RDContribDir, "SA_Score"))
-                    import sascorer
-                    sa_val = round(sascorer.calculateScore(mol), 2)
-                except Exception:
-                    pass
-
-                # Extract score from SDF properties if available
-                score = 0.0
-                if mol.HasProp("score"):
-                    try:
-                        score = float(mol.GetProp("score"))
-                    except Exception:
-                        pass
-                if mol.HasProp("confidence"):
-                    try:
-                        score = float(mol.GetProp("confidence"))
-                    except Exception:
-                        pass
-
-                molecules.append(MoleculeResult(
-                    smiles=smiles,
-                    score=score,
-                    qed=qed_val,
-                    mw=mw_val,
-                    logp=logp_val,
-                    sa_score=sa_val,
-                ))
-
-    return molecules
+    finally:
+        # Clean up PDB input
+        try:
+            os.unlink(pdb_path)
+        except Exception:
+            pass
+        # Clean up output dir (optional — comment out to keep for debugging)
+        # if outdir:
+        #     import shutil
+        #     shutil.rmtree(outdir, ignore_errors=True)
 
 
-def _sample_molecules(
-    model,
+def _write_task_config(
     pdb_path: str,
     outdir: str,
     n_molecules: int,
     pocket_center: list[float],
     pocket_radius: float,
-    device: str,
-):
-    """Run PocketXMol sampling.
+    task: str,
+) -> str:
+    """Generate a PocketXMol task YAML config dynamically."""
+    pxm_config_dir = os.path.join(_PXM_DIR, "configs", "sample", "examples")
+    template_path = os.path.join(pxm_config_dir, f"{task}.yml")
 
-    This function calls PocketXMol's inference API. The exact call pattern
-    depends on PocketXMol's version — adjust imports and calls as needed.
-    """
-    import torch
+    # Load template if exists, otherwise use minimal config
+    if os.path.exists(template_path):
+        with open(template_path) as f:
+            config = yaml.safe_load(f)
+    else:
+        config = {}
 
-    # Try the high-level sample_use.py API first
-    try:
-        from PocketXMol.scripts.sample_use import sample as pxm_sample
-        pxm_sample(
-            model=model,
-            pdb_path=pdb_path,
-            outdir=outdir,
-            n_molecules=n_molecules,
-            pocket_center=pocket_center,
-            pocket_radius=pocket_radius,
-            device=device,
-        )
-        return
-    except (ImportError, AttributeError):
-        pass
+    # Override with request parameters
+    config.setdefault("sample", {})
+    config["sample"]["num_mols"] = n_molecules
+    config["sample"]["seed"] = 2024
 
-    # Fallback: call sample_use.py as a subprocess
-    import subprocess
-    config_path = _find_config_for_task("dock_smallmol")
+    config.setdefault("data", {})
+    config["data"]["protein_path"] = pdb_path
+    config["data"]["is_pep"] = False
+
+    config["data"].setdefault("pocket_args", {})
+    config["data"]["pocket_args"]["pocket_coord"] = pocket_center
+    config["data"]["pocket_args"]["radius"] = pocket_radius
+
+    config["data"].setdefault("pocmol_args", {})
+    config["data"]["pocmol_args"]["data_id"] = f"api_{int(time.time())}"
+
+    config.setdefault("transforms", {})
+    config["transforms"].setdefault("featurizer_pocket", {})
+    config["transforms"]["featurizer_pocket"]["center"] = pocket_center
+
+    # Set task type
+    config.setdefault("task", {})
+    config["task"]["name"] = "dock" if "dock" in task else "sbdd"
+
+    # Write to temp file
+    config_out = os.path.join(outdir, "task_config.yml")
+    with open(config_out, "w") as f:
+        yaml.dump(config, f, default_flow_style=False)
+
+    return config_out
+
+
+def _run_sample_use(config_path: str, outdir: str):
+    """Run PocketXMol's sample_use.py as a subprocess."""
+    sample_script = os.path.join(_PXM_DIR, "scripts", "sample_use.py")
+    model_config = os.path.join(_PXM_DIR, "configs", "sample", "pxm.yml")
+
     cmd = [
-        sys.executable, "-m", "PocketXMol.scripts.sample_use",
+        sys.executable, sample_script,
         "--config_task", config_path,
+        "--config_model", model_config,
         "--outdir", outdir,
-        "--device", device,
-        "--pdb_path", pdb_path,
-        "--n_molecules", str(n_molecules),
-        "--pocket_center", json.dumps(pocket_center),
-        "--pocket_radius", str(pocket_radius),
+        "--device", _DEVICE,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+
+    print(f"[PXM] Running: {' '.join(cmd)}", flush=True)
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=1800,  # 30 min max
+        cwd=_PXM_DIR,  # Run from PocketXMol directory (imports depend on this)
+    )
+
     if result.returncode != 0:
-        raise RuntimeError(f"PocketXMol failed: {result.stderr[:500]}")
+        raise RuntimeError(
+            f"PocketXMol failed (exit {result.returncode}):\n"
+            f"STDOUT: {result.stdout[-1000:]}\n"
+            f"STDERR: {result.stderr[-1000:]}"
+        )
+
+    print(f"[PXM] Completed successfully", flush=True)
 
 
-def _find_config_for_task(task: str) -> str:
-    """Find the PocketXMol config file for a given task."""
-    # Common config locations
-    search_paths = [
-        Path(_model_dir) / "configs" / "sample" / "examples" / f"{task}.yml",
-        Path(_model_dir) / "configs" / f"{task}.yml",
-        Path("configs/sample/examples") / f"{task}.yml",
-    ]
-    for p in search_paths:
-        if p.exists():
-            return str(p)
-    # Return default path and let PocketXMol handle the error
-    return f"configs/sample/examples/{task}.yml"
+def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
+    """Read generated SDF files and convert to SMILES with properties."""
+    from rdkit import Chem
+    from rdkit.Chem import QED, Descriptors
 
+    molecules = []
+    out_path = Path(outdir)
 
-def load_model(model_dir: str, device: str):
-    """Load PocketXMol model weights at startup."""
-    global _model, _device, _model_dir
+    for sdf_file in sorted(out_path.rglob("*.sdf")):
+        supplier = Chem.SDMolSupplier(str(sdf_file))
+        for mol in supplier:
+            if mol is None:
+                continue
+            smiles = Chem.MolToSmiles(mol, canonical=True)
+            if not smiles:
+                continue
 
-    _model_dir = model_dir
-    _device = device
+            # Drug-likeness properties
+            qed_val = mw_val = logp_val = sa_val = None
+            try:
+                qed_val = round(QED.qed(mol), 3)
+                mw_val = round(Descriptors.MolWt(mol), 1)
+                logp_val = round(Descriptors.MolLogP(mol), 2)
+            except Exception:
+                pass
+            try:
+                from rdkit.Chem import RDConfig
+                sa_path = os.path.join(RDConfig.RDContribDir, "SA_Score")
+                if sa_path not in sys.path:
+                    sys.path.append(sa_path)
+                import sascorer
+                sa_val = round(sascorer.calculateScore(mol), 2)
+            except Exception:
+                pass
 
-    try:
-        import torch
+            # Extract confidence score from SDF properties
+            score = 0.0
+            for prop_name in ("confidence", "score", "vina_score"):
+                if mol.HasProp(prop_name):
+                    try:
+                        score = float(mol.GetProp(prop_name))
+                        break
+                    except Exception:
+                        pass
 
-        # Try loading via PocketXMol's API
-        try:
-            from PocketXMol.models import load_pretrained
-            _model = load_pretrained(model_dir, device=device)
-            print(f"[OK] Model loaded from {model_dir} on {device}")
-            return
-        except (ImportError, AttributeError):
-            pass
+            molecules.append(MoleculeResult(
+                smiles=smiles,
+                score=score,
+                qed=qed_val,
+                mw=mw_val,
+                logp=logp_val,
+                sa_score=sa_val,
+            ))
 
-        # Alternative: load checkpoint directly
-        ckpt_path = Path(model_dir) / "model.pt"
-        if not ckpt_path.exists():
-            ckpt_path = Path(model_dir) / "checkpoint.pt"
-        if not ckpt_path.exists():
-            print(f"[WARN] No checkpoint found in {model_dir}, model will not be available")
-            return
-
-        _model = torch.load(str(ckpt_path), map_location=device)
-        _model.eval()
-        print(f"[OK] Checkpoint loaded from {ckpt_path} on {device}")
-
-    except Exception as e:
-        print(f"[ERROR] Failed to load model: {e}")
-        _model = None
+    return molecules
 
 
 def main():
+    global _PXM_DIR, _DEVICE, _CHECKPOINT_EXISTS
+
     parser = argparse.ArgumentParser(description="PocketXMol GPU Inference Server")
+    parser.add_argument("--pxm-dir", required=True,
+                        help="Path to PocketXMol installation (e.g., /root/PocketXMol)")
     parser.add_argument("--host", default="0.0.0.0", help="Server host (default: 0.0.0.0)")
     parser.add_argument("--port", type=int, default=8000, help="Server port (default: 8000)")
-    parser.add_argument("--model-dir", required=True, help="Path to PocketXMol model weights directory")
     parser.add_argument("--device", default="cuda:0", help="Device for inference (default: cuda:0)")
-    parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     args = parser.parse_args()
 
-    load_model(args.model_dir, args.device)
+    _PXM_DIR = os.path.abspath(args.pxm_dir)
+    _DEVICE = args.device
+
+    # Verify PocketXMol installation
+    sample_script = os.path.join(_PXM_DIR, "scripts", "sample_use.py")
+    if not os.path.exists(sample_script):
+        print(f"[ERROR] sample_use.py not found at {sample_script}")
+        sys.exit(1)
+
+    # Check model checkpoint (pxm_use for newer releases, pxm for older)
+    ckpt_path = os.path.join(
+        _PXM_DIR, "data", "trained_models", "pxm_use", "checkpoints", "pocketxmol.ckpt"
+    )
+    if not os.path.exists(ckpt_path):
+        ckpt_path = os.path.join(
+            _PXM_DIR, "data", "trained_models", "pxm", "checkpoints", "pocketxmol.ckpt"
+        )
+    _CHECKPOINT_EXISTS = os.path.exists(ckpt_path)
+    if _CHECKPOINT_EXISTS:
+        print(f"[OK] Checkpoint found: {ckpt_path}")
+    else:
+        print(f"[WARN] Checkpoint not found: {ckpt_path}")
+        print(f"       Download from https://zenodo.org/records/17801271")
+        print(f"       Extract: tar -zxvf model_weights.tar.gz -C {_PXM_DIR}")
+        print(f"       Server will start but /generate will return 503 until checkpoint is available")
 
     import uvicorn
-    uvicorn.run(
-        "main:app" if args.reload else app,
-        host=args.host,
-        port=args.port,
-        reload=args.reload,
-    )
+    print(f"[OK] Starting server on {args.host}:{args.port}")
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
