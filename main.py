@@ -27,6 +27,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from kaos.path import KaosPath
+
 from src.event_logger import EventLogger
 from src.event_schema import MetricsEvent
 
@@ -52,6 +54,8 @@ _openai_provider.OpenAILegacy.__init__ = _patched_openai_init
 
 from kimi_agent_sdk import prompt
 
+
+PROJECT_ROOT = Path(__file__).parent
 
 AGENT_YAML = Path(__file__).parent / "agent.yaml"
 PROGRAM_MD = Path(__file__).parent / "program.md"
@@ -302,6 +306,7 @@ async def main() -> None:
             program,
             config=llm_config,
             agent_file=AGENT_YAML,
+            skills_dir=KaosPath(PROJECT_ROOT / ".kimi" / "skills"),
             yolo=True,
             thinking=args.thinking,
             max_steps_per_turn=args.max_steps,
