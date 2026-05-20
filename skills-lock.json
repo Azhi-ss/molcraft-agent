@@ -5,25 +5,25 @@
       "source": "itallstartedwithaidea/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/scientific-research/cheminformatics/SKILL.md",
-      "computedHash": "9f96c04e34871585f1dbbb3ad4e41d32b709a4318aa350fcc9ba52d70c4fbc7e"
+      "computedHash": "5f1be9988e59261e8ae64c5265bffcb255475b3ab388b6bda1d4715bde792dfa"
     },
     "drug-discovery-informatics": {
       "source": "omer-metin/skills-for-antigravity",
       "sourceType": "github",
       "skillPath": "skills/drug-discovery-informatics/SKILL.md",
-      "computedHash": "bdca6426b0833de85511d17281cd385b097908fb8567b30daff799ff2de2ae0b"
+      "computedHash": "f9f4964bb6f07b683616a8722146eac7c0e2a2e5735598f3ca4d1ec9ee638e52"
     },
     "rdkit": {
       "source": "tondevrel/scientific-agent-skills",
       "sourceType": "github",
       "skillPath": "skills/rdkit/SKILL.md",
-      "computedHash": "160e9a8be4feaee922de321819d0eccd6df165cec19501bc6cdb0746fa77ed1e"
+      "computedHash": "e81d8a8ad3c053e1647d36f1e2f6f4b57215253b0481a92a56345edfbf63f86c"
     },
     "tooluniverse-organic-chemistry": {
       "source": "mims-harvard/tooluniverse",
       "sourceType": "github",
       "skillPath": "skills/tooluniverse-organic-chemistry/SKILL.md",
-      "computedHash": "32c2b681dbae220ce7256519843c0c72c71edbabddbf37d9a7b1072d2052b0ec"
+      "computedHash": "b7bb6495c0016d8e5dc43c74b9a9900601860731a230121c10959ee320c9b7f2"
     }
   }
 }
