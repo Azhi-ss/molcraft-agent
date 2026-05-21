@@ -34,11 +34,19 @@ def smiles_to_pdbqt(smiles: str, output_path: str = None):
     if ret != 0:
         ret = AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
     if ret != 0:
+        ret = AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
+    if ret != 0:
+        # Final fallback: random coordinates + ETKDG
+        ret = AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
+    if ret != 0:
         return None
     try:
         AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
     except Exception:
-        pass
+        try:
+            AllChem.UFFOptimizeMolecule(mol, maxIters=200)
+        except Exception:
+            pass
 
     preparator = MoleculePreparation()
     setup_list = preparator.prepare(mol)
@@ -46,6 +54,8 @@ def smiles_to_pdbqt(smiles: str, output_path: str = None):
         return None
 
     pdbqt_string = PDBQTWriterLegacy.write_string(setup_list[0])[0]
+    if not pdbqt_string or not pdbqt_string.strip():
+        return None
 
     if output_path is None:
         fd, output_path = tempfile.mkstemp(suffix=".pdbqt")
