@@ -79,6 +79,26 @@
 3. 将新策略写入 `docs/knowledge_base.md`
 4. 然后才允许重读 papers/ 相关章节或换方向
 
+### 扩散模型两阶段实验
+
+当纯 RDKit 变异连续无进展（≥2 轮 BE 未提升或 trivial route 反复退化），应尝试 PocketXMol 口袋感知扩散模型：
+
+**阶段 1 — 扩散基线**：
+- `run_pipeline --generator diffusion --n-generate 20`
+- 对照组：同参数 `--generator mutate`
+- 比较指标：最佳/平均 BE、骨架多样性（Murcko scaffold 数）、trivial ratio
+- 扩散分子按 QED≥0.3 + SA≤6.0 预过滤
+
+**阶段 2 — 扩散种子进化**（仅当阶段 1 骨架多样性 > 对照组）：
+- 取扩散 top-5 分子作为种子，写入 `src/generator.py` 的 SCAFFOLDS 列表
+- `run_pipeline --generator mutate` 对这些种子做进化优化
+- 如果扩散分子含新颖骨架（螺环/桥环/中环），先补充对应逆合成规则再跑实验
+
+**注意事项**：
+- 扩散一次生成 20 分子约需 2 分钟（GPU），注意 90 分钟总超时
+- Vina 打分偏向疏水分子，扩散生成的极性分子可能 BE 偏低但路线更好——评判时看综合指标，不只盯 BE
+- 扩散失败（GPU 不可用/超时/生成无效分子）不应视为假设失败，标记为 INFRA_BLOCKED
+
 ---
 
 ## 6. 最终输出
