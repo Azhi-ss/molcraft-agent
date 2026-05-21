@@ -31,8 +31,10 @@
 
 ## 2. 阶段二：瓶颈诊断与假设提出
 
-1. **搜索外部新知识（每轮必做）**：搜索当前靶点/瓶颈的最新进展。提取至少 1 个与知识库对比过的改进方向
-2. **阅读关键源码**（重点看改动过的模块）
+0. **禁重检查（每轮必做）**：`Grep "REJECTED" docs/knowledge_base.md`，列出所有已失败的假设。提出的新假设方向不得与任何 REJECTED 条目重复。除非有 2025-2026 年新文献支撑，否则禁止重提已失败方向。
+1. **搜索外部新知识（每轮必做）**：搜索当前靶点/瓶颈的最新进展。提取至少 1 个与知识库对比过的改进方向。
+   - **网络搜索阻塞时**：改用 `Shell: curl -s "https://export.arxiv.org/api/query?search_query=all:tyk2+inhibitor+docking&start=0&max_results=3&sortBy=submittedDate&sortOrder=descending"` 从 arXiv API 获取最新文献摘要，然后 `FetchURL` 获取相关论文全文。
+2. **阅读关键源码**：只读上一轮改动的文件。如果上一轮没改动或首次运行，只读 `Grep` 搜索当前瓶颈相关函数的签名（不读全文）
 3. **诊断分析**：对比文献方法 vs 现有代码差距，找出影响评分维度（结合能/可合成性/结构合理性）的瓶颈
 4. **提出假设**：如果涉及扩充逆合成规则，先读 `.kimi/skills/molcraft-synthesis-rules/SKILL.md`
    - 假设格式参考 `.kimi/skills/molcraft-hypothesis-template/SKILL.md`
@@ -61,7 +63,7 @@
 1. 运行 `run_pipeline` 或 `python3 tools/pipeline.py --n-generate 50 --n-top 10 --strategy mutate --docking-guidance`
 2. 收集指标：最佳/平均结合能、QED/SA/Lipinski、trivial 比例、路线步数
 3. **强制对照**：实验组 vs 对照组（未修改版本或已知基线）。优于对照组且无副作用才保留
-4. 无效时回退：`python3 tools/git_advance.py --round X --best-be Y.ZZ --status discard`
+4. 无效时回退：`git checkout HEAD~1 -- <改动的文件>`（用 git 精确还原，禁止手动 StrReplace 回退）
 5. 有效时保留：`python3 tools/git_advance.py --round X --best-be Y.ZZ --status keep`
 6. 记录 `docs/experiment_round_X.md`，调用 `report_iteration()`，更新 `experiments.jsonl`
 
