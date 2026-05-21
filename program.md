@@ -108,7 +108,7 @@
 满足以下任一条件即停止迭代：
 - 已完成 3 轮迭代（硬性上限）
 - 连续 2 轮无法提出新的可验证假设
-- 已获得满意结果（初始基线提升 > 20% 且所有分子有有效逆合成路线）
+- 已获得满意结果（初始基线提升 > 30% 且所有分子有有效逆合成路线）
 
 ### 输出文件
 
@@ -136,6 +136,37 @@ mol_smiles,route
 - 代码演进的具体修改
 - 实验验证的结果和结论（有数据对比）
 - 迭代过程的科学洞察
+
+---
+
+## 扩散模型（PocketXMol）使用策略
+
+本项目配备了 PocketXMol 扩散模型作为第二生成引擎（GPU 服务器，通过 `diffusion_generate` 工具调用）。在使用前先读 `.kimi/skills/pocketxmol-diffusion/SKILL.md` 了解详细用法。
+
+### 核心原则
+
+- **hybrid 模式是默认推荐**：扩散提供口袋感知种子 + RDKit 提供多样性补充。不要只用纯扩散或纯 RDKit。
+- **扩散模型不可用时不静默降级**：`run_pipeline(generator="diffusion")` 在 GPU 不可用时会报错，不会偷偷切回 RDKit。如果 GPU 服务挂了，先修服务再跑。
+- **第一轮必用 hybrid**：新靶点第一轮用 `hybrid` 建立基线，后续轮根据瓶颈选择。
+
+### 推荐模式选择
+
+```
+新靶点第一轮 → hybrid  （建立口袋感知基线）
+结合能瓶颈   → hybrid  （扩散探索 RDKit 卡住的空间）
+多样性瓶颈   → hybrid  （扩散+RKKit 各自贡献）
+GPU 挂了     → mutate  （纯 RDKit，同时修 GPU 服务）
+定向优化     → mutate + scaffold=xxx（精确控制骨架）
+```
+
+### 验证对照
+
+验证扩散模型是否真的有效时：
+1. 对照组：`run_pipeline(generator="mutate", n_generate=50)`
+2. 实验组：`run_pipeline(generator="hybrid", n_generate=50)`
+3. 对比：top10 平均结合能、QED 中位数、trivial 比例
+
+扩散模型的优势在于结合能（口袋感知），不是 QED（含磷酸基团天然偏低）。
 
 ---
 
