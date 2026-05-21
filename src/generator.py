@@ -133,36 +133,6 @@ SCAFFOLDS = [
     "C1CCCNCC1",             # 氮杂环庚烷 (azepane)
     "C1CCCOCC1",             # 氧杂环庚烷 (oxepane)
     "O=S1(=O)CCNCC1",        # 硫代吗啉 1,1-二氧化物
-
-    # ===== H026 新增: 大芳香稠环体系（多环芳烃，3-5环）=====
-    # 文献依据:
-    #   - Deep Lead Optimization (JACS 2024): scaffold diversity 是先导化合物优化的核心
-    #   - Round 18-19 实验验证: Vina scoring function 偏向疏水芳香体系,
-    #     更大π表面积可提升结合能 (H025 已证实极性取代基降低 Vina 评分)
-    #   - 环数 ≤ 5 以确保 MW ≤ 500（H027 relaxed filters: max_rings=9）
-    # 设计原则:
-    #   - 线性稠环(蒽)和角形稠环(菲)提供不同形状的π表面
-    #   - 含一个杂原子保持氢键能力（氮杂变体）
-    #   - 芘/苝等大体系虽可能有高BE，但可能超过 MW 限制（由 pass_filters 自动过滤）
-
-    # -- 3环稠合芳烃 --
-    "c1ccc2cc3ccccc3cc2c1",     # 蒽 (anthracene, 线性3环)
-    "c1ccc2c(c1)ccc3ccccc32",   # 菲 (phenanthrene, 角形3环)
-    "c1ccc2c(c1)ccc3ccccc23",   # 菲变体
-
-    # -- 4环稠合芳烃 --
-    "c1cc2ccc3cccc4ccc(c1)c2c34",  # 芘 (pyrene, 4环)
-    "c1ccc2c(c1)cc3cccc4ccc2c34",  # 三亚苯 (triphenylene, 4环)
-    "c1ccc2c(c1)ccc3c2cccc3",      # 荧蒽 (fluoranthene, 4环)
-
-    # -- 含氮大稠环（保持氢键能力）--
-    "c1ccc2c(c1)nc3ccccc3c2",   # 吖啶 (acridine, N-蒽类似物)
-    "c1ccc2c(c1)cc3cccnc3c2",   # 苯并[h]喹啉 (角形含氮)
-    "c1ccc2c(c1)ccc3cccnc23",  # 苯并[f]喹啉 (benzo[f]quinoline)
-
-    # -- 5环稠合芳烃（试探性，可能被 MW 过滤）--
-    "c1cc2cccc3ccc4cccc5ccc1c2c3c54",  # 苝 (perylene, 5环)
-    "c1ccc2c(c1)cc3c4ccccc4ccc3c2",  # 苯并[a]芘 (benzo[a]pyrene, 5环)
 ]
 
 # H021: 激酶铰链结合骨架 — 在突变生成中以 40% 概率优先采样
