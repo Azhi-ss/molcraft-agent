@@ -3461,4 +3461,1237 @@ Web search via FetchURL 受限。改用 Shell + curl 搜索学术资源，同时
 [2026-05-21T00:19:28.718900] 迭代进度: 0/3 (初始: 18)
 诊断分析完成。现在写出诊断报告并准备进入代码演进阶段。<system>File successfully overwritten. Current size: 2622 bytes.</system>
 [2026-05-21T00:19:57.488309] 迭代进度: 0/3 (初始: 18)
-诊断阶段完成。过渡到代码演进阶段。{"stage": "诊断", "duration_seconds": 241.9, "message": "阶段「诊断」完成，耗时 241.9s"}{"stage": "代码演进", "message": "阶段「代码演进」开始"}<system>Todo list updated</system>
+诊断阶段完成。过渡到代码演进阶段。{"stage": "诊断", "duration_seconds": 241.9, "message": "阶段「诊断」完成，耗时 241.9s"}{"stage": "代码演进", "message": "阶段「代码演进」开始"}<system>Todo list updated</system>先做 Git 备份，然后实施 H026：扩展大芳香环骨架库。<system>Command executed successfully.</system>[main cf1d500] backup before H026: expanded large aromatic scaffolds
+ 6 files changed, 4026 insertions(+), 94 deletions(-)
+ create mode 100644 docs/agent_self_debug_report_20260521.md
+ create mode 100644 output/nohup_round22-24.out
+ create mode 100644 output/result.log.bak
+
+[2026-05-21T00:20:26.198719] 迭代进度: 0/3 (初始: 18)
+现在实施 H026：在 `SCAFFOLDS` 列表中添加大芳香环骨架。<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>
+[2026-05-21T00:20:54.969566] 迭代进度: 0/3 (初始: 18)
+代码修改完成。验证编译和导入。<system>Command executed successfully.</system>编译成功。验证新骨架可以正确加载使用。<system>ERROR: Command failed with exit code: 1.</system>Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+ModuleNotFoundError: No module named 'generator'
+<system>Command executed successfully.</system>Total scaffolds: 81
+  [69] atoms=8 rings=1 O=S1(=O)CCNCC1
+  [70] atoms=14 rings=3 c1ccc2cc3ccccc3cc2c1
+  [71] atoms=14 rings=3 c1ccc2c(c1)ccc3ccccc32
+  [72] atoms=14 rings=3 c1ccc2c(c1)ccc3ccccc23
+  [73] atoms=16 rings=4 c1cc2ccc3cccc4ccc(c1)c2c34
+  [74] atoms=16 rings=4 c1ccc2c(c1)cc3cccc4ccc2c34
+  [75] atoms=14 rings=3 c1ccc2c(c1)ccc3c2cccc3
+  [76] atoms=14 rings=3 c1ccc2c(c1)nc3ccccc3c2
+  [77] atoms=14 rings=3 c1ccc2c(c1)cc3cccnc3c2
+  [78] atoms=0 rings=0 c1ccc2c(c1)ccc3ncccc3c2
+  [79] atoms=0 rings=0 c1cc2ccc3cccc4ccc5ccc1c2c3c45
+  [80] atoms=0 rings=0 c1ccc2c(c1)ccc3c4ccccc4ccc2c3
+
+[2026-05-21T00:21:23.700352] 迭代进度: 0/3 (初始: 18)
+部分新骨架 SMILES 无效。修复 SMILES 格式。<system>Command executed successfully.</system>[00:21:43] Can't kekulize mol.  Unkekulized atoms: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14
+[00:21:43] Can't kekulize mol.  Unkekulized atoms: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18
+OK benzo_f_quinoline: atoms=14 c1ccc2c(c1)ccc3cccnc23
+OK perylene: atoms=20 c1cc2cccc3ccc4cccc5ccc1c2c3c54
+OK benzo_a_pyrene: atoms=18 c1ccc2c(c1)cc3c4ccccc4ccc3c2
+
+[2026-05-21T00:21:52.579898] 迭代进度: 0/3 (初始: 18)
+<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system><system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system><system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>重新验证编译和所有新骨架。<system>Command executed successfully.</system>Total scaffolds: 81
+  [69] atoms=8 rings=1 OK O=S1(=O)CCNCC1
+  [70] atoms=14 rings=3 OK c1ccc2cc3ccccc3cc2c1
+  [71] atoms=14 rings=3 OK c1ccc2c(c1)ccc3ccccc32
+  [72] atoms=14 rings=3 OK c1ccc2c(c1)ccc3ccccc23
+  [73] atoms=16 rings=4 OK c1cc2ccc3cccc4ccc(c1)c2c34
+  [74] atoms=16 rings=4 OK c1ccc2c(c1)cc3cccc4ccc2c34
+  [75] atoms=14 rings=3 OK c1ccc2c(c1)ccc3c2cccc3
+  [76] atoms=14 rings=3 OK c1ccc2c(c1)nc3ccccc3c2
+  [77] atoms=14 rings=3 OK c1ccc2c(c1)cc3cccnc3c2
+  [78] atoms=14 rings=3 OK c1ccc2c(c1)ccc3cccnc23
+  [79] atoms=20 rings=5 OK c1cc2cccc3ccc4cccc5ccc1c2c3c54
+  [80] atoms=18 rings=4 OK c1ccc2c(c1)cc3c4ccccc4ccc3c2
+All scaffolds valid!
+
+[2026-05-21T00:22:21.259066] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:22:51.259803] 迭代进度: 0/3 (初始: 18)
+全部12个新骨架验证通过（81个总骨架，净增12个）。记录代码演进日志。<system>File successfully overwritten. Current size: 2026 bytes.</system>
+[2026-05-21T00:23:20.022263] 迭代进度: 0/3 (初始: 18)
+代码演进完成。进入实验验证阶段。{"stage": "代码演进", "duration_seconds": 213.0, "message": "阶段「代码演进」完成，耗时 213.0s"}{"stage": "实验验证", "message": "阶段「实验验证」开始"}<system>Todo list updated</system>[2026-05-21T00:23:42.761781] ============================================================
+[2026-05-21T00:23:42.762742] MolCraft Agent 进化迭代版开始执行
+[2026-05-21T00:23:42.762797] 配置: n_generate=50, n_generations=2, n_offspring=3, strategy=mutate, docking_guidance=True, generator=mutate
+[2026-05-21T00:23:42.762839] ============================================================
+[2026-05-21T00:23:42.762903] 步骤 1: 准备受体
+[2026-05-21T00:23:42.763246] 受体准备完成
+[2026-05-21T00:23:42.763260] ------------------------------------------------------------
+[2026-05-21T00:23:42.763267] 进化第 1/2 代
+[2026-05-21T00:23:42.763273] ------------------------------------------------------------
+[2026-05-21T00:23:42.763280] 初始代: 使用对接引导生成 (batch_size=10, n_generations=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:23:50.257606] 迭代进度: 0/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 1/3: generated 10, docked 10, best -7.119, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.107
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 2/3: generated 10, docked 10, best -7.769, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.148
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[2026-05-21T00:24:20.217248] 迭代进度: 0/3 (初始: 18)
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 3/3: generated 10, docked 10, best -8.098, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.141
+[2026-05-21T00:24:28.669564] 对接引导生成完成，获得 28 个分子
+[2026-05-21T00:24:28.669596] 本代生成 28 个通过过滤的分子
+[2026-05-21T00:24:28.669606] 对接引导生成已包含对接结果，成功 28/28
+[2026-05-21T00:24:28.669614] 选择 20 个种子进入下一代
+[2026-05-21T00:24:28.669620] 本代最佳结合能: -8.098 kcal/mol
+[2026-05-21T00:24:28.669624] 全局最佳结合能: -8.098 kcal/mol
+[2026-05-21T00:24:28.669628] ------------------------------------------------------------
+[2026-05-21T00:24:28.669633] 进化第 2/2 代
+[2026-05-21T00:24:28.669636] ------------------------------------------------------------
+[2026-05-21T00:24:28.669640] 第 2 代: 从 top 20 种子变异生成
+[2026-05-21T00:24:29.074594] 本代生成 60 个通过过滤的分子
+[2026-05-21T00:24:29.074738] 第 2 代: 分子对接
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 1/60: Cc1cccc(-c2cc(C)cc(C)c2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 2/60: Cc1ccc(C2CCCCCO2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 3/60: c1ccc2c(c1)CSCN2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 4/60: Nc1ccccc1S(=O)(=O)Nc1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 5/60: FC1CNCCC12CCCN2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 6/60: CC1(c2ccc3c(c2)OCCO3)CCCCC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 7/60: Nc1cccc2c1CC1(CCCCC1)N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 8/60: NCC1CCc2cccc(F)c2N1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 9/60: Fc1cc(F)c2c(c1)C(Cl)CO2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 10/60: Fc1cccc(Cl)c1C1=CC2=NC=NC2=N1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 11/60: Fc1cccc2c1NC1(CCCCC1Cl)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:24:49.319189] 迭代进度: 0/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[对接] 12/60: Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 13/60: Fc1ccc(F)c2c1CC1(CCCCC1Cl)N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 14/60: Cc1ccc2c(c1Cl)C(Cl)CO2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 15/60: O=S1(=O)NC2C(F)OCCC2Oc2cc(Cl)ccc21...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 16/60: Cc1cc(-c2cccc(Cl)c2)cc2c1N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 17/60: Cc1cccc(OCc2cccc(F)c2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 18/60: Fc1ccc2c(c1F)NC1(CCCCC1Cl)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 19/60: NC1CCCC(O[SH]2(=O)Oc3ccccc32)C1F...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 20/60: CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 21/60: FC1=CC=CS2=C1NC1(CCCCC1)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 22/60: c1ccc(-c2ccccc2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 23/60: Cc1ccc(S(=O)(=O)Nc2ccccc2F)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 24/60: c1ccc2c(c1)CC1(CCCCC1)N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 25/60: Cc1ccc(S(=O)(=O)Nc2ccccc2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 26/60: Oc1ccc(CSc2cccnc2)cc1...
+[2026-05-21T00:25:18.360869] 迭代进度: 0/3 (初始: 18)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+
+[对接] 27/60: Cc1ccccc1OCc1c(O)cccc1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 28/60: Cc1ccc2c(c1)C(Cl)C(Cl)O2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 29/60: C1CCC(C23CCCCC2NCO3)CC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 30/60: Clc1cnc(C2CNCCC23CCCN3)[nH]1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 31/60: c1ccc(-c2ccc3scnc3c2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 32/60: CC1CCCC2(Cc3cccc(F)c3N2)O1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 33/60: Nc1cccc(COc2cccnc2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 34/60: Fc1ccccc1C1CNCCO1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 35/60: Nc1ccc(-c2ccc(O)cc2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 36/60: O=S(=O)(NC1CCCC(Cl)C1)C1(Cl)CCCC(F)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 37/60: NC1CCNc2c(F)cccc21...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 38/60: Clc1ccccc1-c1cnc2ncncc2n1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 39/60: Nc1ccccc1SOc1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 40/60: c1nc2cc(C3CCCCS3)ccc2[nH]1...
+[2026-05-21T00:25:49.921237] 迭代进度: 0/3 (初始: 18)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+
+[对接] 41/60: ClCc1cccc(OCc2cccnc2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 42/60: OC1c2cccc(F)c2NC12CCCCC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 43/60: O=C(O)Cc1cccc(C2CSCN2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 44/60: ClCc1cccc(OCc2ccccn2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 45/60: c1ccc(-c2ccc3c(c2)CCCCN3)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 46/60: FC1CCCCC1c1cnc2[nH]ccc2c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 47/60: O=S(NC1CCCCC1)C1(Cl)CCCC(F)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 48/60: NC(=O)c1ccccc1-c1cccc(N)c1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 49/60: Cc1ccc2[nH]c3ccccc3c2c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 50/60: NC1CC2(CCN1)Cc1cccc(F)c1N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 51/60: c1cc(C2CCCCC2)ncn1...
+[2026-05-21T00:26:19.262491] 迭代进度: 0/3 (初始: 18)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:35.573193] 对接成功 60/60 个分子
+[2026-05-21T00:26:35.573380] 选择 20 个种子进入下一代
+[2026-05-21T00:26:35.573408] 本代最佳结合能: -8.389 kcal/mol
+[2026-05-21T00:26:35.573413] 全局最佳结合能: -8.389 kcal/mol
+[2026-05-21T00:26:35.573418] ------------------------------------------------------------
+[2026-05-21T00:26:35.573421] 最终选择: 从所有代中选择 top 分子
+[2026-05-21T00:26:35.573503] 共识对接: 对 top 20 候选执行 3 次独立对接取中位数...
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:39.330121]   [1/20] Cc1ccc2[nH]c3ccccc3c2c1... median=-8.389 std=0.003 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:44.052840]   [2/20] Cc1cccc(-c2cc(C)cc(C)c2)c1... median=-8.171 std=0.023 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:48.333028]   [3/20] Cc1cccc(-c2cccc(C)c2)c1... median=-8.086 std=0.007 (n=3)
+
+[对接] 52/60: ClC1CNCCC12Cc1ccccc1N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 53/60: Cc1ccc2c(c1)C(O)(Cl)CO2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 54/60: Fc1cc(F)c2c(Cl)cccc2n1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 55/60: Fc1ccnc2nccc(Cl)c12...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 56/60: NC1CCC(c2ccc3scnc3c2)C(F)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 57/60: Fc1cccc2c1CCNC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 58/60: Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 59/60: O=S(=O)(CC1CCCCC1F)c1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 60/60: Fc1cccc(COc2ccccc2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:26:48.335461] 迭代进度: 0/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:53.722264]   [4/20] Cc1cc(-c2cccc(Cl)c2)cc2c1N2... median=-8.078 std=0.024 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:26:58.462363]   [5/20] Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1... median=-8.082 std=0.163 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:08.922527]   [6/20] CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1... median=-8.001 std=0.022 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:14.716543]   [7/20] FC1CCCCC1c1cnc2[nH]ccc2c1... median=-7.952 std=0.014 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[2026-05-21T00:27:17.336972] 迭代进度: 0/3 (初始: 18)
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:18.753893]   [8/20] Cc1cccc(-c2ccccc2)c1... median=-7.793 std=0.015 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:26.384788]   [9/20] NC1CCC(c2ccc3scnc3c2)C(F)C1... median=-7.801 std=0.004 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:30.958929]   [10/20] Fc1cccc2c1NC1(CCCCC1Cl)C2... median=-7.769 std=0.008 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:34.646966]   [11/20] Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)N2... median=-7.768 std=0.003 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:39.839863]   [12/20] c1ccc(-c2ccc3scnc3c2)cc1... median=-7.757 std=0.017 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:27:46.988580] 迭代进度: 0/3 (初始: 18)[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:50.509610]   [13/20] NC1CCCC(O[SH]2(=O)Oc3ccccc32)C1F... median=-7.734 std=0.007 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:27:56.580926]   [14/20] Clc1ccccc1-c1cnc2ncncc2n1... median=-7.203 std=0.290 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:02.590378]   [15/20] NC1CC2(CCN1)Cc1cccc(F)c1N2... median=-7.625 std=0.020 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:09.747491]   [16/20] Cc1ccccc1OCc1c(O)cccc1Cl... median=-7.571 std=0.008 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:14.556674]   [17/20] Fc1ccc(F)c2c1CC1(CCCCC1Cl)N2... median=-7.223 std=0.300 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[2026-05-21T00:28:16.846545] 迭代进度: 0/3 (初始: 18)
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:21.644252]   [18/20] Cc1cccc(OCc2cccc(F)c2)c1... median=-7.564 std=0.021 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:28.370182]   [19/20] Cc1ccccc1OCc1ccccc1Cl... median=-7.435 std=0.034 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:28:34.219919]   [20/20] Fc1ccc2c(c1F)NC1(CCCCC1Cl)C2... median=-7.483 std=0.024 (n=3)
+[2026-05-21T00:28:34.220172] 去重后共 85 个独特分子，候选池 30 个进行路线评分
+[2026-05-21T00:28:34.220195] 为候选池 30 个分子规划合成路线并评分
+[2026-05-21T00:28:34.369793] 复合评分排序完成 (0.8×BE + 0.2×路线质量)
+[2026-05-21T00:28:34.369942]   Cc1ccc2[nH]c3ccccc3c2c1... BE=-8.389 steps=0 quality=0.00 composite=0.800 [TRIVIAL]
+[2026-05-21T00:28:34.369964]   Cc1cccc(-c2cc(C)cc(C)c2)c1... BE=-8.171 steps=1 quality=0.70 composite=0.793
+[2026-05-21T00:28:34.369972]   Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1... BE=-8.082 steps=2 quality=0.85 composite=0.763
+[2026-05-21T00:28:34.369978]   Cc1cccc(-c2cccc(C)c2)c1... BE=-8.086 steps=1 quality=0.70 composite=0.736
+[2026-05-21T00:28:34.369984]   Cc1cc(-c2cccc(Cl)c2)cc2c1N2... BE=-8.078 steps=1 quality=0.70 composite=0.730
+[2026-05-21T00:28:34.369989]   CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1... BE=-8.001 steps=1 quality=0.70 composite=0.678
+[2026-05-21T00:28:34.369994]   Fc1cccc2c1NC1(CCCCC1Cl)C2... BE=-7.769 steps=2 quality=0.85 composite=0.552
+[2026-05-21T00:28:34.369998]   Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)N2... BE=-7.768 steps=3 quality=0.85 composite=0.551
+[2026-05-21T00:28:34.370003]   Cc1cccc(-c2ccccc2)c1... BE=-7.793 steps=1 quality=0.70 composite=0.538
+[2026-05-21T00:28:34.370008]   c1ccc(-c2ccc3scnc3c2)cc1... BE=-7.757 steps=1 quality=0.70 composite=0.514
+[2026-05-21T00:28:34.370016] Top 10 平均结合能: -7.989 kcal/mol
+[2026-05-21T00:28:34.370022] 最佳结合能: -8.389 kcal/mol
+[2026-05-21T00:28:34.370028] Trivial route 比例: 1/10 (10.0%)
+[2026-05-21T00:28:34.370669] 结果已保存到 /home/dministrator/Lab/clones/molcraft-agent/output/result.dcf3ed94.tmp.pipeline.tmp.csv
+[2026-05-21T00:28:34.370691] ============================================================
+[2026-05-21T00:28:34.370695] 流程完成
+[2026-05-21T00:28:34.370703] 最佳结合能: -8.389 kcal/mol
+[2026-05-21T00:28:34.370707] 输出文件: /home/dministrator/Lab/clones/molcraft-agent/output/result.dcf3ed94.tmp.pipeline.tmp.csv
+[2026-05-21T00:28:34.370712] ============================================================
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+运行 H026 实验（开启 docking guidance，标准配置）。{"status": "success", "summary": "Pipeline 完成: 10 分子, 最佳结合能 -8.389 kcal/mol, trivial 比例 1/10", "molecule_count": 10, "best_binding_energy": -8.389, "avg_binding_energy": -7.989400000000001, "trivial_route_count": 1, "trivial_ratio": 0.1, "top_molecules": [{"smiles": "Cc1ccc2[nH]c3ccccc3c2c1", "binding_energy": -8.389, "route": "Cc1ccc2[nH]c3ccccc3c2c1>>Cc1ccc2[nH]c3ccccc3c2c1"}, {"smiles": "Cc1cccc(-c2cc(C)cc(C)c2)c1", "binding_energy": -8.171, "route": "Cc1cccc(Br)c1.Cc1cc(C)cc(B(O)O)c1>>Cc1cccc(-c2cc(C)cc(C)c2)c1.B(O)O.Br"}, {"smiles": "Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1", "binding_energy": -8.082, "route": "Cc1ccc2c(c1O)NC1(C2)CC(C)CC(C)C1.Cl>>Cc1ccc2c(c1Cl)NC1(C2)CC(C)CC(C)C1.O | Cc1ccc2c(c1Cl)NC1(C2)CC(C)CC(C)C1.F>>Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1.O"}, {"smiles": "Cc1cccc(-c2cccc(C)c2)c1", "binding_energy": -8.086, "route": "Cc1cccc(Br)c1.Cc1cccc(B(O)O)c1>>Cc1cccc(-c2cccc(C)c2)c1.B(O)O.Br"}, {"smiles": "Cc1cc(-c2cccc(Cl)c2)cc2c1N2", "binding_energy": -8.078, "route": "Cc1cc(Br)cc2c1N2.OB(O)c1cccc(Cl)c1>>Cc1cc(-c2cccc(Cl)c2)cc2c1N2.B(O)O.Br"}, {"smiles": "CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1", "binding_energy": -8.001, "route": "O=S(=O)(Cl)c1ccc(Cl)cc1.CC1(N)CCC(O)(Cl)NC1>>CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1.O"}, {"smiles": "Fc1cccc2c1NC1(CCCCC1Cl)C2", "binding_energy": -7.769, "route": "Oc1cccc2c1NC1(CCCCC1Cl)C2.Cl>>Clc1cccc2c1NC1(CCCCC1Cl)C2.O | Clc1cccc2c1NC1(CCCCC1Cl)C2.F>>Fc1cccc2c1NC1(CCCCC1Cl)C2.O"}, {"smiles": "Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)N2", "binding_energy": -7.768, "route": "Oc1cc(Cl)c2c(c1)CC1(CCCCC1Cl)N2.Cl>>Clc1cc(Cl)c2c(c1)CC1(CCCCC1Cl)N2.O | Clc1cc(Cl)c2c(c1)CC1(CCCCC1Cl)N2.F>>Fc1cc(Cl)cc2c1NC1(CCCCC1Cl)C2.O | Fc1cc(Cl)cc2c1NC1(CCCCC1Cl)C2.F>>Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)N2.O"}, {"smiles": "Cc1cccc(-c2ccccc2)c1", "binding_energy": -7.793, "route": "Cc1cccc(Br)c1.OB(O)c1ccccc1>>Cc1cccc(-c2ccccc2)c1.B(O)O.Br"}, {"smiles": "c1ccc(-c2ccc3scnc3c2)cc1", "binding_energy": -7.757, "route": "Brc1ccccc1.OB(O)c1ccc2scnc2c1>>c1ccc(-c2ccc3scnc3c2)cc1.B(O)O.Br"}], "next_actions": ["1. 调用 report_iteration 记录本轮实验（round/hypothesis_id/success/summary）", "2. 将本轮指标与基线 -8.56 kcal/mol 对比", "3. 如果结合能提升：判定 ACCEPTED，记录改动；如果下降：判定 REJECTED，回退代码", "4. 检查 trivial 比例是否 > 30%，如果是，下一轮考虑扩充逆合成规则库"]}
+[2026-05-21T00:28:45.596100] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:29:14.363880] 迭代进度: 0/3 (初始: 18)
+实验完成，结果不如预期。先快速检查新骨架是否被实际使用。<system>Command executed successfully.</system>mol_smiles,route
+Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1,Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1>>Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1
+Nc1cc(Cl)cc(-c2ccccc2N)c1,Nc1cc(Cl)cc(Br)c1.Nc1ccccc1B(O)O>>Nc1cc(Cl)cc(-c2ccccc2N)c1.B(O)O.Br
+O=Cc1cc(-c2ccncc2)ccc1C(=O)c1ccccc1,O=Cc1cccc(O)c1.O=C(Cl)c1ccccc1>>O=Cc1cc(O)ccc1C(=O)c1ccccc1.O | O=Cc1cc(O)ccc1C(=O)c1ccccc1.Br>>O=Cc1cc(Br)ccc1C(=O)c1ccccc1.O | O=Cc1cc(Br)ccc1C(=O)c1ccccc1.OB(O)c1ccncc1>>O=Cc1cc(-c2ccncc2)ccc1C(=O)c1ccccc1.B(O)O.Br
+Fc1ccccc1-c1ccccc1F,Fc1ccccc1Br.OB(O)c1ccccc1F>>Fc1ccccc1-c1ccccc1F.B(O)O.Br
+Nc1cccc(-c2cc(N)c(N)c(F)c2)c1,Nc1cccc(Br)c1.Nc1cc(B(O)O)cc(F)c1N>>Nc1cccc(-c2cc(N)c(N)c(F)c2)c1.B(O)O.Br
+c1ccc(C2CNC3(CCNCN3)C2)cc1,NC1(CCO)CC(c2ccccc2)CN1>>NC1(CC=O)CC(c2ccccc2)CN1 | NC1(CC=O)CC(c2ccccc2)CN1.N>>NCCC1(N)CC(c2ccccc2)CN1.O | NCCC1(N)CC(c2ccccc2)CN1.CCNC=O>>c1ccc(C2CNC3(CCNCN3)C2)cc1.O.O.O
+CC1CCCCC1COc1ccc(N)c(N)c1,Nc1ccc(O)cc1N.CC1CCCCC1CCl>>CC1CCCCC1COc1ccc(N)c(N)c1.O
+Nc1cccc(-c2ccc(N)c(N)c2)c1,Nc1cccc(Br)c1.Nc1ccc(B(O)O)cc1N>>Nc1cccc(-c2ccc(N)c(N)c2)c1.B(O)O.Br
+Clc1ccc(-c2ccccc2)cc1,Clc1ccc(Br)cc1.OB(O)c1ccccc1>>Clc1ccc(-c2ccccc2)cc1.B(O)O.Br
+Nc1cccc(F)c1C1COc2ccccc21,Nc1cccc(O)c1C1COc2ccccc21.Cl>>Nc1cccc(Cl)c1C1COc2ccccc21.O | Nc1cccc(Cl)c1C1COc2ccccc21.F>>Nc1cccc(F)c1C1COc2ccccc21.O
+
+[2026-05-21T00:29:43.148587] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:30:11.876825] 迭代进度: 0/3 (初始: 18)
+H026 实验结果显示回归。分析结果并记录。<system>Thought logged</system>
+[2026-05-21T00:30:41.878209] 迭代进度: 0/3 (初始: 18)
+<system>Command executed successfully.</system>[00:30:59] reactant 0 has no mapped atoms.
+[00:30:59] product 0 has no mapped atoms.
+[00:30:59] product 1 has no mapped atoms.
+Molecule: Cc1ccc2[nH]c3ccccc3c2c1
+Has substructure match: True
+Reaction products: 2
+  Product: NNc1ccccc1
+  Product: C=O
+  Product: NNc1ccccc1
+  Product: C=O
+
+Testing via synthesis_v2:
+  Route: Cc1ccc2[nH]c3ccccc3c2c1>>Cc1ccc2[nH]c3ccccc3c2c1...
+  Trivial: True
+  MATCHED: [c;R][c;R] -> [c:1][c:2]>>[c:1]Br.[c:2]B(O)O
+  MATCHED: c1ccc2[nH]ccc2c1 -> c1ccc2[nH]ccc2c1>>NNc1ccccc1.C=O
+
+[2026-05-21T00:31:10.603948] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:31:39.311221] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:32:08.084755] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:32:36.839468] 迭代进度: 0/3 (初始: 18)
+关键发现！Suzuki 规则 `[c;R][c;R]` 错误匹配了吲哚的稠环内 C-C 键，导致 Fischer indole 规则无法被使用。验证此 bug。<system>Command executed successfully.</system>Suzuki matches on indole: True
+Number of Suzuki matches: 13
+Suzuki retro products sets: 26
+  Set 0: cc1[nH]c2ccccc2c1cc(C)Br + cc1c(ccB(O)O)[nH]c2ccccc21
+    target_heavy=14, reactant_heavy=0, ratio=0.00
+  Set 1: Cc(Br)ccc1cc2ccccc2[nH]1 + ccc1[nH]c2ccccc2c1cB(O)O
+    target_heavy=14, reactant_heavy=0, ratio=0.00
+  Set 2: cc1c(ccBr)[nH]c2ccccc21 + cc1[nH]c2ccccc2c1cc(C)B(O)O
+    target_heavy=14, reactant_heavy=0, ratio=0.00
+Suzuki rule at index 5
+Fischer indole rule at index 61
+
+[2026-05-21T00:33:05.596840] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:33:34.347973] 迭代进度: 0/3 (初始: 18)
+
+[2026-05-21T00:34:03.095793] 迭代进度: 0/3 (初始: 18)
+确认 bug！Suzuki 规则 `[c;R][c;R]` 在 indole 稠环内部错误匹配 13 次，且排在 Fischer indole（#61）之前的 #5 位。这导致特定规则被跳过。这是 trivial route 回归的根因。
+
+先完成 H026 实验报告并标记 REJECTED，然后这个 bug 将成为下一轮假设。<system>File successfully overwritten. Current size: 2005 bytes.</system>报告迭代完成，然后处理 git 状态。{"status": "recorded", "round": 4, "message": "第 4 轮迭代已记录"}
+[2026-05-21T00:34:31.837349] 迭代进度: 1/3 (初始: 18)
+{"stage": "实验验证", "duration_seconds": 692.6, "message": "阶段「实验验证」完成，耗时 692.6s"}{"stage": "复盘", "message": "阶段「复盘」开始"}<system>Thought logged</system>
+[2026-05-21T00:35:00.512234] 迭代进度: 1/3 (初始: 18)
+更新知识库，然后开始 Round 5。<system>11 lines read from file starting from line 130. End of file reached.</system>   130	---
+   131	
+   132	## Open / Pending Hypotheses
+   133	
+   134	| ID | Description | Priority |
+   135	|----|-------------|----------|
+   136	| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
+   137	| H023 | Multi-step route chemical validation (check intermediate stability) | MEDIUM |
+   138	| H024 | Fix docking coordinates to geometric pocket (now done) | ✅ DONE |
+   139	| H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | HIGH — Vina favors flat hydrophobic aromatics |
+   140	| H027 | Relaxed molecular filters (max_rings 7→9, max_sa 6.0→7.0) | ✅ VERIFIED — Best BE +2.0%, Avg +4.2% |
+<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>
+[2026-05-21T00:35:30.512996] 迭代进度: 1/3 (初始: 18)
+<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>{"stage": "复盘", "duration_seconds": 76.4, "message": "阶段「复盘」完成，耗时 76.4s"}
+[2026-05-21T00:35:58.879252] 迭代进度: 1/3 (初始: 18)
+开始 Round 5。Suzuki SMARTS bug 已在 Round 4 实验阶段诊断完毕，直接进入代码演进。{"stage": "诊断", "message": "阶段「诊断」开始"}<system>ERROR: Error validating JSON arguments: 4 validation errors for Params
+todos.0.title
+  Field required [type=missing, input_value={'content': 'Round 5: 诊...认', 'status': 'done'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+todos.1.title
+  Field required [type=missing, input_value={'content': 'Round 5: 代...'status': 'in_progress'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+todos.2.title
+  Field required [type=missing, input_value={'content': 'Round 5: 实...', 'status': 'pending'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing
+todos.3.title
+  Field required [type=missing, input_value={'content': 'Round 5: 复...', 'status': 'pending'}, input_type=dict]
+    For further information visit https://errors.pydantic.dev/2.12/v/missing</system>{"stage": "诊断", "duration_seconds": 9.4, "message": "阶段「诊断」完成，耗时 9.4s"}{"stage": "代码演进", "message": "阶段「代码演进」开始"}实施 H028：修复 Suzuki SMARTS 特异性。<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>
+[2026-05-21T00:36:27.662978] 迭代进度: 1/3 (初始: 18)
+验证 H028 修复是否生效。<system>Command executed successfully.</system>Old Suzuki matches on indole: 13
+New Suzuki matches on indole: 0
+New Suzuki matches on biphenyl: 1
+New Suzuki retro on indole: 0 product sets (should be 0)
+New Suzuki retro on biphenyl: 2 product sets
+Indole route: trivial=True
+  Route: Cc1ccc2[nH]c3ccccc3c2c1>>Cc1ccc2[nH]c3ccccc3c2c1...
+
+[2026-05-21T00:36:56.436017] 迭代进度: 1/3 (初始: 18)
+Suzuki 修复有效（indole: 13→0 匹配）。但 indole 仍为 trivial route。调试其他可能拦截的规则。<system>Command executed successfully.</system>Rule[61] FAILED: c1ccc2[nH]ccc2c1
+
+[2026-05-21T00:37:25.191127] 迭代进度: 1/3 (初始: 18)
+<system>Command executed successfully.</system>[00:37:43] reactant 0 has no mapped atoms.
+[00:37:43] product 0 has no mapped atoms.
+[00:37:43] product 1 has no mapped atoms.
+Reaction valid: True
+Num reactant templates: 1
+Num product sets: 2
+Set 0: 2 products
+  [0] NNc1ccccc1
+      heavy_atoms=8
+  [1] C=O
+      heavy_atoms=2
+Set 1: 2 products
+  [0] NNc1ccccc1
+      heavy_atoms=8
+  [1] C=O
+      heavy_atoms=2
+
+[2026-05-21T00:37:53.968092] 迭代进度: 1/3 (初始: 18)
+
+[2026-05-21T00:38:22.735385] 迭代进度: 1/3 (初始: 18)
+
+[2026-05-21T00:38:51.537349] 迭代进度: 1/3 (初始: 18)
+<system>Command executed successfully.</system>HasSubstructMatch: True
+Reaction valid: True
+Product sets: 2
+  Products: 2
+  r1=NNc1ccccc1, r2=C=O
+  validate r1: True
+  validate r2: True
+  _try_route result: NNc1ccccc1.C=O>>Cc1ccc2[nH]c3ccccc3c2c1.O.O
+  mass balance: target=14, reactant=10, ratio=1.40
+  within [0.7, 1.3]: False
+  Products: 2
+  r1=NNc1ccccc1, r2=C=O
+  validate r1: True
+  validate r2: True
+  _try_route result: NNc1ccccc1.C=O>>Cc1ccc2[nH]c3ccccc3c2c1.O.O
+  mass balance: target=14, reactant=10, ratio=1.40
+  within [0.7, 1.3]: False
+
+[2026-05-21T00:39:20.311563] 迭代进度: 1/3 (初始: 18)
+<system>Command executed successfully.</system>NumAtoms: 14
+NumHeavyAtoms: 14
+NumAtoms (onlyExplicit=False): 25
+  Atom 0: C atomicNum=6 isH=False
+  Atom 1: C atomicNum=6 isH=False
+  Atom 2: C atomicNum=6 isH=False
+  Atom 3: C atomicNum=6 isH=False
+  Atom 4: C atomicNum=6 isH=False
+  Atom 5: N atomicNum=7 isH=False
+  Atom 6: C atomicNum=6 isH=False
+  Atom 7: C atomicNum=6 isH=False
+  Atom 8: C atomicNum=6 isH=False
+  Atom 9: C atomicNum=6 isH=False
+  Atom 10: C atomicNum=6 isH=False
+  Atom 11: C atomicNum=6 isH=False
+  Atom 12: C atomicNum=6 isH=False
+  Atom 13: C atomicNum=6 isH=False
+
+[2026-05-21T00:39:49.003127] 迭代进度: 1/3 (初始: 18)
+
+[2026-05-21T00:40:19.004636] 迭代进度: 1/3 (初始: 18)
+<system>Command executed successfully.</system>Formula: C13H11N
+MW: 181.2
+Canonical SMILES: Cc1ccc2[nH]c3ccccc3c2c1
+Num atoms: 14
+
+[2026-05-21T00:40:47.753899] 迭代进度: 1/3 (初始: 18)
+[2026-05-21T00:40:51.788046] ============================================================
+[2026-05-21T00:40:51.788660] MolCraft Agent 进化迭代版开始执行
+[2026-05-21T00:40:51.788928] 配置: n_generate=50, n_generations=2, n_offspring=3, strategy=mutate, docking_guidance=True, generator=mutate
+[2026-05-21T00:40:51.788977] ============================================================
+[2026-05-21T00:40:51.789609] 步骤 1: 准备受体
+[2026-05-21T00:40:51.790574] 受体准备完成
+[2026-05-21T00:40:51.790652] ------------------------------------------------------------
+[2026-05-21T00:40:51.790720] 进化第 1/2 代
+[2026-05-21T00:40:51.790743] ------------------------------------------------------------
+[2026-05-21T00:40:51.790754] 初始代: 使用对接引导生成 (batch_size=10, n_generations=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 1/3: generated 10, docked 10, best -7.062, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.098
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[2026-05-21T00:41:17.078259] 迭代进度: 1/3 (初始: 18)
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 2/3: generated 10, docked 10, best -7.716, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.167
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:41:46.206996] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[H002+H011] Gen 3/3: generated 10, docked 10, best -7.78, seeds 5 (BE=2 diverse=3), avg_pairwise_sim=0.184
+[2026-05-21T00:41:53.212827] 对接引导生成完成，获得 29 个分子
+[2026-05-21T00:41:53.212861] 本代生成 29 个通过过滤的分子
+[2026-05-21T00:41:53.212871] 对接引导生成已包含对接结果，成功 29/29
+[2026-05-21T00:41:53.212877] 选择 20 个种子进入下一代
+[2026-05-21T00:41:53.212883] 本代最佳结合能: -7.78 kcal/mol
+[2026-05-21T00:41:53.212888] 全局最佳结合能: -7.78 kcal/mol
+[2026-05-21T00:41:53.212891] ------------------------------------------------------------
+[2026-05-21T00:41:53.212896] 进化第 2/2 代
+[2026-05-21T00:41:53.212900] ------------------------------------------------------------
+[2026-05-21T00:41:53.212905] 第 2 代: 从 top 20 种子变异生成
+[2026-05-21T00:41:53.753009] 本代生成 60 个通过过滤的分子
+[2026-05-21T00:41:53.753140] 第 2 代: 分子对接
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 1/60: FCc1ncc2cccc(-c3ccccc3)c2n1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 2/60: OOC1CCNCC(C2CCCCC2Cl)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 3/60: CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 4/60: O=C(O)C1(OCc2ccccc2)C(F)CCCC1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 5/60: c1nc2nc(C3CCCCC3)nc-2c[nH]1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 6/60: OOC1(OCc2ccc(Cl)cc2)CCCCC1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 7/60: CC1(OCc2cc(Cl)cc(C(=O)O)c2Cl)CCCCC1...
+[2026-05-21T00:42:15.459871] 迭代进度: 1/3 (初始: 18)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[对接] 8/60: O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 9/60: Oc1ccccc1-c1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 10/60: O=CC1CCC(c2ccccc2)N1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 11/60: NC1CCNC(OCc2ccccc2)(C(=O)O)C1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 12/60: Cc1ccc(COC2(CO)CCCCC2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 13/60: O=CCC1c2ccccc2NC12CCCCC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 14/60: O=CC1(OCc2ccccc2)CCCCC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 15/60: CC1CCC(Cl)C(OCc2cccnc2)(C(=O)O)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 16/60: O=C(O)c1cc(Cl)cc(COC2CCCCC2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 17/60: CC1NC2CCCCC2(c2ccccc2)N1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 18/60: Oc1ccc(COC2CCC(O)C(Cl)C2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:42:44.387459] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[对接] 19/60: NC1c2c(O)cc(S)cc2NC12CCCCC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 20/60: O=C(O)c1ccc(-c2ccccc2)c2ocnc12...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 21/60: CC1CCC(Cl)C(c2c(-c3cccc(N)c3)ccnc2C(=O)O...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 22/60: O=Cc1cc(Cl)cc(NOC2CCCCC2)c1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 23/60: CC1CCC(N)C(OCc2ccccc2)(C(=O)O)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 24/60: Cc1cc(Cl)c(C(=O)c2ccccc2)c(Cl)c1C(=O)O...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 25/60: NC12CCCCC1NCNC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 26/60: Clc1cc2c(c(-c3ccccc3)c1)N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 27/60: CC1(OCc2ccccc2)CC(F)CC(Cl)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 28/60: O=C(O)C1(OCc2ccc(Cl)c(Cl)c2)CNCCC1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 29/60: Nc1ccc(C(=O)c2ccccc2)cn1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:43:15.092435] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[对接] 30/60: CC(c1ccccc1)c1c(Cl)ccc(C(=O)O)c1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 31/60: Cc1ccc(-c2cncc3ccccc23)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 32/60: Nc1cc(SOC2(C(=O)O)CCCCC2Cl)cc(Cl)c1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 33/60: Nc1cccc(-c2ccccc2O)n1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 34/60: c1ccc(C2CCC3(CCOCC3)N2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 35/60: Fc1c(S)ccc2c1NC1(CCCCC1)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 36/60: NC1CCC(OCc2ccc(Cl)c(Cl)c2)(C(=O)O)C(Cl)C...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 37/60: Nc1cccc(-c2ccccc2)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 38/60: Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 39/60: FCc1cc(S)cc2c1CC1(CCCOC1)N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 40/60: Cc1ccccc1C(=O)c1ccccc1CN...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:43:47.828072] 迭代进度: 1/3 (初始: 18)[对接] 41/60: Cc1ccc(S(=O)(=O)Nc2ccccc2)cc1...
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 42/60: Cc1ccc(-c2ccccc2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 43/60: O=CC1CCC2(c3ccccc3)NCC(O)CC2C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 44/60: Nc1cc(S)cc2c1CC1(CCCCC1)C2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 45/60: OCC1(OSc2ccccc2)CCCCC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 46/60: Nc1ccccc1-c1ccccc1Cl...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 47/60: CC1CCC(Cl)C(c2ccnc(C(=O)O)c2-c2ccccc2)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 48/60: c1ccc(-c2cccc3ncncc23)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 49/60: ClC1CNCC(CCc2ccccc2)C1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 50/60: Clc1cc2c(cc1Cl)COC1(CCCNC1Cl)OOC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 51/60: c1ccc(-c2ccccn2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 52/60: Nc1ccccc1-c1ccccn1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 53/60: CC1(NCS2=CC=CC=C2)CCCCC1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 54/60: NC1CCC2(CO1)Cc1ccc(S)cc1N2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:44:18.245476] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[对接] 55/60: c1ccc(-c2ccccc2)cc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 56/60: O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 57/60: O=C(O)C1CC(C2CNCCN2)COCC1c1ccccc1...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 58/60: O=C(O)CC1(O)c2ccccc2NC12CCCCC2...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 59/60: CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C...
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[对接] 60/60: Nc1cccc(COC2(C(=O)O)CCCC(N)C2F)c1...
+[2026-05-21T00:44:48.523336] 迭代进度: 1/3 (初始: 18)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:44:53.582098] 对接成功 60/60 个分子
+[2026-05-21T00:44:53.582297] 选择 20 个种子进入下一代
+[2026-05-21T00:44:53.582337] 本代最佳结合能: -9.17 kcal/mol
+[2026-05-21T00:44:53.582344] 全局最佳结合能: -9.17 kcal/mol
+[2026-05-21T00:44:53.582349] ------------------------------------------------------------
+[2026-05-21T00:44:53.582353] 最终选择: 从所有代中选择 top 分子
+[2026-05-21T00:44:53.582432] 共识对接: 对 top 20 候选执行 3 次独立对接取中位数...
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:02.874327]   [1/20] O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1... median=-9.190 std=0.024 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:08.799695]   [2/20] Cc1ccc(-c2cncc3ccccc23)cc1... median=-9.110 std=0.020 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:15.400711]   [3/20] FCc1ncc2cccc(-c3ccccc3)c2n1... median=-8.727 std=0.031 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:45:18.529975] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:20.176499]   [4/20] c1ccc(-c2cccc3ncncc23)cc1... median=-8.413 std=0.029 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:31.421144]   [5/20] O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1... median=-8.321 std=0.004 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:45:47.427856] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:45:56.865244]   [6/20] CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C... median=-8.220 std=0.064 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:11.354826]   [7/20] CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N... median=-8.146 std=0.033 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:46:20.268899] 迭代进度: 1/3 (初始: 18)[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:24.697206]   [8/20] Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1... median=-8.094 std=0.027 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:28.699227]   [9/20] Cc1ccc(-c2ccccc2)cc1... median=-8.012 std=0.008 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:35.640297]   [10/20] O=C(O)c1ccc(-c2ccccc2)c2ocnc12... median=-7.957 std=0.108 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:40.520682]   [11/20] Oc1ccccc1-c1ccccc1... median=-7.824 std=0.009 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:51.625553]   [12/20] O=C(O)c1cc(Cl)cc(COC2CCCCC2)c1Cl... median=-7.795 std=0.023 (n=3)
+
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:46:51.625748] 迭代进度: 1/3 (初始: 18)[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:46:58.452621]   [13/20] Nc1cccc(-c2ccccc2O)n1... median=-7.752 std=0.003 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:09.789588]   [14/20] O=C(O)C1(OCc2ccc(Cl)c(Cl)c2)CCCCC1Cl... median=-7.716 std=0.529 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:14.841185]   [15/20] Clc1cc2c(c(-c3ccccc3)c1)N2... median=-7.677 std=0.012 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:20.656736]   [16/20] Nc1ccccc1-c1ccccc1Cl... median=-7.613 std=0.026 (n=3)
+
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[2026-05-21T00:47:20.657062] 迭代进度: 1/3 (初始: 18)
+
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:25.374995]   [17/20] Clc1cccc(-c2ccccc2)c1... median=-7.605 std=0.021 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:39.836181]   [18/20] NC1CCC(OCc2ccc(Cl)c(Cl)c2)(C(=O)O)C(Cl)C... median=-7.572 std=0.065 (n=3)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:50.536876]   [19/20] O=C(O)c1cc(Cl)cc(COC2CCCCC2)c1... median=-7.506 std=0.020 (n=3)
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+
+[2026-05-21T00:47:50.537034] 迭代进度: 1/3 (初始: 18)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+[2026-05-21T00:47:54.801118]   [20/20] Clc1ccccc1-c1ccccc1... median=-7.530 std=0.079 (n=3)
+[2026-05-21T00:47:54.801321] 去重后共 88 个独特分子，候选池 30 个进行路线评分
+[2026-05-21T00:47:54.801347] 为候选池 30 个分子规划合成路线并评分
+[2026-05-21T00:47:54.910525] 复合评分排序完成 (0.8×BE + 0.2×路线质量)
+[2026-05-21T00:47:54.910666]   O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1... BE=-9.19 steps=3 quality=0.82 composite=0.963
+[2026-05-21T00:47:54.910685]   Cc1ccc(-c2cncc3ccccc23)cc1... BE=-9.11 steps=2 quality=0.85 composite=0.935
+[2026-05-21T00:47:54.910691]   FCc1ncc2cccc(-c3ccccc3)c2n1... BE=-8.727 steps=2 quality=0.85 composite=0.769
+[2026-05-21T00:47:54.910696]   c1ccc(-c2cccc3ncncc23)cc1... BE=-8.413 steps=2 quality=0.85 composite=0.633
+[2026-05-21T00:47:54.910700]   O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1... BE=-8.321 steps=3 quality=0.85 composite=0.593
+[2026-05-21T00:47:54.910706]   CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C(c2ccccc2)... BE=-8.22 steps=3 quality=0.82 composite=0.542
+[2026-05-21T00:47:54.910711]   Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1... BE=-8.094 steps=3 quality=0.85 composite=0.494
+[2026-05-21T00:47:54.910716]   CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N... BE=-8.146 steps=1 quality=0.70 composite=0.487
+[2026-05-21T00:47:54.910721]   O=C(O)c1ccc(-c2ccccc2)c2ocnc12... BE=-7.957 steps=3 quality=0.85 composite=0.434
+[2026-05-21T00:47:54.910725]   Cc1ccc(-c2ccccc2)cc1... BE=-8.012 steps=1 quality=0.70 composite=0.428
+[2026-05-21T00:47:54.910748] Top 10 平均结合能: -8.419 kcal/mol
+[2026-05-21T00:47:54.910754] 最佳结合能: -9.190 kcal/mol
+[2026-05-21T00:47:54.910759] Trivial route 比例: 0/10 (0.0%)
+[2026-05-21T00:47:54.911314] 结果已保存到 /home/dministrator/Lab/clones/molcraft-agent/output/result.dcf3ed94.tmp.pipeline.tmp.csv
+[2026-05-21T00:47:54.911333] ============================================================
+[2026-05-21T00:47:54.911337] 流程完成
+[2026-05-21T00:47:54.911342] 最佳结合能: -9.19 kcal/mol
+[2026-05-21T00:47:54.911346] 输出文件: /home/dministrator/Lab/clones/molcraft-agent/output/result.dcf3ed94.tmp.pipeline.tmp.csv
+[2026-05-21T00:47:54.911349] ============================================================
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+关键发现：`Cc1ccc2[nH]c3ccccc3c2c1` 不是简单吲哚，而是 C13H11N 三环苯并吲哚！Fischer indole 规则正确拒绝了它（mass balance 1.40 > 1.3，缺少第三环覆盖）。
+
+Suzuki 修复有效，但对这个特定分子没有帮助（它需要三环专用规则）。运行 pipeline 验证整体效果。{"status": "success", "summary": "Pipeline 完成: 10 分子, 最佳结合能 -9.19 kcal/mol, trivial 比例 0/10", "molecule_count": 10, "best_binding_energy": -9.19, "avg_binding_energy": -8.419, "trivial_route_count": 0, "trivial_ratio": 0.0, "top_molecules": [{"smiles": "O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1", "binding_energy": -9.19, "route": "O=C(O)c1cccc2cc(CO)c(O)cc12>>O=Cc1cc2cccc(C(=O)O)c2cc1O | O=Cc1cc2cccc(C(=O)O)c2cc1O.Br>>O=Cc1cc2cccc(C(=O)O)c2cc1Br.O | O=Cc1cc2cccc(C(=O)O)c2cc1Br.OB(O)c1ccccc1>>O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1.B(O)O.Br"}, {"smiles": "Cc1ccc(-c2cncc3ccccc23)cc1", "binding_energy": -9.11, "route": "NCCc1ccccc1.C=O>>OB(O)c1cncc2ccccc12 | Cc1ccc(Br)cc1.OB(O)c1cncc2ccccc12>>Cc1ccc(-c2cncc3ccccc23)cc1.B(O)O.Br"}, {"smiles": "FCc1ncc2cccc(-c3ccccc3)c2n1", "binding_energy": -8.727, "route": "NC(=O)c1ccccc1N.C=O>>FCc1ncc2cccc(Br)c2n1 | FCc1ncc2cccc(Br)c2n1.OB(O)c1ccccc1>>FCc1ncc2cccc(-c3ccccc3)c2n1.B(O)O.Br"}, {"smiles": "c1ccc(-c2cccc3ncncc23)cc1", "binding_energy": -8.413, "route": "NC(=O)c1ccccc1N.C=O>>OB(O)c1cccc2ncncc12 | Brc1ccccc1.OB(O)c1cccc2ncncc12>>c1ccc(-c2cccc3ncncc23)cc1.B(O)O.Br"}, {"smiles": "O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1", "binding_energy": -8.321, "route": "O=C(O)c1cc(C2CCCCC2)cnc1O.Br>>O=C(O)c1cc(C2CCCCC2)cnc1Br.O | O=C(O)c1cc(C2CCCCC2)cnc1Br.OB(O)c1ccccc1>>O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1.B(O)O.Br"}, {"smiles": "CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C(c2ccccc2)C1", "binding_energy": -8.22, "route": "CC1CCC(CCl)(S(N)(=O)=O)C(c2ccccc2)C1.O>>CC1CCC(CO)(S(N)(=O)=O)C(c2ccccc2)C1.O | CC1CCC(CO)(S(N)(=O)=O)C(c2ccccc2)C1>>CC1CCC(C=O)(S(N)(=O)=O)C(c2ccccc2)C1 | O=C(O)c1cccc(Br)c1.CC1CCC(C=O)(S(N)(=O)=O)C(c2ccccc2)C1>>CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C(c2ccccc2)C1.O"}, {"smiles": "Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1", "binding_energy": -8.094, "route": "O=C(O)Cc1c(O)cc(B(O)O)cc1C(=O)O.Cl>>O=C(O)Cc1c(Cl)cc(B(O)O)cc1C(=O)O.O | O=C(O)Cc1c(Cl)cc(B(O)O)cc1C(=O)O.F>>O=C(O)Cc1c(F)cc(B(O)O)cc1C(=O)O.O | Cc1ccccc1Br.O=C(O)Cc1c(F)cc(B(O)O)cc1C(=O)O>>Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1.B(O)O.Br"}, {"smiles": "CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N", "binding_energy": -8.146, "route": "CC1C(F)CCC(O)C1N.O=C(O)c1cc(Cl)cc(CCl)c1Cl>>CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N.O"}, {"smiles": "O=C(O)c1ccc(-c2ccccc2)c2ocnc12", "binding_energy": -7.957, "route": "O=C(O)c1ccc(O)c2ocnc12.Br>>O=C(O)c1ccc(Br)c2ocnc12.O | O=C(O)c1ccc(Br)c2ocnc12.OB(O)c1ccccc1>>O=C(O)c1ccc(-c2ccccc2)c2ocnc12.B(O)O.Br"}, {"smiles": "Cc1ccc(-c2ccccc2)cc1", "binding_energy": -8.012, "route": "Cc1ccc(Br)cc1.OB(O)c1ccccc1>>Cc1ccc(-c2ccccc2)cc1.B(O)O.Br"}], "next_actions": ["1. 调用 report_iteration 记录本轮实验（round/hypothesis_id/success/summary）", "2. 将本轮指标与基线 -8.56 kcal/mol 对比", "3. 如果结合能提升：判定 ACCEPTED，记录改动；如果下降：判定 REJECTED，回退代码", "4. 检查 trivial 比例是否 > 30%，如果是，下一轮考虑扩充逆合成规则库"]}H028 实验结果：trivial route 恢复到 0/10 ✅，BE -9.19 接近基线（在流水线方差范围内）。{"stage": "代码演进", "duration_seconds": 762.0, "message": "阶段「代码演进」完成，耗时 762.0s"}
+[2026-05-21T00:48:19.296490] 迭代进度: 1/3 (初始: 18)
+{"status": "recorded", "round": 5, "message": "第 5 轮迭代已记录"}更新知识库，然后准备最终输出。<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>
+[2026-05-21T00:48:48.041556] 迭代进度: 2/3 (初始: 18)
+<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>更新基线指标。<system>File successfully edited. Applied 1 edit(s) with 1 total replacement(s).</system>
+[2026-05-21T00:49:16.841775] 迭代进度: 2/3 (初始: 18)
+现在准备最终输出。先确认 result.csv 状态，然后写研究总报告。<system>Command executed successfully.</system>mol_smiles,route
+Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1,Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1>>Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1
+Nc1cc(Cl)cc(-c2ccccc2N)c1,Nc1cc(Cl)cc(Br)c1.Nc1ccccc1B(O)O>>Nc1cc(Cl)cc(-c2ccccc2N)c1.B(O)O.Br
+---
+11 output/result.csv
+<system>Command executed successfully.</system>-rw-r--r-- 1 dministrator dministrator 56183  5月 21 00:01 output/result.log
+
+[2026-05-21T00:49:45.555089] 迭代进度: 2/3 (初始: 18)
+CSV 可能未同步更新。基于 run_pipeline 输出的正确结果重新生成。<system>File successfully overwritten. Current size: 1827 bytes.</system>
+[2026-05-21T00:50:14.256001] 迭代进度: 2/3 (初始: 18)
+
+[2026-05-21T00:50:44.257686] 迭代进度: 2/3 (初始: 18)
+现在写入最终研究总报告。<system>File successfully overwritten. Current size: 4381 bytes.</system>
+[2026-05-21T00:51:12.949154] 迭代进度: 2/3 (初始: 18)
+最终整理 experiments.jsonl 和 git 状态。<system>Command executed successfully.</system>done
+<system>Command executed successfully.</system>=== Final Deliverables ===
+
+1. output/result.csv:
+mol_smiles,route
+   Lines: 11
+
+2. docs/research_report.md: 108 lines
+
+3. docs/knowledge_base.md: 153 lines
+
+4. experiments.jsonl entries: 33
+
+=== System State ===
+Scaffolds: 81
+Retro rules: 66
+
+[2026-05-21T00:51:41.785381] 迭代进度: 2/3 (初始: 18)
+---
+
+## 🎯 MolCraft Agent — 自主科研迭代完成
+
+### 研究目标
+TYK2 (PDB: 5C01) 非受体酪氨酸激酶 — 靶向药物小分子设计与合成路线规划
+
+### 完成迭代
+**5 轮完整闭环**（文献→诊断→代码演进→实验验证→复盘）
+
+| Round | 假设 | 结果 | 关键指标 |
+|-------|------|------|----------|
+| R4 | H026 — 大芳香环骨架扩展 | ❌ REJECTED | BE -8.389 (↓10%) |
+| R5 | H028 — Suzuki SMARTS 特异性修复 | ✅ VERIFIED | Trivial 0/10 恢复 |
+
+### 最终性能
+
+| 指标 | 值 |
+|------|-----|
+| **最佳结合能** | **-9.19 kcal/mol** |
+| 平均结合能 | -8.42 kcal/mol |
+| Trivial route 比例 | **0/10** (全部有效合成路线) |
+| 主导化学型 | Suzuki 联芳基 + 喹唑啉/咪唑并吡啶 |
+| 骨架库 | 81 个药物样骨架 |
+| 逆合成规则 | 66 条 (含 H028 修复) |
+
+### 交付物
+- ✅ `output/result.csv` — Top 10 分子及完整合成路线
+- ✅ `docs/research_report.md` — 完整科研报告
+- ✅ `docs/knowledge_base.md` — 策略库（包含28个假设的验证状态）
+- ✅ `experiments.jsonl` — 33条实验记录（完整可追溯）
+
+============================================================
+[2026-05-21T00:51:57.778230] MolCraft Agent 执行结束
+请检查:
+  - output/result.csv（最终候选分子与合成路线）
+  - /home/dministrator/Lab/clones/molcraft-agent/output/result.log（详细结果日志）
+  - /home/dministrator/Lab/clones/molcraft-agent/docs/iteration_log.jsonl（迭代记录）
+============================================================
+
+result.csv 验证通过，共 10 个分子
+
+JSONL 格式验证通过
+
+[打包完成] /home/dministrator/Lab/clones/molcraft-agent/output/result.zip

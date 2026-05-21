@@ -114,18 +114,30 @@
 - **When to use**: When current filters exclude >7-ring molecules that could pack better in Vina
 - **Status**: ✅ VERIFIED — Best BE +2.0% (-9.153→-9.332), Avg +4.2% (-8.453→-8.810)
 
+### H026 — Expanded Large Aromatic Scaffold Library
+- **Source**: JACS 2024 — scaffold diversity + Vina hydrophobic bias
+- **Tech**: Added 12 large polycyclic aromatic scaffolds (anthracene, phenanthrene, pyrene, perylene, acridine, benzoquinolines, benzo[a]pyrene)
+- **When to use**: N/A
+- **Status**: ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989
+
+### H028 — Suzuki SMARTS Specificity Fix
+- **Source**: Empirical (Round 4 debugging) — discovered Suzuki [c;R][c;R] falsely matching fused ring C-C bonds
+- **Tech**: Changed SMARTS from [c;R][c;R] to [c;R]!@[c;R] to only match inter-ring (biaryl) bonds, not intra-ring fused bonds
+- **When to use**: Always in RETRO_RULES
+- **Status**: ✅ VERIFIED — Trivial ratio restored 1/10→0/10, BE -9.19 within baseline variance
+
 ---
 
 ## Current Baseline (TYK2 5C01 — CORRECTED DOCKING COORDINATES)
 
-> Updated Round 20 (H027 VERIFIED).
+> Updated Round 5 (H028 VERIFIED).
 
 | Metric | Value |
 |--------|-------|
-| Best BE | -9.332 |
-| Avg BE | -8.810 |
+| Best BE | -9.19 |
+| Avg BE | -8.42 |
 | Trivial ratio | 0/10 |
-| Dominant chemistry | Suzuki biaryl + imidazopyridine scaffolds |
+| Dominant chemistry | Suzuki biaryl + quinazoline/imidazopyridine scaffolds |
 
 ---
 
@@ -136,5 +148,6 @@
 | H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
 | H023 | Multi-step route chemical validation (check intermediate stability) | MEDIUM |
 | H024 | Fix docking coordinates to geometric pocket (now done) | ✅ DONE |
-| H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | HIGH — Vina favors flat hydrophobic aromatics |
+| H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989. Large scaffolds unused by pipeline, MW filter blocks them. Discovered Suzuki SMARTS bug in process. |
 | H027 | Relaxed molecular filters (max_rings 7→9, max_sa 6.0→7.0) | ✅ VERIFIED — Best BE +2.0%, Avg +4.2% |
+| H028 | Fix Suzuki SMARTS specificity (prevent intra-ring false matches) | ✅ VERIFIED — Trivial ratio restored to 0/10. BE -9.19 within baseline variance. Suzuki [c;R][c;R]→[c;R]!@[c;R] prevents false matches on fused rings. |

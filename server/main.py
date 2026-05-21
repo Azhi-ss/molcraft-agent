@@ -256,23 +256,42 @@ def _run_sample_use(config_path: str, outdir: str):
 
 
 def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
-    """Read generated SDF files and convert to SMILES with properties."""
+    """Read PocketXMol outputs: gen_info.csv for SMILES + main SDFs for properties."""
     from rdkit import Chem
     from rdkit.Chem import QED, Descriptors
 
     molecules = []
     out_path = Path(outdir)
 
-    for sdf_file in sorted(out_path.rglob("*.sdf")):
-        supplier = Chem.SDMolSupplier(str(sdf_file))
-        for mol in supplier:
+    # Find the run subdirectory (named like "task_config_pxm_*")
+    run_dirs = sorted(out_path.glob("task_config_pxm_*"))
+    if not run_dirs:
+        return molecules
+    run_dir = run_dirs[0]
+
+    # Strategy 1: Read gen_info.csv for SMILES (already reconstructed by PocketXMol)
+    gen_csv = run_dir / "gen_info.csv"
+    smiles_from_csv: dict[str, dict] = {}  # smiles -> row data
+    if gen_csv.exists():
+        import csv
+        with open(gen_csv) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                smi = row.get("smiles", "").strip()
+                if smi and Chem.MolFromSmiles(smi) is not None:
+                    smiles_from_csv[smi] = {
+                        "cfd": float(row.get("cfd_traj", 0) or 0),
+                        "cfd_pos": float(row.get("cfd_pos", 0) or 0),
+                        "filename": row.get("filename", ""),
+                    }
+
+    # If we have gen_info.csv SMILES, use those (most reliable)
+    if smiles_from_csv:
+        for smi, meta in smiles_from_csv.items():
+            mol = Chem.MolFromSmiles(smi)
             if mol is None:
                 continue
-            smiles = Chem.MolToSmiles(mol, canonical=True)
-            if not smiles:
-                continue
 
-            # Drug-likeness properties
             qed_val = mw_val = logp_val = sa_val = None
             try:
                 qed_val = round(QED.qed(mol), 3)
@@ -290,24 +309,62 @@ def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
             except Exception:
                 pass
 
-            # Extract confidence score from SDF properties
-            score = 0.0
-            for prop_name in ("confidence", "score", "vina_score"):
-                if mol.HasProp(prop_name):
-                    try:
-                        score = float(mol.GetProp(prop_name))
-                        break
-                    except Exception:
-                        pass
-
             molecules.append(MoleculeResult(
-                smiles=smiles,
-                score=score,
+                smiles=smi,
+                score=round(meta["cfd"], 3),
                 qed=qed_val,
                 mw=mw_val,
                 logp=logp_val,
                 sa_score=sa_val,
             ))
+        return molecules
+
+    # Strategy 2: Fallback — parse main SDF files only (not raw intermediates)
+    sdf_dir = run_dir / f"{run_dir.name}_SDF"
+    if sdf_dir.exists():
+        for sdf_file in sorted(sdf_dir.glob("[0-9]*.sdf")):
+            supplier = Chem.SDMolSupplier(str(sdf_file))
+            for mol in supplier:
+                if mol is None:
+                    continue
+                smiles = Chem.MolToSmiles(mol, canonical=True)
+                if not smiles:
+                    continue
+
+                qed_val = mw_val = logp_val = sa_val = None
+                try:
+                    qed_val = round(QED.qed(mol), 3)
+                    mw_val = round(Descriptors.MolWt(mol), 1)
+                    logp_val = round(Descriptors.MolLogP(mol), 2)
+                except Exception:
+                    pass
+                try:
+                    from rdkit.Chem import RDConfig
+                    sa_path = os.path.join(RDConfig.RDContribDir, "SA_Score")
+                    if sa_path not in sys.path:
+                        sys.path.append(sa_path)
+                    import sascorer
+                    sa_val = round(sascorer.calculateScore(mol), 2)
+                except Exception:
+                    pass
+
+                score = 0.0
+                for prop_name in ("confidence", "score", "cfd_traj"):
+                    if mol.HasProp(prop_name):
+                        try:
+                            score = float(mol.GetProp(prop_name))
+                            break
+                        except Exception:
+                            pass
+
+                molecules.append(MoleculeResult(
+                    smiles=smiles,
+                    score=score,
+                    qed=qed_val,
+                    mw=mw_val,
+                    logp=logp_val,
+                    sa_score=sa_val,
+                ))
 
     return molecules
 

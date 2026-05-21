@@ -32,56 +32,138 @@ def _validate_smiles(smiles: str) -> bool:
     return mol is not None
 
 
-# 已知反应类型对应的副产物，用于原子平衡
-# 格式: (反应物特征子串1, 反应物特征子串2) -> 副产物 SMILES 列表
-# 当两个反应物分别包含两个特征子串时，添加对应的副产物
-REACTION_BYPRODUCTS = {
-    # Suzuki 偶联: Ar-Br + Ar-B(OH)2 → Ar-Ar + B(OH)2 + Br
-    # 丢失重原子: B + 2*O + Br = 4 个
-    # B(O)O = B(OH)2 碎片 (3原子) + Br (1原子) = 恰好 4 原子
-    ("Br", "B(O)"): ["B(O)O", "Br"],
-    ("B(O)", "Br"): ["B(O)O", "Br"],
+# ---- 自动原子守恒副产物表 ----
+# 每个条目: (atom_counts_dict, SMILES)
+# SMILES 经过 RDKit AddHs 验证，原子计数与 dict 精确匹配
+_BYPRODUCT_TABLE = [
+    # 有机小分子（优先匹配，减少碎片数）
+    ({'C': 2, 'H': 4, 'O': 2}, 'CC(=O)O'),     # CH3COOH 乙酸
+    ({'C': 1, 'H': 4, 'O': 1}, 'CO'),           # CH3OH 甲醇
+    # 含硼副产物
+    ({'B': 1, 'H': 3, 'O': 3}, 'OB(O)O'),       # H3BO3 硼酸
+    ({'B': 1, 'H': 3, 'O': 2}, 'B(O)O'),        # BH3O2
+    ({'B': 1, 'H': 1, 'O': 2}, 'B(=O)O'),       # HBO2 偏硼酸 (Suzuki byproduct)
+    # 无机小分子
+    ({'N': 1, 'H': 3}, 'N'),                    # NH3
+    ({'S': 1, 'H': 2}, 'S'),                    # H2S
+    ({'H': 2, 'O': 1}, 'O'),                    # H2O
+    ({'H': 1, 'Cl': 1}, 'Cl'),                  # HCl
+    ({'H': 1, 'Br': 1}, 'Br'),                  # HBr
+    ({'H': 1, 'I': 1}, 'I'),                    # HI
+    # 双原子气体
+    ({'H': 2}, '[H][H]'),                       # H2
+    ({'O': 2}, 'O=O'),                          # O2
+    ({'N': 2}, 'N#N'),                          # N2
+    ({'C': 1, 'O': 2}, 'O=C=O'),               # CO2
+    ({'S': 1, 'O': 2}, 'O=S=O'),               # SO2
+    # 单原子离子（无隐式 H，兜底用）
+    ({'Na': 1}, '[Na+]'),
+    ({'K': 1}, '[K+]'),
+    ({'Li': 1}, '[Li+]'),
+    ({'Cl': 1}, '[Cl-]'),
+    ({'Br': 1}, '[Br-]'),
+    ({'I': 1}, '[I-]'),
+    ({'F': 1}, '[F-]'),
+    ({'B': 1}, '[B]'),
+    ({'C': 1}, '[C]'),
+    ({'N': 1}, '[N]'),
+    ({'O': 1}, '[O]'),
+    ({'P': 1}, '[P]'),
+    ({'S': 1}, '[S]'),
+    ({'Si': 1}, '[Si]'),
+]
 
-    # Friedländer 喹啉合成: 邻氨基苯甲醛 + 丙酮 → 喹啉 + 2H2O
-    ("Nc", "C=O"): ["O", "O"],
-    ("C=O", "Nc"): ["O", "O"],
-}
+
+def _count_all_atoms(smiles_str: str) -> dict:
+    """Count ALL atoms in a SMILES string (including H) using AddHs."""
+    counts = {}
+    for frag in smiles_str.split('.'):
+        frag = frag.strip()
+        if not frag:
+            continue
+        mol = Chem.MolFromSmiles(frag)
+        if mol is None:
+            continue
+        h_mol = Chem.AddHs(mol)
+        for atom in h_mol.GetAtoms():
+            sym = atom.GetSymbol()
+            counts[sym] = counts.get(sym, 0) + 1
+    return counts
+
+
+def _decompose_excess(excess: dict, max_frags: int = 5) -> list | None:
+    """Recursively decompose excess atoms into known small-molecule byproducts.
+
+    Returns list of SMILES strings, or None if decomposition fails.
+    """
+    excess = {k: v for k, v in excess.items() if v > 0}
+    if not excess:
+        return []
+    if max_frags <= 0:
+        return None
+
+    for bp_atoms, bp_smiles in _BYPRODUCT_TABLE:
+        if not all(excess.get(sym, 0) >= need for sym, need in bp_atoms.items()):
+            continue
+
+        remaining = dict(excess)
+        for sym, need in bp_atoms.items():
+            remaining[sym] -= need
+            if remaining[sym] == 0:
+                del remaining[sym]
+
+        result = _decompose_excess(remaining, max_frags - 1)
+        if result is not None:
+            return [bp_smiles] + result
+
+    return None
 
 
 def _add_byproducts_for_balance(product_smiles: str, reactant_smiles: list) -> list:
-    """为反应添加必要的副产物以达到原子平衡。
+    """Add necessary byproducts to balance the full atom equation (including H).
 
-    返回需要添加到产物侧的副产物 SMILES 列表。
+    Computes full atom counts via RDKit AddHs, finds excess atoms in reactants,
+    and decomposes them into known small-molecule byproduct SMILES.
     """
-    # 计算当前原子数差异
-    product_heavy = Chem.MolFromSmiles(product_smiles).GetNumHeavyAtoms()
-    reactant_heavy = sum(Chem.MolFromSmiles(r).GetNumHeavyAtoms()
-                         for r in reactant_smiles
-                         if Chem.MolFromSmiles(r))
+    if not reactant_smiles:
+        return []
 
-    # 检查已知反应类型的副产物
-    # H022 fix: 要求反应物含碳，排除单质试剂（Br, Cl, O 等）的误匹配
-    if len(reactant_smiles) >= 2:
-        r1, r2 = reactant_smiles[0], reactant_smiles[1]
-        r1_has_carbon = "C" in r1 or "c" in r1
-        r2_has_carbon = "C" in r2 or "c" in r2
-        for (key1, key2), byproducts in REACTION_BYPRODUCTS.items():
-            if (key1 in r1 and key2 in r2) or (key1 in r2 and key2 in r1):
-                # Suzuki: 两个反应物都必须含碳（排除 Br 单质）
-                if key1 in ("Br", "B(O)") and key2 in ("Br", "B(O)"):
-                    if not (r1_has_carbon and r2_has_carbon):
-                        continue
-                return byproducts
+    # Count all atoms (including H) in reactants
+    reactant_counts = {}
+    for r in reactant_smiles:
+        r_counts = _count_all_atoms(r)
+        for sym, cnt in r_counts.items():
+            reactant_counts[sym] = reactant_counts.get(sym, 0) + cnt
 
-    # 默认：如果反应物原子更多，添加 O 占位副产物
-    # diff=1: 酰胺缩合/卤素置换等丢失 1 个 O (H2O 或 OH)
-    # diff=2: 某些缩合反应丢失 2 分子水
-    # diff>2: 用占位符平衡
-    diff = reactant_heavy - product_heavy
-    if diff >= 1:
-        return ["O"] * min(diff, 3)
+    # Count all atoms in product
+    product_counts = _count_all_atoms(product_smiles)
 
-    return []
+    # Compute excess: atoms present in reactants but missing from product
+    excess = {}
+    for sym, cnt in reactant_counts.items():
+        p_cnt = product_counts.get(sym, 0)
+        if cnt > p_cnt:
+            excess[sym] = cnt - p_cnt
+
+    if not excess:
+        return []
+
+    # Try to decompose excess into known byproduct molecules
+    byproducts = _decompose_excess(excess)
+    if byproducts:
+        return byproducts
+
+    # Fallback: use single-atom SMILES for any remaining excess
+    fallback = []
+    for sym, cnt in sorted(excess.items()):
+        for bp_atoms, bp_smiles in _BYPRODUCT_TABLE:
+            if len(bp_atoms) == 1 and sym in bp_atoms and bp_atoms[sym] == 1:
+                fallback.extend([bp_smiles] * cnt)
+                break
+        else:
+            fallback.extend([f'[{sym}]'] * cnt)
+
+    return fallback
 
 
 def _try_route(smiles: str, r1: str, r2: str = None) -> str:
@@ -162,12 +244,35 @@ def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
                         reactant_heavy += r_mol.GetNumHeavyAtoms()
                 if reactant_heavy > 0:
                     ratio = target_heavy / reactant_heavy
-                    # 允许 ±30% 容差（考虑脱保护基、缩合失水等）
+                    # 允许 ±25% 容差（考虑脱保护基、缩合失水等）
                     # H014 调优: 0.7-1.3 — 验证显示 0.5-1.5 过宽
                     #   例: 取代喹啉(17atoms) / 无取代原料(12atoms) = 1.42 > 1.3 ✓ 拒绝
-                    if ratio < 0.7 or ratio > 1.3:
+                    # H021 调优: 0.75-1.25 — 进一步收紧，防止误匹配
+                    if ratio < 0.75 or ratio > 1.25:
                         # 原子不守恒 — 拒绝此条规则，尝试下一条
                         continue
+            except Exception:
+                # 解析失败时不拒绝，保留原有行为
+                pass
+
+            # H021: 元素守恒检查
+            # 验证目标分子中的所有元素（除 C, H, O, N 外）在反应物中都存在
+            # 防止因 SMARTS 只匹配核心骨架而丢失取代基导致的误匹配
+            # 例如: 含 B(OH)2 的异喹啉在 Pictet-Spengler 逆反应中会丢失 B
+            # 因为 SMARTS 只匹配异喹啉核心，B(OH)2 取代基在反应中被丢弃
+            try:
+                target_elements = {a.GetSymbol() for a in mol.GetAtoms()}
+                reactant_elements = set()
+                for r_smi in reactants:
+                    r_mol = Chem.MolFromSmiles(r_smi)
+                    if r_mol:
+                        reactant_elements |= {a.GetSymbol() for a in r_mol.GetAtoms()}
+                # C, H, O, N 在缩合反应中可能丢失/获得，不视为异常
+                suspicious_elements = target_elements - reactant_elements - {'C', 'H', 'O', 'N'}
+                if suspicious_elements:
+                    # 反应物中缺少目标分子含有的元素（如 B, F, Cl, Br, I, S, P 等）
+                    # 这些元素不可能在逆合成中凭空出现
+                    continue
             except Exception:
                 # 解析失败时不拒绝，保留原有行为
                 pass
@@ -240,7 +345,8 @@ RETRO_RULES = [
     
     # -- 喹唑啉合成 --
     # 喹唑啉 → 邻氨基苯甲酰胺 + 甲酸
-    ("c1ccc2c(c1)ncnc2", "c1ccc2c(c1)ncnc2>>Nc1ccccc1C(=O)N.C=O"),
+    # H021: 使用规范的 SMARTS 表示（c1ccc2ncncc2c1），提高匹配特异性
+    ("c1ccc2ncncc2c1", "c1ccc2ncncc2c1>>Nc1ccccc1C(=O)N.C=O"),
     
     # -- 1,2,3-三唑 (Click Chemistry) --
     # CuAAC 逆反应: 三唑 → 叠氮 + 炔
@@ -255,7 +361,7 @@ RETRO_RULES = [
     # Suzuki 逆反应: Ar-Ar' → Ar-Br + (HO)2B-Ar'
     # 文献依据: Coscientist (Boiko et al., 2023) — Suzuki coupling 是经典 C-C 键形成;
     # LARC (Baker et al., 2025) — 规则覆盖率决定逆合成质量
-    ("[c;R][c;R]", "[c:1][c:2]>>[c:1]Br.[c:2]B(O)O"),
+    ("[c;R]!@[c;R]", "[c:1]!@[c:2]>>[c:1]Br.[c:2]B(O)O"),
     
     # ------------------- 磺酰胺类 -------------------
     ("[S](=[O])(=[O])[N;!H0]", "[c:1][S](=[O])(=[O])[N:2]>>[c:1][S](=[O])(=[O])Cl.[N:2]"),
