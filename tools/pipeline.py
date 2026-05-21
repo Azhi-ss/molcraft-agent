@@ -15,6 +15,7 @@ import csv
 import tempfile
 import uuid
 import argparse
+import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
@@ -151,12 +152,19 @@ def run_evolutionary_pipeline(
 
         log(f"本代生成 {len(mols)} 个通过过滤的分子", log_lines)
 
-        # 对接（如果用了 docking_guidance，mols 已经包含对接结果）
+        # 对接处理
         if use_docking_guidance and gen == 0:
-            # 初始代已对接，直接使用
-            successful = [d for d in mols if d.get("docking_success")]
-            successful.sort(key=lambda x: x.get("binding_energy", 999))
-            log(f"对接引导生成已包含对接结果，成功 {len(successful)}/{len(mols)}", log_lines)
+            # 初始代：docking_guidance mutate 模式已预对接（含 docking_success）
+            # hybrid/diffusion 模式生成的是裸分子，需显式对接
+            pre_docked = [d for d in mols if d.get("docking_success")]
+            if pre_docked:
+                successful = sorted(pre_docked, key=lambda x: x.get("binding_energy", 999))
+                log(f"对接引导生成已包含对接结果，成功 {len(successful)}/{len(mols)}", log_lines)
+            else:
+                docked = batch_dock(mols)
+                successful = [d for d in docked if d.get("success")]
+                successful.sort(key=lambda x: x.get("binding_energy", 999))
+                log(f"对接完成 (hybrid/diffusion), 成功 {len(successful)}/{len(mols)}", log_lines)
         else:
             log(f"第 {gen + 1} 代: 分子对接", log_lines)
             docked = batch_dock(mols)
@@ -292,8 +300,22 @@ def run_evolutionary_pipeline(
         scored_candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
         log(f"复合评分排序完成 (0.75×BE + 0.15×路线质量 + 0.10×LogP)", log_lines)
 
-    # 选择 top N
-    final_top = scored_candidates[:n_top]
+    # H032: Post-synthesis validity filter
+    # Exclude candidates with smiles>>smiles trivial routes (no valid retrosynthesis).
+    # These are typically complex fused polycyclic structures that current
+    # RETRO_RULES cannot break — they shouldn't occupy top-N slots.
+    # Reference: LARC (Baker et al., 2025) — molecules without valid
+    # retrosynthetic pathways should be excluded from candidate selection.
+    valid_candidates = [c for c in scored_candidates if c["route"] != f"{c['mol_smiles']}>>{c['mol_smiles']}"]
+    n_filtered = len(scored_candidates) - len(valid_candidates)
+    if n_filtered > 0:
+        log(f"H032 后过滤: 排除 {n_filtered} 个无有效合成路线的分子 (smiles>>smiles)", log_lines)
+    # Use valid candidates for top-N; if too few, take what we have
+    if len(valid_candidates) >= n_top:
+        final_top = valid_candidates[:n_top]
+    else:
+        final_top = valid_candidates
+        log(f"警告: 有效候选不足 ({len(valid_candidates)}/{n_top})，全部保留", log_lines)
     results = []
     trivial_count = 0
     for c in final_top:
@@ -375,7 +397,7 @@ def _generate_diffusion(n_molecules, log_lines):
     """
     import urllib.request
     import urllib.error
-    from src import config as _config
+    import config as _config
 
     api_url = _config.DIFFUSION_API_URL
     if not api_url:
