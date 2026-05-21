@@ -28,6 +28,9 @@ agent:
     # 扩散模型生成工具（PocketXMol，需 GPU 服务器）
     - "molcraft_agent.tools:DiffusionGenerate"
 
+    # LKM 科学知识图谱搜索
+    - "molcraft_agent.tools:SearchLKM"
+
     # 阶段标记工具（Agent 四阶段：诊断、代码演进、实验验证、复盘）
     - "molcraft_agent.tools:BeginStage"
     - "molcraft_agent.tools:EndStage"

@@ -15,6 +15,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 from datetime import datetime, timezone
+from typing import Any
 from pathlib import Path
 
 import numpy as np
@@ -932,6 +933,14 @@ class DiffusionGenerateParams(BaseModel):
         default=None,
         description="口袋中心坐标 [x, y, z]，留空则自动检测",
     )
+    two_stage: bool = Field(
+        default=True,
+        description="是否启用两阶段优化：sbdd 生成 → 取 top-3 种子 → opt_mol 优化（推荐）",
+    )
+    n_optimize: int = Field(
+        default=3,
+        description="两阶段时优化的种子数量（每个种子生成 5 个变体）",
+    )
 
 
 class DiffusionGenerate(CallableTool2):
@@ -978,7 +987,7 @@ class DiffusionGenerate(CallableTool2):
             base_url = api_url.rstrip("/")
 
             # Phase 1: Submit job
-            submit_url = f"{base_url}/generate"
+            submit_url = f"{base_url}/generate-and-dock"
             submit_req = urllib.request.Request(
                 submit_url,
                 data=request_body,
@@ -1047,9 +1056,72 @@ class DiffusionGenerate(CallableTool2):
             molecules = result_data.get("molecules", [])
             gen_time = result_data.get("generation_time_seconds", 0)
 
+            # Optional Phase 4: two-stage optimization (sbdd → opt_mol)
+            if params.two_stage and molecules:
+                molecules.sort(key=lambda m: m.get("qed") or 0, reverse=True)
+                n_seeds = min(params.n_optimize, len(molecules))
+                seeds = molecules[:n_seeds]
+                per_seed_timeout = max(timeout // n_seeds, 120)  # At least 2min per seed
+                opt_variants = []
+                total_opt_elapsed = 0
+                for i, seed in enumerate(seeds):
+                    try:
+                        opt_body = json.dumps({
+                            "pdb_content": pdb_content,
+                            "smiles": seed["smiles"],
+                            "n_variants": 5,
+                            "pocket_center": pocket_center,
+                        }, ensure_ascii=False).encode("utf-8")
+                        opt_req = urllib.request.Request(
+                            f"{base_url}/optimize",
+                            data=opt_body,
+                            headers={"Content-Type": "application/json"},
+                            method="POST",
+                        )
+                        opt_accept = await asyncio.to_thread(
+                            _http_request_json, opt_req, timeout=60
+                        )
+                        opt_job = opt_accept["job_id"]
+                        opt_elapsed = 0
+                        while opt_elapsed < per_seed_timeout:
+                            await asyncio.sleep(10)
+                            opt_elapsed += 10
+                            opt_status_req = urllib.request.Request(f"{base_url}/job/{opt_job}")
+                            try:
+                                opt_status = await asyncio.to_thread(
+                                    _http_request_json, opt_status_req, timeout=15
+                                )
+                            except urllib.error.URLError:
+                                continue
+                            if opt_status["status"] != "running":
+                                break
+                        total_opt_elapsed += opt_elapsed
+                        if opt_status["status"] == "completed":
+                            opt_result_req = urllib.request.Request(f"{base_url}/job/{opt_job}/result")
+                            opt_result = await asyncio.to_thread(
+                                _http_request_json, opt_result_req, timeout=30
+                            )
+                            for v in opt_result.get("molecules", []):
+                                v["optimized_from"] = seed["smiles"][:40]
+                                opt_variants.append(v)
+                    except Exception:
+                        continue  # Skip failed optimization, keep original seed
+                if opt_variants:
+                    gen_time += total_opt_elapsed
+                    molecules.extend(opt_variants)
+                    # Deduplicate by SMILES
+                    seen = set()
+                    deduped = []
+                    for m in molecules:
+                        if m["smiles"] not in seen:
+                            seen.add(m["smiles"])
+                            deduped.append(m)
+                    molecules = deduped
+
+            stage_label = "（两阶段优化）" if params.two_stage else ""
             output = {
                 "status": "success",
-                "summary": f"扩散模型生成了 {len(molecules)} 个口袋感知分子（耗时 {gen_time:.0f}s）",
+                "summary": f"扩散模型生成了 {len(molecules)} 个口袋感知分子{stage_label}（耗时 {gen_time:.0f}s）",
                 "count": len(molecules),
                 "molecules": [
                     {
@@ -1059,6 +1131,7 @@ class DiffusionGenerate(CallableTool2):
                         "logp": m.get("logp"),
                         "sa_score": m.get("sa_score"),
                         "score": m.get("score"),
+                        "binding_energy": m.get("binding_energy"),
                     }
                     for m in molecules
                 ],
@@ -1105,3 +1178,210 @@ def _http_request_json(
     """Send HTTP request and parse JSON response. Raises on failure."""
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
+
+
+# ── Bohrium LKM ──────────────────────────────────────────────────────────────────
+
+LKM_BASE_URL = "https://open.bohrium.com/openapi/v1/lkm"
+
+
+def _lkm_fetch_json(
+    url: str,
+    *,
+    method: str = "GET",
+    headers: dict[str, str] | None = None,
+    body: Any | None = None,
+) -> Any:
+    """HTTP request to Bohrium LKM API. Returns parsed JSON."""
+    data: bytes | None = None
+    if body is not None:
+        data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(
+        url, data=data, headers=headers or {}, method=method,
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        text = resp.read().decode("utf-8", errors="replace")
+    return json.loads(text)
+
+
+class SearchLKMParams(BaseModel):
+    verb: str = Field(
+        description="子命令: search(搜索科学claims), reasoning(追溯推理链), papers_graph(论文知识图谱)"
+    )
+    query: str | None = Field(
+        default=None,
+        description="搜索查询（verb=search 时必填）",
+    )
+    claim_id: str | None = Field(
+        default=None,
+        description="Claim GCN ID（verb=reasoning 时必填）",
+    )
+    doi: str | None = Field(
+        default=None,
+        description="论文 DOI（verb=papers_graph 时使用）",
+    )
+    title: str | None = Field(
+        default=None,
+        description="论文标题（verb=papers_graph 时使用）",
+    )
+    top_k: int = Field(
+        default=20,
+        description="搜索返回最大结果数",
+    )
+    reasoning_only: bool = Field(
+        default=False,
+        description="仅返回有推理链的 claims",
+    )
+
+
+class SearchLKM(CallableTool2):
+    name: str = "search_lkm"
+    description: str = (
+        "搜索 Bohrium LKM 科学知识图谱。三个子命令：search — 按主题搜索科学 claims 和研究问题；"
+        "reasoning — 追溯某条 claim 的推理链（前提、推导步骤、弱点）；"
+        "papers_graph — 获取论文的完整知识图谱。"
+        "文献解析阶段优先使用此工具，SearchWeb 作为兜底。"
+    )
+    params: type[BaseModel] = SearchLKMParams
+
+    async def __call__(self, params: SearchLKMParams) -> ToolReturnValue:
+        access_key = os.environ.get("LKM_ACCESS_KEY")
+        if not access_key:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": "LKM_ACCESS_KEY 未设置。请在 .env 中添加 LKM_ACCESS_KEY=<key>。",
+                }),
+                message="LKM_ACCESS_KEY not set",
+                brief="LKM_ACCESS_KEY 缺失",
+            )
+
+        try:
+            if params.verb == "search":
+                result_data = await asyncio.to_thread(
+                    self._search, access_key, params
+                )
+            elif params.verb == "reasoning":
+                result_data = await asyncio.to_thread(
+                    self._reasoning, access_key, params
+                )
+            elif params.verb == "papers_graph":
+                result_data = await asyncio.to_thread(
+                    self._papers_graph, access_key, params
+                )
+            else:
+                return ToolError(
+                    output=json.dumps({
+                        "status": "error",
+                        "error": f"未知 verb: {params.verb}。支持的 verb: search, reasoning, papers_graph。",
+                    }),
+                    message=f"Unknown verb: {params.verb}",
+                    brief="未知 verb",
+                )
+
+            api_code = result_data.get("code") if isinstance(result_data, dict) else None
+            if api_code and api_code != 0:
+                return ToolError(
+                    output=json.dumps({
+                        "status": "error",
+                        "verb": params.verb,
+                        "api_code": api_code,
+                        "detail": result_data,
+                    }),
+                    message=f"LKM API error code {api_code}",
+                    brief="LKM API 返回错误",
+                )
+
+            output_payload = {
+                "status": "success",
+                "verb": params.verb,
+                "data": result_data,
+            }
+            append_experiment(
+                tool="search_lkm",
+                round_num=get_latest_round(),
+                params={
+                    "verb": params.verb,
+                    "query": params.query,
+                    "claim_id": params.claim_id,
+                },
+                result={
+                    "code": result_data.get("code"),
+                    "total": result_data.get("data", {}).get("total"),
+                },
+            )
+            return ToolOk(output=json.dumps(output_payload, ensure_ascii=False))
+
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": f"HTTP {exc.code}: {detail}",
+                }),
+                message=f"HTTP {exc.code}",
+                brief=f"LKM API HTTP 错误 {exc.code}",
+            )
+        except Exception as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                }),
+                message=str(exc),
+                brief="LKM API 请求失败",
+            )
+
+    @staticmethod
+    def _search(access_key: str, params: SearchLKMParams):
+        if params.query is None:
+            raise ValueError("query is required for verb=search")
+        body = {
+            "query": params.query,
+            "top_k": params.top_k,
+        }
+        if params.reasoning_only:
+            body["reasoning_only"] = True
+        headers = {
+            "accessKey": access_key,
+            "content-type": "application/json",
+        }
+        return _lkm_fetch_json(
+            f"{LKM_BASE_URL}/search",
+            method="POST",
+            headers=headers,
+            body=body,
+        )
+
+    @staticmethod
+    def _reasoning(access_key: str, params: SearchLKMParams):
+        if params.claim_id is None:
+            raise ValueError("claim_id is required for verb=reasoning")
+        headers = {"accessKey": access_key}
+        encoded_id = urllib.parse.quote(params.claim_id, safe="")
+        return _lkm_fetch_json(
+            f"{LKM_BASE_URL}/claims/{encoded_id}/reasoning"
+            f"?max_chains=10&sort_by=comprehensive",
+            method="GET",
+            headers=headers,
+        )
+
+    @staticmethod
+    def _papers_graph(access_key: str, params: SearchLKMParams):
+        if params.doi is None and params.title is None:
+            raise ValueError("doi or title is required for verb=papers_graph")
+        body: dict[str, Any] = {}
+        if params.doi is not None:
+            body["doi"] = params.doi
+        if params.title is not None:
+            body["title"] = params.title
+        headers = {
+            "accessKey": access_key,
+            "content-type": "application/json",
+        }
+        return _lkm_fetch_json(
+            f"{LKM_BASE_URL}/papers/graph",
+            method="POST",
+            headers=headers,
+            body=body,
+        )
