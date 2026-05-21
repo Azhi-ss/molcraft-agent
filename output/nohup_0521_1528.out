@@ -1,0 +1,3493 @@
+/home/dministrator/Lab/clones/molcraft-agent/.venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py:10: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import JsonWebKey, JsonWebToken
+[2026-05-21T15:28:46.510248] MolCraft Agent 启动
+============================================================
+模式: autoresearch（LLM 自主迭代实验）
+指令书: /home/dministrator/Lab/clones/molcraft-agent/program.md
+迭代记录: /home/dministrator/Lab/clones/molcraft-agent/docs/iteration_log.jsonl
+日志文件: /home/dministrator/Lab/clones/molcraft-agent/output/result.log
+配置: 最大 3 次迭代 | 最长 90 分钟
+[配置] 使用自定义 LLM: deepseek-v4-pro
+[配置] Provider: openai_legacy
+[配置] API Endpoint: https://api.deepseek.com/v1
+(yolo 模式下自动批准所有操作)
+
+好的，我是 MolCraft Agent — 自主科研智能体。开始启动检查。<system>Command executed successfully.</system>-rw-r--r-- 1 dministrator dministrator 158815  5月 17 15:13 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+-rw-r--r-- 1 dministrator dministrator 160138  5月 16 20:33 /home/dministrator/Lab/clones/molcraft-agent/data/target.pdb
+---
+total 3532
+drwxr-xr-x  3 dministrator dministrator   4096  5月 21 15:28 .
+drwxr-xr-x 23 dministrator dministrator   4096  5月 21 15:25 ..
+-rw-r--r--  1 dministrator dministrator 365827  5月 19 14:03 cytoscape.min.js
+-rw-r--r--  1 dministrator dministrator 279706  5月 19 13:30 d3.v7.min.js
+---
+autonomous_agents_survey.md
+coscientist.md
+deep_lead_optimization_jacs.md
+pdf
+---
+/home/dministrator/Lab/clones/molcraft-agent/docs/knowledge_base.md
+<system>33 lines read from file starting from line 1. End of file reached.</system>     1	version: 1
+     2	agent:
+     3	  extend: default
+     4	  tools:
+     5	    # Kimi CLI 默认工具
+     6	    - "kimi_cli.tools.shell:Shell"
+     7	    - "kimi_cli.tools.web:SearchWeb"
+     8	    - "kimi_cli.tools.web:FetchURL"
+     9	    - "kimi_cli.tools.file:ReadFile"
+    10	    - "kimi_cli.tools.file:WriteFile"
+    11	    - "kimi_cli.tools.file:Glob"
+    12	    - "kimi_cli.tools.file:Grep"
+    13	    - "kimi_cli.tools.file:StrReplaceFile"
+    14	    - "kimi_cli.tools.todo:SetTodoList"
+    15	    - "kimi_cli.tools.think:Think"
+    16	
+    17	    # MolCraft Agent 自定义化学工具
+    18	    - "molcraft_agent.tools:IdentifyTarget"
+    19	    - "molcraft_agent.tools:GenerateMolecules"
+    20	    - "molcraft_agent.tools:DockMolecules"
+    21	    - "molcraft_agent.tools:PlanSynthesis"
+    22	    - "molcraft_agent.tools:EvaluateMolecule"
+    23	    - "molcraft_agent.tools:RunPipeline"
+    24	
+    25	    # 迭代报告工具（Agent 主动报告迭代完成）
+    26	    - "molcraft_agent.tools:ReportIteration"
+    27	
+    28	    # 扩散模型生成工具（PocketXMol，需 GPU 服务器）
+    29	    - "molcraft_agent.tools:DiffusionGenerate"
+    30	
+    31	    # 阶段标记工具（Agent 四阶段：诊断、代码演进、实验验证、复盘）
+    32	    - "molcraft_agent.tools:BeginStage"
+    33	    - "molcraft_agent.tools:EndStage"
+<system>35 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-paper-analysis
+     3	description: 文献解析关注点。仅首次运行/陷入困境需要回原文查找时读取。包含参考论文中值得关注的具体章节和概念。
+     4	---
+     5	
+     6	# 文献解析指南
+     7	
+     8	首次运行或陷入困境后强制恢复时使用。
+     9	
+    10	## 综述论文关注点 (papers/autonomous_agents_survey.md)
+    11	
+    12	### Chemistry Agent 部分
+    13	- **ChemCrow**: 18个工具集成的化学 Agent
+    14	- **ChemAgents**: 分层多 Agent（Manager+Specialist）
+    15	- **ChemReasoner**: LLM + DFT 假设验证
+    16	- **LARC**: Agent-as-a-Judge 逆合成
+    17	- **MOOSE-Chem**: 自动假设生成
+    18	- **FROGENT**: 端到端药物设计
+    19	
+    20	### Multi-Agent 部分
+    21	- **TAIS**: 模拟研究团队
+    22	- **Agent Laboratory**: 文献 → 实验 → 论文
+    23	
+    24	### Self-Code Evolution
+    25	- **AI Scientist**: 自主代码生成与迭代
+    26	
+    27	## 解析产出
+    28	
+    29	1. `docs/literature_analysis_round_X.md` — 完整分析报告
+    30	2. `docs/knowledge_base.md` — 策略库（每条: 标题 + 来源 + 技术要点 + 适用场景 + 已尝试标记）
+    31	
+    32	## knowledge_base.md 格式
+    33	
+    34	每条策略包含: 标题, 来源论文, 技术要点, 适用场景, 尝试状态(VERIFIED/REJECTED/PENDING)
+    35	Agent 每轮验证后更新标记。后续轮次直接读此文件，不必重读论文全文。
+[2026-05-21T15:29:15.424850] 迭代进度: 0/3 (初始: 21)
+启动检查通过：
+- ✅ `data/target.pdb` 存在
+- ✅ `data/receptor.pdbqt` 存在 
+- ✅ `output/` 可写
+- ✅ `papers/` 有论文
+- ✅ `agent.yaml` 配置完整
+
+`docs/knowledge_base.md` **已存在** → 非首次运行，跳过论文全文阅读，直接读知识库和当前状态。<system>155 lines read from file starting from line 1. End of file reached.</system>     1	# MolCraft Agent — Knowledge Base
+     2	
+     3	> Auto-generated strategy repository. Updated after each experimental round.
+     4	
+     5	---
+     6	
+     7	## Strategy Catalog
+     8	
+     9	### H001 — SA Score Filter Tightening
+    10	- **Source**: Deep Lead Optimization (JACS 2024)
+    11	- **Tech**: SA threshold 8.0→6.0, added max_rings=7, fused ring penalty 0.5→1.0, spiro 1.0→1.5, bridgehead 1.5→2.0
+    12	- **When to use**: When generating too many unsynthesizable molecules
+    13	- **Status**: ✅ VERIFIED
+    14	
+    15	### H002 — Docking-Guided Generation
+    16	- **Source**: MOOSE-Chem (Yang et al., 2025) + Coscientist (Boiko et al., 2023)
+    17	- **Tech**: Embed docking as fitness function in generation loop; batch_size=10, n_generations=3, top_k=5
+    18	- **When to use**: Always (default on). Verified +0.4~0.8 kcal/mol improvement
+    19	- **Status**: ✅ VERIFIED
+    20	
+    21	### H003 — Recursive Multi-Step Synthesis
+    22	- **Source**: LARC (Baker et al., 2025)
+    23	- **Tech**: max_depth=3 recursive retrosynthesis; continue breaking intermediates until simple
+    24	- **When to use**: Always (default in plan_synthesis_v2)
+    25	- **Status**: ✅ VERIFIED
+    26	
+    27	### H009 — Consensus Docking
+    28	- **Source**: Coscientist (Boiko et al., 2023) — "performing experiments multiple times"
+    29	- **Tech**: 3 independent docking runs with different seeds, median as consensus score
+    30	- **When to use**: For final top-N ranking
+    31	- **Status**: ✅ VERIFIED
+    32	
+    33	### H010 — Scaffold Hopping Mutation
+    34	- **Source**: Deep Lead Optimization (JACS 2024)
+    35	- **Tech**: BRICS decompose → identify core → replace with different scaffold → reattach side chains
+    36	- **When to use**: ~20% probability in mutation; improves scaffold diversity
+    37	- **Status**: ✅ VERIFIED
+    38	
+    39	### H011 — Diversity-Preserving Selection (MMD)
+    40	- **Source**: MOOSE-Chem (Yang et al., 2025)
+    41	- **Tech**: Greedy Maximum Minimal Distance selection with 0.7×BE + 0.3×diversity
+    42	- **When to use**: During seed selection in docking guidance (top_k=5 BE + rest diversity)
+    43	- **Status**: ✅ VERIFIED — Best BE improved +19.3%
+    44	
+    45	### H012 — Route Quality Scoring (Agent-as-a-Judge)
+    46	- **Source**: LARC (Baker et al., 2025)
+    47	- **Tech**: Multi-step route scoring: reactant count, complexity ratio, step count bonus
+    48	- **When to use**: Composite ranking 0.8×BE + 0.2×route_quality
+    49	- **Status**: ✅ VERIFIED
+    50	
+    51	### H013 — Crossover (Fragment Recombination)
+    52	- **Source**: MOOSE-Chem (Yang et al., 2025) + MolLEO (Wang et al., 2024b)
+    53	- **Tech**: Swap Murcko scaffolds between parent molecules, reattach side chains
+    54	- **When to use**: 25% probability in combine strategy and offspring generation
+    55	- **Status**: ✅ VERIFIED
+    56	
+    57	### H014 — Mass Balance Validation
+    58	- **Source**: LARC (Baker et al., 2025)
+    59	- **Tech**: Validate reactant/target heavy atom ratio 0.7–1.3; reject rules that only match partial fragments
+    60	- **When to use**: Run during _run_retro_rule; eliminates false matches
+    61	- **Status**: ✅ VERIFIED
+    62	
+    63	### H015 — Saturated N-Heterocycle Synthesis Rules
+    64	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    65	- **Tech**: Added THIQ, indoline, tetrahydroquinoline, saturated cyclic amine C-N cleavage, benzazepine rules
+    66	- **When to use**: Always in RETRO_RULES
+    67	- **Status**: ✅ VERIFIED — achieved 0/10 trivial routes
+    68	
+    69	### H016 — Diels-Alder Retro Rules
+    70	- **Source**: JACS 2024 (cycloaddition as key synthetic strategy)
+    71	- **Tech**: Cyclohexene→butadiene+dienophile, dihydropyran→oxa-diene+dienophile
+    72	- **When to use**: Always in RETRO_RULES
+    73	- **Status**: ✅ VERIFIED
+    74	
+    75	### H017 — Lactone/Epoxide/Pyrazole/sp3C-sp3C Rules
+    76	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    77	- **Tech**: Lactone hydrolysis, epoxide ring-opening, Knorr pyrazole, sp3 C-C Grignard retro, cyclic ether opening
+    78	- **When to use**: Always in RETRO_RULES
+    79	- **Status**: ✅ VERIFIED
+    80	
+    81	### H018 — BRICS Fragment Recombination (Fixed)
+    82	- **Source**: JACS 2024 (BRICS) + MOOSE-Chem (Yang et al., 2025)
+    83	- **Tech**: Replaced string concatenation with BRICSBuild; fragment pool from docked molecules
+    84	- **When to use**: combine strategy
+    85	- **Status**: ✅ VERIFIED — avg BE -8.609
+    86	
+    87	### H019 — Suzuki Byproduct Atom Balance
+    88	- **Source**: LARC (Baker et al., 2025) — atom conservation
+    89	- **Tech**: Added REACTION_BYPRODUCTS dict for Suzuki (B(OH)2+Br loss), Friedländer (2H2O loss)
+    90	- **When to use**: In _add_byproducts_for_balance
+    91	- **Status**: ❌ REJECTED — trivial ratio regressed (1/10)
+    92	
+    93	### H020 — Diaryl Amine / Indole / Benzofuran / Tetrazole / Isoxazole Rules
+    94	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    95	- **Tech**: Fischer indole, Rap-Stoermer benzofuran, tetrazole [3+2], isoxazole condensation
+    96	- **When to use**: Always in RETRO_RULES
+    97	- **Status**: ✅ VERIFIED
+    98	
+    99	### H022 — Expanded Scaffold Library (Bridge/Spiro/Fused Heterocycles)
+   100	- **Source**: MOOSE-Chem (Yang et al., 2025) + JACS 2024
+   101	- **Tech**: Added BCP, quinuclidine, tropane, spiro-piperidine, azaindole, imidazopyridine scaffolds
+   102	- **When to use**: Always in SCAFFOLDS
+   103	- **Status**: ✅ VERIFIED
+   104	
+   105	### H025 — Expanded Substituent Library (Polar Pharmacophores)
+   106	- **Source**: Deep Lead Optimization (JACS 2024) + Coscientist (2023)
+   107	- **Tech**: Added 5 polar substituents (C=O, CN, CH2OH, CH2NH2, SO2CH3) to _add_substituent
+   108	- **When to use**: When molecules lack hydrogen bond features
+   109	- **Status**: ❌ REJECTED — Best BE -9.153→-8.972, Avg -8.453→-8.325. Vina scoring favors hydrophobic/flat aromatics over polar hinge binders.
+   110	
+   111	### H027 — Relaxed Molecular Filters
+   112	- **Source**: Empirical (Round 18-19) — Vina rewards hydrophobic packing
+   113	- **Tech**: max_rings 7→9, max_sa 6.0→7.0 in passes_filters(); allows larger hydrophobic aromatics
+   114	- **When to use**: When current filters exclude >7-ring molecules that could pack better in Vina
+   115	- **Status**: ✅ VERIFIED — Best BE +2.0% (-9.153→-9.332), Avg +4.2% (-8.453→-8.810)
+   116	
+   117	### H026 — Expanded Large Aromatic Scaffold Library
+   118	- **Source**: JACS 2024 — scaffold diversity + Vina hydrophobic bias
+   119	- **Tech**: Added 12 large polycyclic aromatic scaffolds (anthracene, phenanthrene, pyrene, perylene, acridine, benzoquinolines, benzo[a]pyrene)
+   120	- **When to use**: N/A
+   121	- **Status**: ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989
+   122	
+   123	### H028 — Suzuki SMARTS Specificity Fix
+   124	- **Source**: Empirical (Round 4 debugging) — discovered Suzuki [c;R][c;R] falsely matching fused ring C-C bonds
+   125	- **Tech**: Changed SMARTS from [c;R][c;R] to [c;R]!@[c;R] to only match inter-ring (biaryl) bonds, not intra-ring fused bonds
+   126	- **When to use**: Always in RETRO_RULES
+   127	- **Status**: ✅ VERIFIED — Trivial ratio restored 1/10→0/10, BE -9.19 within baseline variance
+   128	
+   129	---
+   130	
+   131	## Current Baseline (TYK2 5C01 — H029 VERIFIED)
+   132	
+   133	> Updated Round X (H029 VERIFIED).
+   134	
+   135	| Metric | Value |
+   136	|--------|-------|
+   137	| Best BE | **-10.099** |
+   138	| Avg BE | **-9.412** |
+   139	| Trivial ratio | 2/10 ⚠️ |
+   140	| Dominant chemistry | Polycyclic aromatics (pyrene/phenanthrene derivatives) |
+   141	| Note | Trivial regression due to Vina hydrophobic bias; needs LogP penalty in composite scoring |
+   142	
+   143	---
+   144	
+   145	## Open / Pending Hypotheses
+   146	
+   147	| ID | Description | Priority |
+   148	|----|-------------|----------|
+   149	| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
+   150	| H023 | Multi-step route chemical validation (check intermediate stability) | MEDIUM |
+   151	| H024 | Fix docking coordinates to geometric pocket (now done) | ✅ DONE |
+   152	| H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989. Large scaffolds unused by pipeline, MW filter blocks them. Discovered Suzuki SMARTS bug in process. |
+   153	| H027 | Relaxed molecular filters (max_rings 7→9, max_sa 6.0→7.0) | ✅ VERIFIED — Best BE +2.0%, Avg +4.2% |
+   154	| H028 | Fix Suzuki SMARTS specificity (prevent intra-ring false matches) | ✅ VERIFIED — Trivial ratio restored to 0/10. BE -9.19 within baseline variance. Suzuki [c;R][c;R]→[c;R]!@[c;R] prevents false matches on fused rings. |
+   155	| H029 | Multi-conformer docking enhancement (3 conformers × 3 seeds consensus) | ✅ VERIFIED — Best BE -9.19→-10.099 (+9.9%), Avg -8.42→-9.412 (+11.8%). Only used in consensus stage to control cost. Trivial ratio regression (2/10) due to Vina hydrophobic bias selecting polycyclic aromatics. |
+<system>36 lines read from file starting from line 1. End of file reached.</system>     1	{"timestamp": "2026-05-17T17:50:32.137801+00:00", "tool": "run_pipeline", "round": 1, "params": {"n_generate": 60, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": false}, "result": {"molecule_count": 10, "best_be": -8.117, "avg_be": -7.8875, "trivial_ratio": 0.0}}
+     2	{"timestamp": "2026-05-17T17:59:21.280745+00:00", "tool": "run_pipeline", "round": 2, "params": {"n_generate": 60, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.43, "avg_be": -7.9007000000000005, "trivial_ratio": 0.0}}
+     3	{"timestamp": "2026-05-17T19:49:46.591839+00:00", "tool": "run_pipeline", "round": 3, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.335, "avg_be": -8.131499999999999, "trivial_ratio": 0.0}}
+     4	{"timestamp": "2026-05-18T05:34:45.536743+00:00", "tool": "run_pipeline", "round": 4, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.941, "avg_be": -8.9613, "trivial_ratio": 0.1}}
+     5	{"timestamp": "2026-05-18T13:36:13+08:00", "round": 1, "hypothesis": "H011", "success": true, "best_be": -9.941, "avg_be": -8.961, "trivial_ratio": 0.1, "summary": "Diversity-preserving selection (MMD greedy) improved best BE from -8.335 to -9.941 (+19.3%), avg BE from -8.131 to -8.961 (+10.2%)"}
+     6	{"timestamp": "2026-05-18T05:45:22.742418+00:00", "tool": "run_pipeline", "round": 5, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.896, "avg_be": -8.4176, "trivial_ratio": 0.1}}
+     7	{"timestamp": "2026-05-18T13:39:40.844797+00:00", "tool": "run_pipeline", "round": 6, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.17, "avg_be": -8.0613, "trivial_ratio": 0.1}}
+     8	{"timestamp": "2026-05-18T21:41:32+08:00", "round": 6, "hypothesis": "H014", "success": true, "best_be": -9.17, "avg_be": -8.0613, "trivial_ratio": 0.1, "summary": "Mass balance validation: eliminated Friedlander false matches, trivial ratio unchanged (different root cause - missing rules for saturated bicycles)"}
+     9	{"timestamp": "2026-05-18T13:55:29.506442+00:00", "tool": "run_pipeline", "round": 7, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.77, "avg_be": -8.012699999999999, "trivial_ratio": 0.1}}
+    10	{"timestamp": "2026-05-18T14:04:25.556346+00:00", "tool": "run_pipeline", "round": 8, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.074, "avg_be": -8.314400000000001, "trivial_ratio": 0.0}}
+    11	{"timestamp": "2026-05-18T22:06:24+08:00", "round": 7, "hypothesis": "H015", "success": true, "best_be": -9.074, "avg_be": -8.3144, "trivial_ratio": 0.0, "summary": "Saturated N-heterocycle rules + _is_simple_molecule fix: achieved 0/10 trivial routes for first time"}
+    12	{"timestamp": "2026-05-19T05:07:52.818322+00:00", "tool": "run_pipeline", "round": 9, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.591, "avg_be": -8.8529, "trivial_ratio": 0.0}}
+    13	{"timestamp": "2026-05-19T06:34:01.438457+00:00", "tool": "run_pipeline", "round": 10, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.292, "avg_be": -8.608799999999999, "trivial_ratio": 0.0}}
+    14	{"timestamp": "2026-05-19T14:16:02+08:00", "round": 10, "hypothesis": "H018", "success": true, "best_be": -9.292, "avg_be": -8.609, "trivial_ratio": 0.0, "summary": "BRICS fragment recombination + Crossover 15->25%: avg BE -8.609 (-2.8%), best -9.292, trivial 0/10"}
+    15	{"timestamp": "2026-05-19T06:49:37.441078+00:00", "tool": "run_pipeline", "round": 11, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.335, "avg_be": -8.5805, "trivial_ratio": 0.1}}
+    16	{"timestamp":"2026-05-19T14:50:00+08:00","round":11,"hypothesis":"H019","success":false,"best_be":-9.335,"avg_be":-8.581,"trivial_ratio":0.1,"summary":"Combine strategy: BE performance comparable to mutate (best -9.335 vs -9.292) but trivial route regression (1/10 vs 0/10) due to novel BRICS-recombined scaffold not covered by retrosynthesis rules"}
+    17	{"timestamp": "2026-05-19T17:07:20.359215+00:00", "tool": "run_pipeline", "round": 12, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.307, "avg_be": -8.6966, "trivial_ratio": 0.0}}
+    18	{"timestamp": "2026-05-19T17:15:54.193266+00:00", "tool": "run_pipeline", "round": 13, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.159, "avg_be": -8.6774, "trivial_ratio": 0.0}}
+    19	{"timestamp": "2026-05-19T17:24:40.968824+00:00", "tool": "run_pipeline", "round": 14, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -10.359, "avg_be": -9.494800000000001, "trivial_ratio": 0.0}}
+    20	{"timestamp": "2026-05-19T19:43:59.967922+00:00", "tool": "run_pipeline", "round": 15, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -10.119, "avg_be": -9.417300000000001, "trivial_ratio": 0.0}}
+    21	{"timestamp": "2026-05-19T19:55:00.915592+00:00", "tool": "run_pipeline", "round": 16, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.325, "avg_be": -8.397499999999999, "trivial_ratio": 0.0}}
+    22	{"timestamp": "2026-05-20T09:56:58.106946+00:00", "tool": "run_pipeline", "round": 17, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.767, "avg_be": -9.0914, "trivial_ratio": 0.0}}
+    23	{"timestamp": "2026-05-20T10:08:56.541766+00:00", "tool": "run_pipeline", "round": 18, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.039, "avg_be": -8.639999999999999, "trivial_ratio": 0.1}}
+    24	{"timestamp": "2026-05-20T14:37:53.563150+00:00", "tool": "run_pipeline", "round": 19, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.153, "avg_be": -8.453, "trivial_ratio": 0.0}}
+    25	{"timestamp": "2026-05-20T14:51:23.953375+00:00", "tool": "run_pipeline", "round": 20, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.972, "avg_be": -8.325199999999999, "trivial_ratio": 0.0}}
+    26	{"timestamp": "2026-05-20T15:03:19.704054+00:00", "tool": "run_pipeline", "round": 21, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.741, "avg_be": -8.196299999999999, "trivial_ratio": 0.1}}
+    27	{"timestamp": "2026-05-20T15:13:33.222024+00:00", "tool": "run_pipeline", "round": 22, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.332, "avg_be": -8.8102, "trivial_ratio": 0.0}}
+    28	{"timestamp": "2026-05-20T23:15:00+08:00", "round": 3, "hypothesis": "H027", "success": true, "best_be": -9.332, "avg_be": -8.810, "trivial_ratio": 0.0, "summary": "Relaxed filters (max_rings 7→9, max_sa 6.0→7.0): Best BE +2.0%, Avg +4.2%. Released imidazopyridine scaffolds with combined hydrophobic packing + hinge binding."}
+    29	{"timestamp": "2026-05-20T15:54:15.512756+00:00", "tool": "run_pipeline", "round": 23, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -8.434, "avg_be": -7.9679, "trivial_ratio": 0.1}}
+    30	{"timestamp": "2026-05-20T16:28:34.372384+00:00", "tool": "run_pipeline", "round": 24, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -8.389, "avg_be": -7.989400000000001, "trivial_ratio": 0.1}}
+    31	{"timestamp": "2026-05-20T16:47:54.912362+00:00", "tool": "run_pipeline", "round": 25, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -9.19, "avg_be": -8.419, "trivial_ratio": 0.0}}
+    32	{"timestamp":"2026-05-21T00:10:00+08:00","round":4,"hypothesis":"H026","success":false,"best_be":-8.389,"avg_be":-7.989,"trivial_ratio":0.1,"summary":"Expanded large aromatic scaffolds: Best BE -9.332→-8.389, Avg -8.810→-7.989. New scaffolds unused. REJECTED."}
+    33	{"timestamp":"2026-05-21T00:35:00+08:00","round":5,"hypothesis":"H028","success":true,"best_be":-9.19,"avg_be":-8.419,"trivial_ratio":0.0,"summary":"Fixed Suzuki SMARTS [c;R][c;R]→[c;R]!@[c;R]: Trivial ratio 1/10→0/10 restored. VERIFIED."}
+    34	{"timestamp": "2026-05-20T17:52:51.914646+00:00", "tool": "diffusion_generate", "round": 26, "params": {"n_molecules": 5, "pocket_center": [21.86, -0.41, 29.93]}, "result": {"output_count": 5, "gen_time": 27.9}}
+    35	{"timestamp": "2026-05-21T04:01:30.804929+00:00", "tool": "run_pipeline", "round": 27, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -10.099, "avg_be": -9.4121, "trivial_ratio": 0.2}}
+    36	{"timestamp": "2026-05-21T06:06:37.325600+00:00", "tool": "run_pipeline", "round": 28, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -9.253, "avg_be": -8.5121, "trivial_ratio": 0.2}}
+<system>68 lines read from file starting from line 1. End of file reached.</system>     1	# MolCraft Agent
+     2	
+     3	MolCraft Agent 是一个基于 Kimi Agent SDK 的自主科研智能体，用于靶向药物小分子设计与合成路线规划。它遵循文献解析→瓶颈诊断→代码演进→实验验证四阶段迭代循环，自主完成药物发现流程。
+     4	
+     5	## Language
+     6	
+     7	**Session**:
+     8	一次 Agent 运行的完整对话上下文，包含 program.md、所有 user/assistant/tool 消息。持久化存储在 `~/.kimi/sessions/` 下，可以跨运行恢复。
+     9	_Avoid_: 会话、对话
+    10	
+    11	**Resume**:
+    12	从上次中断的 Session 接续执行，不重建对话上下文。通过 `--resume` CLI 参数触发。
+    13	_Avoid_: 恢复、重连
+    14	
+    15	**Program**:
+    16	定义 Agent 行为规范和工作流的指令文档（`program.md`），在 Session 创建时作为首条 user 消息注入。
+    17	_Avoid_: 指令书、任务定义
+    18	
+    19	**Autoresearch Loop**:
+    20	Agent 的自主科研循环：文献解析 → 瓶颈诊断 → 代码演进 → 实验验证。每完成一轮称为一次 Iteration。
+    21	_Avoid_: 工作流、管线
+    22	
+    23	**Auto-approval (YOLO)**:
+    24	Agent 自动批准所有操作请求，无需人工确认。
+    25	_Avoid_: 无人值守
+    26	
+    27	**Iteration**:
+    28	Autoresearch Loop 的一轮完整执行，包含全部四个阶段。Agent 通过 `report_iteration` 工具记录。
+    29	_Avoid_: 轮次
+    30	
+    31	**Stage**:
+    32	Iteration 内部的四个阶段之一：诊断、代码演进、实验验证、复盘。通过 `begin_stage`/`end_stage` 工具标记。
+    33	_Avoid_: 阶段
+    34	
+    35	**Checkpoint**:
+    36	kimi-cli 在 context 中自动插入的状态标记点，用于 context 压缩和回滚。写入 `context.jsonl` 的 `_checkpoint` 消息。
+    37	_Avoid_: 保存点
+    38	
+    39	**Context Compaction**:
+    40	kimi-cli 内置的自动 context 压缩机制。当 token 数量接近 `max_context_size` 时，用 LLM 总结压缩历史消息，保持对话窗口不溢出。
+    41	_Avoid_: 压缩
+    42	
+    43	**Auto-detection**:
+    44	`--resume` 通过 kimi-cli 底层 `continue_()` 自动定位最近一次 session，无需手动指定 session_id。
+    45	
+    46	## Relationships
+    47	
+    48	- 一个 **Program** 驱动一个 **Session** 的完整生命周期
+    49	- 一个 **Session** 可以被多次 **Resume**，每次恢复追加一条 user 消息
+    50	- 一个 **Autoresearch Loop** 包含多个 **Iterations**
+    51	- 一个 **Iteration** 包含 4 个 **Stages**
+    52	- **Context Compaction** 在 token 数接近上限时自动触发，不影响 **Resume**
+    53	- **Checkpoints** 在每条 user/assistant/tool 消息插入后自动创建
+    54	
+    55	## Example dialogue
+    56	
+    57	> **Dev:** "Agent 在迭代 2 的代码演进阶段被 90 分钟超时杀了。我可以用 `--resume` 让它接上吗？"
+    58	>
+    59	> **Domain expert:** "可以。`--resume` 会找到上次的 **Session**，加载全部对话历史，发一条接续指令。Agent 会读取 context 判断自己执行到哪一步，跳过已完成阶段继续迭代。注意：如果 context 过大，**Context Compaction** 会压缩早期消息再恢复。"
+    60	
+    61	> **Dev:** "如果 Agent 已经跑完了 3 轮迭代，我误操作 `--resume` 会怎样？"
+    62	>
+    63	> **Domain expert:** "Agent 重新加载 context 发现 '已完成所有迭代'，会进入最终输出阶段。不会造成破坏，只是重复输出而已。目前不检测完成状态。"
+    64	
+    65	## Flagged ambiguities
+    66	
+    67	- "恢复" 曾同时用于 "从代码错误恢复" 和 "从 session 断点恢复" → 已解决：后者用英文 **Resume** 作为规范术语
+    68	- "session" 曾混用为 "kimi-cli 的底层 session" 和 "一次 agent 运行" → 已解决：统一指 **Session**
+[2026-05-21T15:29:44.138505] 迭代进度: 0/3 (初始: 21)
+状态已清晰。当前基线：**H029 VERIFIED**（Best BE -10.099, Avg -9.412），但 Trivial ratio 2/10 ⚠️。上轮已验证多构象对接带来结合能大幅提升，但 Vina 疏水偏置导致多环芳烃泛滥、逆合成路线退化。开始新一轮迭代。<system>Todo list updated</system>{"stage": "诊断", "message": "阶段「诊断」开始"}
+[2026-05-21T15:30:12.886912] 迭代进度: 0/3 (初始: 21)
+开始阶段二：瓶颈诊断。先搜索外部新知识，同时读取关键源码和技能文件。<system>The returned content is the main text content extracted from the page.</system>---
+title: Cite
+date: 2016-10-20
+---
+[HTML][HTML] In silico evaluation of pharmacokinetic properties and molecular docking for the identification of potential anticancer compounds
+JPB Arango, DYM Rodriguez, SL Cruz… - … Biology and Chemistry, 2025 - Elsevier
+… key trends, including a strong relationship between Log P and Log D, and groupings based
+on … Molecular docking identified several compounds with favorable binding affinities to TLK2, …
+on … Molecular docking identified several compounds with favorable binding affinities to TLK2, …
+[HTML][HTML] Open-Source Molecular Docking and AI-Augmented Structure-Based Drug Design: Current Workflows, Challenges, and Opportunities
+F Azam, SA Almahmoud - International Journal of Molecular Sciences, 2026 - mdpi.com
+… sets and chemically biased benchmarks can substantially … Docking workflows utilizing the
+Vina family typically require … annotate hydrogen bonds, hydrophobic contacts, salt bridges…
+Vina family typically require … annotate hydrogen bonds, hydrophobic contacts, salt bridges…
+Best Practices in Mixed-Solvent Molecular Dynamics and Solvent-Site-Biased Docking
+JM Prieto, JAD Cuellar Estrada… - Journal of Chemical …, 2026 - ACS Publications
+… high conformational entropy penalties or forming suboptimal … ligand hydrophobic moieties
+should replace the hydrophobic … AutoDock Vina 60 Open source Empirical scoring function …
+should replace the hydrophobic … AutoDock Vina 60 Open source Empirical scoring function …
+Integrated virtual screening, machine learning and molecular dynamics identify novel phytochemical FabI inhibitors against MRSA
+M Rudrapal, KK Kırboğa - Journal of Molecular Graphics and Modelling, 2026 - Elsevier
+… aureus FabI (PDB: 4BNF) using AutoDock Vina, and ten ML algorithms were trained on
+ECFP4 molecular fingerprints to classify compounds as active or inactive. Top candidates …
+ECFP4 molecular fingerprints to classify compounds as active or inactive. Top candidates …
+Machine-learning–enabled virtual screening delivers scaffold-diverse, experimentally validated, c-MET inhibitors
+… of kinases and engage the hydrophobic subpockets flanking the … ) due to inherent publication
+bias and the tendency of medicinal … to molecular docking using AutoDock Vina for further …
+bias and the tendency of medicinal … to molecular docking using AutoDock Vina for further …
+Multiparametric optimisation of a kinase inhibitor by a physiochemical approach
+A Kabiri - 2025 - sussex.figshare.com
+… Docking profiles for compounds in Chapter 2 were … are larger and more hydrophobic to
+accommodate this bulky … hinge and regulates access to a hydrophobic back pocket within the ATP…
+accommodate this bulky … hinge and regulates access to a hydrophobic back pocket within the ATP…
+[PDF][PDF] Machine-Learning-based prediction of human SERT protein ligand affinity using molecular docking and interaction analysis
+D Papanagnou - 2026 - dspace.lib.ntua.gr
+… docking was employed with the aid of “AutoDock Vina” and “… conducted by Adejoro and
+Adewara in 2025. The goal was to … ” (PSA): LogP is an indicator of hydrophobicity for a molecule …
+Adewara in 2025. The goal was to … ” (PSA): LogP is an indicator of hydrophobicity for a molecule …
+Integrating traditional QSAR and read-across-based regression models for predicting potential anti-leishmanial azole compounds
+… method to split a dataset can be bias-prone, a third method, ie … The docking study was
+performed using the AutoDock Vina … coefficient (LogP), which quantifies molecular hydrophobicity. …
+performed using the AutoDock Vina … coefficient (LogP), which quantifies molecular hydrophobicity. …
+DrugBank in 3D: Comprehensive Computational Identification, Generation and Assessment of Three-Dimensional Drug and Drug–Target Complexes for DrugBank
+FS Afkhami - 2025 - ualberta.scholaris.ca
+… DockQ scores for Boltz-1 protein3protein docking models compared with their corresponding
+experimental structures, showing the predicted quality metrics for each complex………………
+experimental structures, showing the predicted quality metrics for each complex………………
+Artificial Intelligence for Predicting Small-Molecule Bioactive Conformations
+Y Liu, S Chen, K Lin, S Gao, X Li - Journal of Chemical Information …, 2026 - ACS Publications
+… term into the hybrid score function to bias generation toward low-… (3) RL optimization using
+docking scores (Vina) as a direct … a hard physical violation penalty. Very low MAT or favorable …
+docking scores (Vina) as a direct … a hard physical violation penalty. Very low MAT or favorable …<system>ERROR: Failed to fetch URL. Status: 403. This may indicate the page is not accessible or the server is down.</system><system>58 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-vina-strategies
+     3	description: AutoDock Vina docking optimization knowledge for TYK2/JAK kinase targets. Covers scoring function biases, docking box tuning, common failure modes, and kinase-specific binding pocket characteristics.
+     4	---
+     5	
+     6	# Vina Docking Strategies for Kinase Targets
+     7	
+     8	## Scoring Function Known Biases
+     9	
+    10	- **Hydrophobic overestimation**: Vina over-rewards burial of nonpolar surface area. Large aromatic
+    11	  substituents in solvent-exposed regions may score well but bind poorly in reality.
+    12	- **Halogen underestimation**: Halogen bonds (C-X...O=C) contribute ~0.5-2 kcal/mol but Vina
+    13	  lacks explicit sigma-hole terms. Halogenated fragments near backbone carbonyls are under-scored.
+    14	- **Desolvation penalty weak**: Vina's implicit solvent model underestimates the cost of
+    15	  desolvating polar groups. Highly polar molecules may appear better than they are.
+    16	- **Entropic penalty flat**: The ligand entropy penalty is approximated as proportional to the
+    17	  number of rotatable bonds (~0.3 kcal/mol per bond). This is a rough estimate.
+    18	
+    19	## Docking Box Tuning Heuristics
+    20	
+    21	- **Center**: Must be at the geometric center of the binding site, NOT the protein center of mass.
+    22	  For TYK2 JH1 domain, the hinge region (residues 950-960, backbone NH of Met953, Glu955) is the
+    23	  key anchor point. The box center should be ~2-3 A from the hinge backbone toward the ATP pocket.
+    24	- **Size**: For kinase ATP sites, 20x20x20 A typically suffices. If the allosteric pocket adjacent
+    25	  to the ATP site is targeted, extend to 25x25x25 A.
+    26	- **Validation**: After setting `DOCKING_CENTER` in `src/config.py`, run a known co-crystallized
+    27	  ligand through docking. RMSD < 2.0 A from the crystal pose indicates correct box placement.
+    28	
+    29	## Common Docking Failure Modes
+    30	
+    31	| Symptom | Likely Cause | Fix |
+    32	|---------|-------------|-----|
+    33	| All scores > -5 kcal/mol | Box center off-target | Verify against crystal structure pocket residues |
+    34	| Zero successful docks | Molecule too large for box | Increase box size or filter by MW < 500 |
+    35	| All scores clustered at -4 to -6 | Exhaustiveness too low | Increase `--exhaustiveness` from 8 to 16 |
+    36	| Good scores but bad poses | Scoring function deceived by hydrophobics | Cross-validate with pose quality check |
+    37	
+    38	## Kinase Hinge Region Characteristics
+    39	
+    40	- **Hinge motif**: The backbone NH of the hinge residue (Met953 in TYK2) is a conserved hydrogen
+    41	  bond donor. A heterocyclic nitrogen (pyridine, pyrimidine, pyrazole) that accepts this H-bond
+    42	  is the hallmark of type I kinase inhibitors.
+    43	- **Gatekeeper residue**: TYK2 has Thr972 as gatekeeper. Bulkier gatekeepers (Phe, Met) restrict
+    44	  access to the back pocket; smaller ones (Thr) allow type II inhibitors to extend past the gate.
+    45	- **DFG motif**: Asp-Phe-Gly at the activation loop N-terminus. DFG-in = ATP-competitive (type I),
+    46	  DFG-out = allosteric (type II). Vina cannot distinguish these states -- always use the DFG-in
+    47	  conformation for docking unless explicitly targeting the allosteric pocket.
+    48	- **Ribose pocket**: The conserved Asp1041 interacts with the ribose hydroxyls of ATP. Polar
+    49	  fragments (alcohol, amide) near this residue can improve selectivity.
+    50	
+    51	## Recommended Docking Protocol for This Project
+    52	
+    53	1. Verify `DOCKING_CENTER` in `src/config.py` with `identify_target()`
+    54	2. Run a small batch (n=20) as smoke test: check docking success rate > 80%
+    55	3. If success rate < 80%, check box size and molecule MW distribution
+    56	4. After each generator change, re-run smoke test to confirm docking still works
+    57	5. Cross-reference top 10% binding energies with QED: if best BE comes from QED < 0.3 molecules,
+    58	   the scoring function may be overweighting unrealistic features
+<system>38 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-hypothesis-template
+     3	description: 假设提出格式模板。需要写新的改进假设时读取。包含完整的假设结构和验证标准模板。
+     4	---
+     5	
+     6	# 假设格式模板
+     7	
+     8	提出新的改进假设时，必须完整填写以下所有部分：
+     9	
+    10	```
+    11	假设ID: HXXX
+    12	瓶颈: 简要描述具体瓶颈
+    13	文献支撑: 相关论文/方法
+    14	
+    15	───────────────── 推理链 ─────────────────
+    16	步骤 | 内容                  | 置信度 | 推理方式 | 依据来源
+    17	S1   | ...                   | 高/中/低 | 文献/演绎 | ...
+    18	S2   | ...                   | ...    | ...     | ...
+    19	...
+    20	综合置信度 = 所有步骤最低（木桶效应）
+    21	
+    22	───────────────── 验证标准 ─────────────────
+    23	Q1 如果核心指标提升 < 5%，是否仍保留？
+    24	答：是/否
+    25	理由：...
+    26	
+    27	Q2 如果指标下降，最可能的原因是什么？
+    28	答：...
+    29	理由：...
+    30	
+    31	Q3 本假设的最低可接受结果是什么？
+    32	答：...
+    33	
+    34	───────────────── 改进方案 ─────────────────
+    35	改动文件: src/xxx.py
+    36	改动内容: 具体改什么
+    37	验证指标: pipeline 跑 N 个分子，对比改前改后的结合能 + trivial 比例
+    38	```
+[2026-05-21T15:30:41.707707] 迭代进度: 0/3 (初始: 21)
+搜索结果不够精确，让我针对性搜索 LogP 惩罚和复合评分策略，同时读取关键源码。<system>ERROR: Failed to fetch URL. Status: 403. This may indicate the page is not accessible or the server is down.</system>/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py
+/home/dministrator/Lab/clones/molcraft-agent/src/event_logger.py
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py
+/home/dministrator/Lab/clones/molcraft-agent/src/evaluator.py
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py
+<system>Found 11 matches for pattern `src/**/*.py`.</system>src/__init__.py
+src/calibrator.py
+src/config.py
+src/docking.py
+src/evaluator.py
+src/event_logger.py
+src/event_schema.py
+src/generator.py
+src/receptor.py
+src/scorer.py
+src/synthesis_v2.py<system>438 lines read from file starting from line 1. End of file reached.</system>     1	"""Scorer core functions: validity, SA normalization, binding normalization."""
+     2	
+     3	import csv
+     4	import json
+     5	from pathlib import Path
+     6	
+     7	from rdkit import Chem
+     8	
+     9	from src.evaluator import estimate_sa_score
+    10	
+    11	
+    12	# Path to calibration file, relative to project root
+    13	CALIBRATION_PATH = Path(__file__).parent.parent / "data" / "calibration.json"
+    14	
+    15	
+    16	# Default calibration values
+    17	DEFAULT_CALIBRATION = {
+    18	    "version": 1,
+    19	    "binding_score": {
+    20	        "function": "clipped_linear",
+    21	        "params": {"threshold": 0.0, "range": 15.0},
+    22	    },
+    23	    "sa_score": {
+    24	        "function": "step",
+    25	        "params": {"cutoff": 4.0, "scale": 4.0},
+    26	    },
+    27	}
+    28	
+    29	
+    30	def load_calibration(path=None) -> dict:
+    31	    """Load calibration from JSON file.
+    32	
+    33	    Args:
+    34	        path: Path to calibration JSON. Defaults to data/calibration.json.
+    35	
+    36	    Returns:
+    37	        Calibration dict with binding_score and sa_score keys.
+    38	    """
+    39	    if path is None:
+    40	        path = CALIBRATION_PATH
+    41	
+    42	    if Path(path).exists():
+    43	        with open(path) as f:
+    44	            cal = json.load(f)
+    45	        # Merge with defaults for any missing keys
+    46	        result = DEFAULT_CALIBRATION.copy()
+    47	        result.update(cal)
+    48	        for key in DEFAULT_CALIBRATION:
+    49	            if key not in cal and isinstance(DEFAULT_CALIBRATION[key], dict):
+    50	                result[key] = DEFAULT_CALIBRATION[key]
+    51	            elif key in cal and isinstance(DEFAULT_CALIBRATION.get(key), dict) and isinstance(cal[key], dict):
+    52	                merged = DEFAULT_CALIBRATION[key].copy()
+    53	                merged.update(cal[key])
+    54	                result[key] = merged
+    55	        return result
+    56	    return DEFAULT_CALIBRATION.copy()
+    57	
+    58	
+    59	def save_calibration(cal: dict, path=None):
+    60	    """Save calibration to JSON file.
+    61	
+    62	    Args:
+    63	        cal: Calibration dict to save.
+    64	        path: Path to write. Defaults to data/calibration.json.
+    65	    """
+    66	    if path is None:
+    67	        path = CALIBRATION_PATH
+    68	
+    69	    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    70	    with open(path, "w") as f:
+    71	        json.dump(cal, f, indent=2)
+    72	
+    73	
+    74	def compute_validity_score(smiles: str) -> float:
+    75	    """Compute validity score for a SMILES string.
+    76	
+    77	    Args:
+    78	        smiles: SMILES string to validate.
+    79	
+    80	    Returns:
+    81	        1.0 if valid SMILES, 0.0 otherwise.
+    82	    """
+    83	    if not smiles:
+    84	        return 0.0
+    85	    mol = Chem.MolFromSmiles(smiles)
+    86	    return 1.0 if mol is not None else 0.0
+    87	
+    88	
+    89	def compute_sa_score_normalized(sa_raw: float, cal: dict = None) -> float:
+    90	    """Normalize SA score to 0-1 (lower SA = higher score).
+    91	
+    92	    Supports:
+    93	    - step: SA >= cutoff → 0, else (cutoff - sa) / scale
+    94	    - inverted: (max_sa - sa) / scale
+    95	    """
+    96	    if cal is None:
+    97	        cal = load_calibration()
+    98	
+    99	    sa_cal = cal.get("sa_score", DEFAULT_CALIBRATION["sa_score"])
+   100	    func = sa_cal.get("function", "step")
+   101	    params = sa_cal.get("params", sa_cal)
+   102	
+   103	    if func == "step":
+   104	        cutoff = params.get("cutoff", 4.0)
+   105	        scale = params.get("scale", 4.0)
+   106	        if sa_raw >= cutoff:
+   107	            return 0.0
+   108	        score = (cutoff - sa_raw) / scale
+   109	    elif func == "inverted":
+   110	        max_sa = params.get("max_sa", 10.0)
+   111	        scale = params.get("scale", 10.0)
+   112	        score = (max_sa - sa_raw) / scale
+   113	    else:
+   114	        raise ValueError(f"Unknown sa_score function: {func}")
+   115	
+   116	    return max(0.0, min(1.0, score))
+   117	
+   118	
+   119	def compute_binding_score(vina_raw: float, cal: dict = None) -> float:
+   120	    """Normalize binding score (Vina) using clipped linear or minmax.
+   121	
+   122	    Args:
+   123	        vina_raw: Raw Vina binding score (typically negative).
+   124	        cal: Optional calibration dict. Defaults to loaded calibration.
+   125	
+   126	    Returns:
+   127	        Normalized score in [0, 1].
+   128	    """
+   129	    if cal is None:
+   130	        cal = load_calibration()
+   131	
+   132	    binding_cal = cal.get("binding_score", DEFAULT_CALIBRATION["binding_score"])
+   133	    func = binding_cal.get("function", binding_cal.get("type", "clipped_linear"))
+   134	    params = binding_cal.get("params", binding_cal)  # support both nested and flat
+   135	
+   136	    if func == "clipped_linear":
+   137	        threshold = params.get("threshold", 0.0)
+   138	        range_ = params.get("range", 15.0)
+   139	        score = (threshold - vina_raw) / range_
+   140	    elif func == "minmax":
+   141	        min_val = params.get("min", -15.0)
+   142	        max_val = params.get("max", 0.0)
+   143	        score = (vina_raw - min_val) / (max_val - min_val)
+   144	    else:
+   145	        raise ValueError(f"Unknown binding normalization function: {func}")
+   146	
+   147	    return max(0.0, min(1.0, score))
+   148	
+   149	
+   150	def compute_route_validity_score(routes_valid: list[bool]) -> float:
+   151	    """Fraction of routes that pass validity checks. Empty list → 0.0."""
+   152	    if not routes_valid:
+   153	        return 0.0
+   154	    return sum(routes_valid) / len(routes_valid)
+   155	
+   156	
+   157	def compute_balance_score(reactant_heavy: int, product_heavy: int) -> float:
+   158	    """0-1 score based on atom balance. Perfect=1.0, >50% imbalance=0.0.
+   159	    ratio = product_heavy / reactant_heavy
+   160	    If ratio < 0.5 or ratio > 1.5 → 0.0
+   161	    Else: max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+   162	    """
+   163	    if reactant_heavy == 0:
+   164	        return 1.0 if product_heavy == 0 else 0.0
+   165	    ratio = product_heavy / reactant_heavy
+   166	    if ratio < 0.5 or ratio > 1.5:
+   167	        return 0.0
+   168	    return max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+   169	
+   170	
+   171	def compute_step_penalty_score(n_steps: int) -> float:
+   172	    """1.0 for 1 step, decreasing by 0.15 per extra step. n_steps<=0 → 0.0."""
+   173	    if n_steps <= 0:
+   174	        return 0.0
+   175	    return max(0.0, 1.0 - 0.15 * (n_steps - 1))
+   176	
+   177	
+   178	def compute_starting_material_availability_score(reactant_smiles: list[str]) -> float:
+   179	    """Heuristic: SA < 4 → 1.0, SA 4-6 → 0.5, SA > 6 → 0.0. Average over all reactants.
+   180	    Empty list → 0.0. Uses estimate_sa_score from evaluator.
+   181	    """
+   182	    if not reactant_smiles:
+   183	        return 0.0
+   184	    scores = []
+   185	    for smi in reactant_smiles:
+   186	        mol = Chem.MolFromSmiles(smi)
+   187	        if mol is None:
+   188	            continue
+   189	        sa = estimate_sa_score(mol)
+   190	        if sa < 4:
+   191	            scores.append(1.0)
+   192	        elif sa <= 6:
+   193	            scores.append(0.5)
+   194	        else:
+   195	            scores.append(0.0)
+   196	    if not scores:
+   197	        return 0.0
+   198	    return sum(scores) / len(scores)
+   199	
+   200	
+   201	def compute_mol_score(binding_score: float, validity_score: float, sa_score: float) -> float:
+   202	    """Molecular score = 0.8*binding + 0.1*validity + 0.1*sa."""
+   203	    return 0.8 * binding_score + 0.1 * validity_score + 0.1 * sa_score
+   204	
+   205	
+   206	def compute_route_score(
+   207	    route_validity: float,
+   208	    sm_availability: float,
+   209	    step_penalty: float,
+   210	    convergence: float,
+   211	    balance: float,
+   212	) -> float:
+   213	    """Route score = 0.55*route_validity + 0.30*sm_availability + 0.05*step_penalty + 0.05*convergence + 0.05*balance."""
+   214	    return (
+   215	        0.55 * route_validity
+   216	        + 0.30 * sm_availability
+   217	        + 0.05 * step_penalty
+   218	        + 0.05 * convergence
+   219	        + 0.05 * balance
+   220	    )
+   221	
+   222	
+   223	def compute_total_score(mol_score: float, route_score: float) -> float:
+   224	    """Total = 0.7*mol + 0.3*route."""
+   225	    return 0.7 * mol_score + 0.3 * route_score
+   226	
+   227	
+   228	def _is_trivial_route(route: str, target_smiles: str) -> bool:
+   229	    """Check if route is trivial (A>>A).
+   230	
+   231	    - No >> in route → True
+   232	    - Single reactant identical to product → True
+   233	    - Single reactant identical to first product (before any .) → True
+   234	    - Otherwise → False
+   235	    """
+   236	    if ">>" not in route:
+   237	        return True
+   238	
+   239	    parts = route.split(">>")
+   240	    if len(parts) != 2:
+   241	        return False
+   242	
+   243	    reactants_str, products_str = parts
+   244	
+   245	    # Check single reactant identical to product
+   246	    reactants = [r.strip() for r in reactants_str.split(".")]
+   247	    if len(reactants) == 1:
+   248	        reactant = reactants[0]
+   249	        product = products_str.strip()
+   250	        # Remove any . separated additional products for comparison
+   251	        first_product = product.split(".")[0].strip()
+   252	        if reactant == product or reactant == first_product:
+   253	            return True
+   254	
+   255	    return False
+   256	
+   257	
+   258	def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict:
+   259	    """Score a result.csv file and return full scoring report.
+   260	
+   261	    Args:
+   262	        csv_path: Path to result.csv (columns: mol_smiles,route)
+   263	        vina_scores: Dict mapping SMILES → Vina raw score (kcal/mol, negative)
+   264	        cal: Calibration params (loaded from file if None)
+   265	
+   266	    Returns:
+   267	        Dict with keys: total_score, mol_score, route_score, binding_score,
+   268	        validity_score, sa_score, route_validity_score,
+   269	        starting_material_availability_score, sample_count
+   270	        All float values rounded to 6 decimal places.
+   271	    """
+   272	    import math
+   273	
+   274	    if vina_scores is None:
+   275	        vina_scores = {}
+   276	    if cal is None:
+   277	        cal = load_calibration()
+   278	
+   279	    rows = []
+   280	    with open(csv_path, newline="") as f:
+   281	        reader = csv.DictReader(f)
+   282	        for row in reader:
+   283	            rows.append(row)
+   284	
+   285	    # Validate required columns (H1 fix: fail fast with clear error)
+   286	    if rows:
+   287	        header = set(rows[0].keys())
+   288	        if "mol_smiles" not in header:
+   289	            raise ValueError("CSV is missing required column: 'mol_smiles'")
+   290	        if "route" not in header:
+   291	            raise ValueError("CSV is missing required column: 'route'")
+   292	
+   293	    if not rows:
+   294	        return {
+   295	            "total_score": 0.0,
+   296	            "mol_score": 0.0,
+   297	            "route_score": 0.0,
+   298	            "binding_score": 0.0,
+   299	            "validity_score": 0.0,
+   300	            "sa_score": 0.0,
+   301	            "route_validity_score": 0.0,
+   302	            "starting_material_availability_score": 0.0,
+   303	            "sample_count": 0,
+   304	        }
+   305	
+   306	    validity_scores = []
+   307	    binding_scores = []
+   308	    sa_scores = []
+   309	    route_validity_flags = []
+   310	    sm_availabilities = []
+   311	    step_penalties = []
+   312	
+   313	    for row in rows:
+   314	        mol_smiles = row.get("mol_smiles", "").strip()
+   315	        route = row.get("route", "").strip()
+   316	
+   317	        # Validity
+   318	        val_score = compute_validity_score(mol_smiles)
+   319	        validity_scores.append(val_score)
+   320	
+   321	        # Binding
+   322	        vina_raw = vina_scores.get(mol_smiles, None)
+   323	        if vina_raw is not None:
+   324	            b_score = compute_binding_score(vina_raw, cal)
+   325	        else:
+   326	            b_score = 0.0
+   327	        binding_scores.append(b_score)
+   328	
+   329	        # SA score
+   330	        mol = Chem.MolFromSmiles(mol_smiles) if mol_smiles else None
+   331	        if mol is not None:
+   332	            sa_raw = estimate_sa_score(mol)
+   333	            s_score = compute_sa_score_normalized(sa_raw, cal)
+   334	        else:
+   335	            s_score = 0.0
+   336	        sa_scores.append(s_score)
+   337	
+   338	        # Route validity (trivial check)
+   339	        is_non_trivial = not _is_trivial_route(route, mol_smiles)
+   340	        route_validity_flags.append(is_non_trivial)
+   341	
+   342	        # Extract reactants from LAST step for SM availability
+   343	        # Route format: step1 | step2 | step3  or  reactant1.reactant2>>product
+   344	        # Multi-step: "A>>B | C>>D | D>>E" → last step is "D>>E"
+   345	        # Single step: "A.B>>C"
+   346	        reactants_for_sm = []
+   347	        if ">>" in route:
+   348	            # Split by >> to get the last reaction step
+   349	            steps = route.split("|")
+   350	            last_step = steps[-1].strip()
+   351	            if ">>" in last_step:
+   352	                reactants_side = last_step.split(">>")[0].strip()
+   353	                reactants_for_sm = [r.strip() for r in reactants_side.split(".") if r.strip()]
+   354	
+   355	        sm_avail = compute_starting_material_availability_score(reactants_for_sm)
+   356	        sm_availabilities.append(sm_avail)
+   357	
+   358	        # Step count: number of | separators + 1 (0 for empty routes)
+   359	        n_steps = route.count("|") + 1 if route.strip() else 0
+   360	        step_penalty = compute_step_penalty_score(n_steps)
+   361	        step_penalties.append(step_penalty)
+   362	
+   363	    # Average across molecules
+   364	    n = len(rows)
+   365	    avg_validity = sum(validity_scores) / n if n > 0 else 0.0
+   366	    avg_binding = sum(binding_scores) / n if n > 0 else 0.0
+   367	    avg_sa = sum(sa_scores) / n if n > 0 else 0.0
+   368	    avg_sm_avail = sum(sm_availabilities) / n if n > 0 else 0.0
+   369	    avg_step_penalty = sum(step_penalties) / n if n > 0 else 0.0
+   370	
+   371	    # Route validity: fraction of non-trivial valid routes
+   372	    # Use route_validity_flags directly (True = non-trivial = valid route)
+   373	    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+   374	
+   375	    # Compute balance scores from actual route atom counts
+   376	    balance_scores = []
+   377	    for row in rows:
+   378	        mol_smiles = row.get("mol_smiles", "").strip()
+   379	        route = row.get("route", "").strip()
+   380	        if ">>" not in route or _is_trivial_route(route, mol_smiles):
+   381	            balance_scores.append(0.0)
+   382	            continue
+   383	        step_scores = []
+   384	        for step in route.split("|"):
+   385	            step = step.strip()
+   386	            if ">>" not in step:
+   387	                continue
+   388	            left, right = step.split(">>", 1)
+   389	            reactants = [r.strip() for r in left.split(".") if r.strip()]
+   390	            products = [p.strip() for p in right.split(".") if p.strip()]
+   391	            r_heavy = 0
+   392	            p_heavy = 0
+   393	            for r in reactants:
+   394	                m = Chem.MolFromSmiles(r)
+   395	                if m:
+   396	                    r_heavy += m.GetNumHeavyAtoms()
+   397	            for p in products:
+   398	                m = Chem.MolFromSmiles(p)
+   399	                if m:
+   400	                    p_heavy += m.GetNumHeavyAtoms()
+   401	            step_scores.append(compute_balance_score(r_heavy, p_heavy))
+   402	        if step_scores:
+   403	            balance_scores.append(sum(step_scores) / len(step_scores))
+   404	        else:
+   405	            balance_scores.append(0.0)
+   406	    avg_balance = sum(balance_scores) / len(balance_scores) if balance_scores else 0.0
+   407	
+   408	    # Route validity: non-trivial AND all steps have non-zero balance
+   409	    for i, row in enumerate(rows):
+   410	        if balance_scores[i] == 0.0 and route_validity_flags[i]:
+   411	            route_validity_flags[i] = False
+   412	    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+   413	
+   414	    # Use placeholder for convergence (route convergence not easy to compute)
+   415	    convergence = 1.0
+   416	
+   417	    # Compute sub-scores
+   418	    mol_score = compute_mol_score(avg_binding, avg_validity, avg_sa)
+   419	    route_score = compute_route_score(
+   420	        route_validity, avg_sm_avail, avg_step_penalty, convergence, avg_balance
+   421	    )
+   422	    total_score = compute_total_score(mol_score, route_score)
+   423	
+   424	    def r6(x):
+   425	        """Round to 6 decimal places."""
+   426	        return math.floor(x * 1_000_000 + 0.5) / 1_000_000
+   427	
+   428	    return {
+   429	        "total_score": r6(total_score),
+   430	        "mol_score": r6(mol_score),
+   431	        "route_score": r6(route_score),
+   432	        "binding_score": r6(avg_binding),
+   433	        "validity_score": r6(avg_validity),
+   434	        "sa_score": r6(avg_sa),
+   435	        "route_validity_score": r6(route_validity),
+   436	        "starting_material_availability_score": r6(avg_sm_avail),
+   437	        "sample_count": n,
+   438	    }
+<system>121 lines read from file starting from line 1. End of file reached.</system>     1	"""分子性质评估模块：使用 RDKit 计算药物相似性和理化性质。"""
+     2	import math
+     3	from rdkit import Chem
+     4	from rdkit.Chem import Descriptors, QED, Lipinski
+     5	from rdkit.Chem import RDConfig
+     6	import os
+     7	
+     8	
+     9	def evaluate_molecule(smiles: str):
+    10	    """评估分子的药物相似性和基本理化性质。"""
+    11	    mol = Chem.MolFromSmiles(smiles)
+    12	    if mol is None:
+    13	        return {"valid": False, "error": "无效的 SMILES"}
+    14	
+    15	    mol = Chem.AddHs(mol)
+    16	    mw = Descriptors.MolWt(mol)
+    17	    logp = Descriptors.MolLogP(mol)
+    18	    tpsa = Descriptors.TPSA(mol)
+    19	    hbd = Lipinski.NumHDonors(mol)
+    20	    hba = Lipinski.NumHAcceptors(mol)
+    21	    rotb = Descriptors.NumRotatableBonds(mol)
+    22	    rings = Descriptors.RingCount(mol)
+    23	    qed = QED.qed(mol)
+    24	
+    25	    # 合成可及性估算（非常粗略）
+    26	    sa = estimate_sa_score(mol)
+    27	
+    28	    # 类药五规则检查
+    29	    lipinski_violations = 0
+    30	    if mw > 500: lipinski_violations += 1
+    31	    if logp > 5: lipinski_violations += 1
+    32	    if hbd > 5: lipinski_violations += 1
+    33	    if hba > 10: lipinski_violations += 1
+    34	    lipinski_ok = lipinski_violations <= 1  # 允许违反 1 条
+    35	
+    36	    return {
+    37	        "valid": True,
+    38	        "smiles": smiles,
+    39	        "mw": round(mw, 2),
+    40	        "logp": round(logp, 2),
+    41	        "tpsa": round(tpsa, 2),
+    42	        "hbd": hbd,
+    43	        "hba": hba,
+    44	        "rotatable_bonds": rotb,
+    45	        "rings": rings,
+    46	        "qed": round(qed, 3),
+    47	        "sa_score": round(sa, 2),
+    48	        "lipinski_pass": lipinski_ok,
+    49	    }
+    50	
+    51	
+    52	def estimate_sa_score(mol):
+    53	    """合成可及性估算（0-10，越低越好）。
+    54	
+    55	    H001 改进：
+    56	    - 环贡献因子从 0.5→1.0（多环结构显著增加合成难度）
+    57	    - 新增稠环惩罚：每个额外环系 +0.3（fused ring penalty）
+    58	    - 螺环惩罚从 1.0→1.5（螺环形成挑战性高）
+    59	    - 桥头原子惩罚从 1.5→2.0（桥头结构极难合成）
+    60	
+    61	    """
+    62	    # 统计环信息
+    63	    ri = mol.GetRingInfo()
+    64	    atom_rings = ri.AtomRings()
+    65	    n_rings = len(atom_rings)
+    66	
+    67	    # 检测稠环数（真正共享原子/键的环系）
+    68	    # ri.BondRings() 返回所有环，错误地会对单环多环都惩罚
+    69	    # 正确方式：统计共享 >=2 个原子的环对数量
+    70	    n_fused_systems = 0
+    71	    n = len(atom_rings)
+    72	    for i in range(n):
+    73	        for j in range(i + 1, n):
+    74	            shared = len(set(atom_rings[i]) & set(atom_rings[j]))
+    75	            if shared >= 2:  # 共享至少2个原子才是稠合环
+    76	                n_fused_systems += 1
+    77	    fused_penalty = n_fused_systems * 0.3
+    78	
+    79	    # 螺环中心
+    80	    spiro = Chem.rdMolDescriptors.CalcNumSpiroAtoms(mol)
+    81	
+    82	    # 桥头原子
+    83	    bridge = Chem.rdMolDescriptors.CalcNumBridgeheadAtoms(mol)
+    84	
+    85	    # 手性中心
+    86	    stereo = Chem.rdMolDescriptors.CalcNumAtomStereoCenters(mol)
+    87	
+    88	    # 基础启发式公式（优化后）
+    89	    score = 1.0 + n_rings * 1.0 + fused_penalty + spiro * 1.5 + bridge * 2.0 + stereo * 0.5
+    90	    score += Descriptors.NumRotatableBonds(mol) * 0.1
+    91	    return min(score, 10.0)
+    92	
+    93	
+    94	def passes_filters(props: dict, min_qed=0.3, max_mw=500, min_mw=150, max_logp=5.0,
+    95	                   max_sa=7.0, max_rings=9):
+    96	    """检查分子是否通过基础类药性质过滤。
+    97	
+    98	    H001 改进：
+    99	    - SA score 阈值从 8.0 收紧至 6.0
+   100	    - 新增 max_rings=7 环数上限
+   101	    - 文献依据：Deep Lead Optimization (JACS, 2024)
+   102	
+   103	    H027 改进：
+   104	    - max_rings 7→9, max_sa 6.0→7.0
+   105	    - 基于 Round 18-19 实验验证：Vina 评分偏向疏水芳香体系，
+   106	      更宽松的过滤器允许更大的π体系通过（MW仍<500约束）
+   107	
+   108	    """
+   109	    if not props.get("valid"):
+   110	        return False
+   111	    if props["qed"] < min_qed:
+   112	        return False
+   113	    if not (min_mw <= props["mw"] <= max_mw):
+   114	        return False
+   115	    if props["logp"] > max_logp:
+   116	        return False
+   117	    if props["sa_score"] > max_sa:
+   118	        return False
+   119	    if props.get("rings", 0) > max_rings:
+   120	        return False
+   121	    return True
+<system>93 lines read from file starting from line 1. End of file reached.</system>     1	"""药物研发智能体的配置模块。"""
+     2	import os
+     3	import json
+     4	from dotenv import load_dotenv
+     5	
+     6	# 自动加载项目根目录的 .env 文件
+     7	load_dotenv()
+     8	
+     9	# 路径配置
+    10	PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    11	DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+    12	OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
+    13	
+    14	os.makedirs(DATA_DIR, exist_ok=True)
+    15	os.makedirs(OUTPUT_DIR, exist_ok=True)
+    16	
+    17	TARGET_PDB = os.path.join(DATA_DIR, "target.pdb")
+    18	RECEPTOR_PDBQT = os.path.join(DATA_DIR, "receptor.pdbqt")
+    19	
+    20	# ==========================================
+    21	# 大语言模型配置（支持任意 OpenAI 兼容接口）
+    22	# ==========================================
+    23	# 通用配置方式：通过环境变量指定 LLM_BASE_URL、LLM_API_KEY、LLM_MODEL
+    24	# 不配置时，默认尝试从 Kimi CLI 凭据自动读取
+    25	
+    26	LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://api.kimi.com/coding/v1")
+    27	LLM_MODEL = os.getenv("LLM_MODEL", "kimi-k2.6")
+    28	
+    29	
+    30	def _get_api_key():
+    31	    """按优先级获取 API Key。
+    32	
+    33	    优先级:
+    34	        1. 环境变量 LLM_API_KEY
+    35	        2. 环境变量 KIMI_API_KEY（兼容旧配置）
+    36	        3. Kimi CLI OAuth 凭据文件（~/.kimi/credentials/kimi-code.json）
+    37	    """
+    38	    # 环境变量优先
+    39	    env_key = os.getenv("LLM_API_KEY", "") or os.getenv("KIMI_API_KEY", "")
+    40	    if env_key:
+    41	        return env_key
+    42	
+    43	    # 尝试读取 Kimi CLI 的 OAuth Token
+    44	    cred_path = os.path.expanduser("~/.kimi/credentials/kimi-code.json")
+    45	    if os.path.exists(cred_path):
+    46	        try:
+    47	            with open(cred_path) as f:
+    48	                data = json.load(f)
+    49	                return data.get("access_token", "")
+    50	        except Exception:
+    51	            pass
+    52	    return ""
+    53	
+    54	
+    55	LLM_API_KEY = _get_api_key()
+    56	
+    57	# ==========================================
+    58	# 分子对接配置
+    59	# ==========================================
+    60	# H024 fix: 对齐比赛规格的对接盒子和中心坐标
+    61	# 之前 center=[24.87,0.55,33.89] (Hinge 区域)，与比赛规格偏移 14.2 Å
+    62	# 新 center 覆盖 DFG + Gatekeeper + P-loop 区域，盒子扩大到 30Å
+    63	DOCKING_CENTER = [21.86, -0.41, 29.93]  # TYK2 5C01 — 几何口袋检测活性位点
+    64	DOCKING_SIZE = [35.0, 35.0, 35.0]       # TYK2 5C01 — 推荐盒子大小（原 30Å 偏移 8.66Å）
+    65	DOCKING_EXHAUSTIVENESS = 8
+    66	
+    67	# ==========================================
+    68	# 分子生成配置
+    69	# ==========================================
+    70	N_GENERATED_MOLECULES = 50
+    71	N_TOP_MOLECULES = 10
+    72	
+    73	# ==========================================
+    74	# 类药性质过滤参数
+    75	# ==========================================
+    76	MAX_MW = 550
+    77	MIN_MW = 150
+    78	MAX_LOGP = 5.0
+    79	MIN_LOGP = -0.5
+    80	MAX_TPSA = 140
+    81	MIN_QED = 0.3
+    82	
+    83	# ==========================================
+    84	# 扩散模型配置（PocketXMol）
+    85	# ==========================================
+    86	DIFFUSION_API_URL = os.getenv("DIFFUSION_API_URL", "")
+    87	DIFFUSION_ENABLED = bool(DIFFUSION_API_URL)
+    88	DIFFUSION_TIMEOUT = int(os.getenv("DIFFUSION_TIMEOUT", "1800"))  # 30 min
+    89	DIFFUSION_DEFAULT_N = int(os.getenv("DIFFUSION_DEFAULT_N", "20"))
+    90	
+    91	# ==========================================
+    92	# 合成规划配置
+    93	# ==========================================
+
+[2026-05-21T15:31:10.545296] 迭代进度: 0/3 (初始: 21)
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:201:def compute_mol_score(binding_score: float, validity_score: float, sa_score: float) -> float:
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:223:def compute_total_score(mol_score: float, route_score: float) -> float:
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:258:def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict:
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:418:    mol_score = compute_mol_score(avg_binding, avg_validity, avg_sa)
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:422:    total_score = compute_total_score(mol_score, route_score)
+<system>1000 lines read from file starting from line 1.</system>     1	"""分子生成模块：使用 RDKit 进行基于变异的分子生成。
+     2	
+     3	改进点（H002）:
+     4	- 引入对接引导生成（docking-guided generation）
+     5	- 文献依据:
+     6	  - MOOSE-Chem (Yang et al., 2025): 进化算法导航组合空间
+     7	  - Coscientist (Boiko et al., 2023): 基于实验结果的迭代反思
+     8	  - 综述第4.2节: Post-Execution Feedback 策略
+     9	
+    10	改进点（H010）:
+    11	- 引入 Scaffold Hopping（骨架替换）变异算子
+    12	- 使用 BRICS 分解 + BM 骨架识别 → 骨架库替换 → 侧链重连
+    13	- 文献依据:
+    14	  - Deep Lead Optimization (JACS 2024): 明确定义 Scaffold Hopping 为四个核心
+    15	    先导化合物优化子任务之一，提出"替换核心骨架同时保留有利取代基"
+    16	  - MOOSE-Chem (Yang et al., 2025): "Diverse initial population is essential
+    17	    for evolutionary search to avoid premature convergence"
+    18	  - 综述第3.2节: Scaffold hopping 是药物发现的核心策略之一
+    19	"""
+    20	import random
+    21	from rdkit import Chem, rdBase
+    22	from rdkit.Chem import AllChem, Descriptors, QED, BRICS
+    23	from rdkit.Chem.Scaffolds import MurckoScaffold
+    24	from rdkit.DataStructs import TanimotoSimilarity
+    25	from evaluator import evaluate_molecule, passes_filters
+    26	
+    27	# 压制 RDKit 错误输出
+    28	rdBase.DisableLog('rdApp.error')
+    29	rdBase.DisableLog('rdApp.warning')
+    30	
+    31	
+    32	# 药物样骨架和片段库（H007: 扩充至55个，覆盖更多含氮稠环和饱和杂环）
+    33	# 文献依据:
+    34	#   - MOOSE-Chem (Yang et al., 2025): "Diverse initial population is essential
+    35	#     for evolutionary search to avoid premature convergence"
+    36	#   - ChemCrow (Bran et al., 2024): 工具/库的丰富度直接决定 Agent 探索的化学空间边界
+    37	#   - 综述第3.2节: Scaffold hopping 是药物发现的核心策略之一
+    38	SCAFFOLDS = [
+    39	    # ===== 单环芳烃（6个）=====
+    40	    "c1ccc(cc1)",           # 苯环
+    41	    "c1ccccc1C",            # 甲苯
+    42	    "c1ccc(cc1)O",          # 苯酚
+    43	    "c1ccc(cc1)N",          # 苯胺
+    44	    "COc1ccc(cc1)",         # 苯甲醚
+    45	    "c1ccc(cc1)CN",         # 苄胺
+    46	
+    47	    # ===== 多环芳烃（2个）=====
+    48	    "c1ccc2ccccc2c1",       # 萘
+    49	    "c1ccc2c(c1)cccc2",     # 萘变体
+    50	
+    51	    # ===== 含氮单杂环（4个）=====
+    52	    "c1ccc(nc1)",           # 吡啶
+    53	    "c1cncnc1",             # 嘧啶
+    54	    "c1cnccc1",             # 吡啶变体
+    55	    "c1c[nH]cn1",           # 咪唑
+    56	
+    57	    # ===== 饱和杂环（8个）=====
+    58	    "C1CCOC1",              # 四氢呋喃
+    59	    "C1CCNC1",              # 吡咯烷
+    60	    "C1CCNCC1",             # 哌啶
+    61	    "C1CNCCN1",             # 哌嗪
+    62	    "C1COCCN1",             # 吗啉
+    63	    "C1CSCN1",              # 硫代吗啉
+    64	    "C1COC1",               # 氧杂环丁烷
+    65	    "C1CNC1",               # 氮杂环丁烷
+    66	
+    67	    # ===== 含氮稠环（12个）=====
+    68	    "c1ccc2cncnc2c1",       # 喹唑啉
+    69	    "c1ccc2nc[nH]c2c1",      # 苯并咪唑
+    70	    "c1ccc2c(c1)cccn2",     # 吲哚
+    71	    "c1ccc2c(c1)ocn2",      # 苯并噁唑
+    72	    "c1ccc2c(c1)scn2",      # 苯并噻唑
+    73	    "c1ccc2ncccc2c1",       # 喹啉
+    74	    "c1ccc2ccncc2c1",       # 异喹啉
+    75	    "c1ccc2CCNc2c1",         # 吲哚啉（二氢吲哚）
+    76	    "c1ccc2c(c1)CCN2",      # 二氢吲哚（含N）
+    77	    "c1ccc2c(c1)CCNC2",     # 四氢异喹啉
+    78	    "c1ccc2c(c1)N=CN2",     # 苯并咪唑啉
+    79	    "c1nc2c([nH]1)cccc2",   # 苯并咪唑变体
+    80	
+    81	    # ===== 药物常见骨架（6个）=====
+    82	    "c1[nH]cnc2ncnc12",      # 嘌呤
+    83	    "c1cnc2ncncc2n1",       # 蝶啶
+    84	    "c1ccc2c(c1)cncn2",     # 喹唑啉变体
+    85	    "c1ccc2c(c1)ncnc2",     # 喹唑啉（另一表示）
+    86	    "c1ccc2c(c1)OCCO2",     # 苯并二噁烷
+    87	    "c1ccc2c(c1)CCO2",      # 苯并呋喃烷
+    88	
+    89	    # ===== 酰胺/磺酰胺类（6个）=====
+    90	    "c1ccc(cc1)C(=O)O",     # 苯甲酸
+    91	    "c1ccc(cc1)C(=O)N",     # 苯甲酰胺
+    92	    "c1ccc(cc1)S(=O)(=O)N", # 磺酰胺
+    93	    "c1ccc(cc1)C(=O)Nc2ccccc2",  # 二苯甲酮酰胺
+    94	    "c1ccc(cc1)NC(=O)c2ccccc2",  # N-苯基苯甲酰胺
+    95	    "Cc1ccc(cc1)S(=O)(=O)Nc2ccccc2",  # 对甲苯磺酰苯胺
+    96	
+    97	    # ===== 卤代/其他（5个）=====
+    98	    "c1cc(ccc1F)F",         # 二氟苯
+    99	    "c1cc(ccc1Cl)Cl",       # 二氯苯
+   100	    "c1ccc(cc1)CC(=O)O",    # 苯乙酸
+   101	    "c1ccc(cc1)C(=O)c2ccccc2",  # 二苯甲酮
+   102	    "c1ccc(cc1)OCc2ccccc2",     # 二苯甲醚
+   103	
+   104	    # ===== 饱和环-芳环稠合（6个）=====
+   105	    "c1ccc2c(c1)CCCC2",     # 四氢萘
+   106	    "c1ccc2c(c1)CCCCC2",    # 十氢萘骨架
+   107	    "c1ccc2c(c1)NCCC2",     # 四氢喹啉
+   108	    "c1ccc2c(c1)OCC2",      # 2,3-二氢苯并呋喃
+   109	    "c1ccc2c(c1)SCC2",      # 2,3-二氢苯并噻吩
+   110	    "c1ccc2c(c1)CCO2",      # 苯并二氢吡喃
+   111	
+   112	    # ===== H022 新增: 稠杂环（激酶抑制剂铰链结合核心）=====
+   113	    # 文献: MOOSE-Chem (2025) — diverse initial population avoids convergence
+   114	    # JACS 2024 — scaffold diversity is key for lead optimization
+   115	    "c1nc2c(n1)ncn2",       # 嘌呤（变体）
+   116	    "c1cnc2[nH]ccc2c1",     # 吡咯并[2,3-b]吡啶（7-azaindole, 激酶铰链binder）
+   117	    "c1cc2nccc2n1",         # 咪唑并[1,2-a]吡啶
+   118	    "c1cc2ncnc2n1",         # 吡唑并[1,5-a]嘧啶
+   119	    "c1ccc2cccn2c1",         # 吲哚嗪 (indolizine)
+   120	
+   121	    # ===== H022 新增: 桥环骨架（刚性三维结构）=====
+   122	    "C1CC2CCC1C2",           # 降冰片烷 (bicyclo[2.2.1]heptane)
+   123	    "C1CN2CCC1CC2",          # 奎宁环 (quinuclidine)
+   124	    "C1CC2CCC(C1)N2",        # 托烷 (tropane 骨架)
+   125	    "C1C2CC1C2",             # 双环[1.1.1]戊烷 (BCP, 苯环生物电子等排体)
+   126	
+   127	    # ===== H022 新增: 螺环骨架（三维多样性）=====
+   128	    "C1CC2(CCNCC2)NC1",      # 螺哌啶
+   129	    "c1ccc2c(c1)CC3(CCCCC3)N2",  # 螺吲哚啉-环己烷
+   130	    "C1NCC2(COC2)C1",        # 2-氧杂-6-氮杂螺[3.3]庚烷
+   131	
+   132	    # ===== H022 新增: 扩展饱和杂环 ====
+   133	    "C1CCCNCC1",             # 氮杂环庚烷 (azepane)
+   134	    "C1CCCOCC1",             # 氧杂环庚烷 (oxepane)
+   135	    "O=S1(=O)CCNCC1",        # 硫代吗啉 1,1-二氧化物
+   136	]
+   137	
+   138	# H021: 激酶铰链结合骨架 — 在突变生成中以 40% 概率优先采样
+   139	# 文献依据: MOOSE-Chem (2025) — 靶向初始种群设计改善进化收敛;
+   140	#           JACS 2024 — 骨架多样性+靶点特异性偏置提升命中率
+   141	#           Coscientist (2023) — 基于领域知识的定向探索优于随机搜索
+   142	# 
+   143	# TYK2 (5C01) 的铰链区 Met978 主链 NH 和 CO 是经典 hinge binder 靶点，
+   144	# 以下骨架含氢键供体/受体可同时与 hinge 形成双齿氢键：
+   145	KINASE_HINGE_SCAFFOLDS = [
+   146	    # 吡咯并[2,3-b]吡啶 (7-azaindole) — 激酶铰链双齿氢键
+   147	    "c1cnc2[nH]ccc2c1",
+   148	    # 嘌呤 — 腺嘌呤模拟物，经典 hinge binder
+   149	    "c1[nH]cnc2ncnc12",
+   150	    # 吡唑并[1,5-a]嘧啶 — 铰链区双齿氢键（N1+C2-H）
+   151	    "c1cc2ncnc2n1",
+   152	    # 咪唑并[1,2-a]吡啶 — hinge binder 变体
+   153	    "c1cc2nccc2n1",
+   154	    # 喹唑啉 — EGFR/TYK2 常见 hinge 骨架
+   155	    "c1ccc2c(c1)ncnc2",
+   156	    # 吲哚 — NH 作 hinge 氢键供体
+   157	    "c1ccc2c(c1)cccn2",
+   158	    # 嘧啶 — 基础铰链binder（最小 hinge 识别单元）
+   159	    "c1cncnc1",
+   160	    # 嘌呤变体
+   161	    "c1nc2c(n1)ncn2",
+   162	]
+   163	
+   164	LINKERS = [
+   165	    "",                     # 直接连接
+   166	    "C",                    # 亚甲基
+   167	    "CC",                   # 亚乙基
+   168	    "O",                    # 醚键
+   169	    "NH",                   # 胺键
+   170	    "C(=O)",               # 羰基
+   171	    "C(=O)N",              # 酰胺
+   172	    "C(=O)O",              # 酯键
+   173	    "S(=O)(=O)",           # 砜
+   174	    "S(=O)(=O)N",          # 磺酰胺
+   175	    "NHC(=O)",             # 反向酰胺
+   176	    "OC(=O)",              # 反向酯键
+   177	    "C#C",                 # 炔键
+   178	    "C=C",                 # 烯键
+   179	]
+   180	
+   181	
+   182	def random_mutate_smiles(smiles: str, n_mutations: int = 1):
+   183	    """对 SMILES 字符串应用随机变异。"""
+   184	    mol = Chem.MolFromSmiles(smiles)
+   185	    if mol is None:
+   186	        return None
+   187	
+   188	    for _ in range(n_mutations):
+   189	        mol = _mutate_mol(mol)
+   190	        if mol is None:
+   191	            return None
+   192	
+   193	    new_smiles = Chem.MolToSmiles(mol, canonical=True)
+   194	    return new_smiles
+   195	
+   196	
+   197	def _mutate_mol(mol):
+   198	    """单次变异：添加/替换/删除/连接/骨架替换。
+   199	
+   200	    H010 改进：新增 scaffold hopping 算子（~20% 概率），
+   201	    对应 Deep Lead Optimization 的四个核心子任务中的 Scaffold Hopping。
+   202	    """
+   203	    choice = random.random()
+   204	    try:
+   205	        if choice < 0.25:
+   206	            mol = _add_substituent(mol)
+   207	        elif choice < 0.50:
+   208	            mol = _replace_atom(mol)
+   209	        elif choice < 0.60:
+   210	            mol = _remove_terminal(mol)
+   211	        elif choice < 0.80:
+   212	            mol = _insert_linker(mol)
+   213	        else:
+   214	            # H010: Scaffold Hopping（20% 概率）
+   215	            result = _scaffold_hop(mol)
+   216	            if result is not None:
+   217	                mol = result
+   218	            else:
+   219	                # 骨架替换失败 → 回退到插入连接子
+   220	                mol = _insert_linker(mol)
+   221	    except Exception:
+   222	        return None
+   223	    if mol is None:
+   224	        return None
+   225	    # 返回前验证分子有效性
+   226	    try:
+   227	        Chem.SanitizeMol(mol)
+   228	        # 测试 SMILES 往返
+   229	        s = Chem.MolToSmiles(mol, canonical=True)
+   230	        m2 = Chem.MolFromSmiles(s)
+   231	        if m2 is None:
+   232	            return None
+   233	    except Exception:
+   234	        return None
+   235	    return mol
+   236	
+   237	
+   238	def _add_substituent(mol):
+   239	    """在随机碳原子上添加小取代基（F, Cl, OH, NH2, CH3）。"""
+   240	    substituents = ["F", "Cl", "[OH]", "[NH2]", "C"]
+   241	    subst = random.choice(substituents)
+   242	    subst_mol = Chem.MolFromSmiles(subst)
+   243	    if subst_mol is None:
+   244	        return mol
+   245	
+   246	    # 查找候选原子（非氢、非末端碳原子）
+   247	    atoms = [a for a in mol.GetAtoms() if a.GetAtomicNum() == 6 and a.GetDegree() < 4]
+   248	    if not atoms:
+   249	        return mol
+   250	    atom = random.choice(atoms)
+   251	
+   252	    # 将取代基连接到分子上
+   253	    combo = Chem.CombineMols(mol, subst_mol)
+   254	    emol = Chem.EditableMol(combo)
+   255	    new_bond_idx = combo.GetNumAtoms() - 1
+   256	    emol.AddBond(atom.GetIdx(), new_bond_idx, Chem.BondType.SINGLE)
+   257	    new_mol = emol.GetMol()
+   258	    Chem.SanitizeMol(new_mol)
+   259	    return new_mol
+   260	
+   261	
+   262	def _replace_atom(mol):
+   263	    """随机替换一个杂原子或碳原子为另一种原子。"""
+   264	    replacements = {6: [7, 8, 9, 16], 7: [6, 8], 8: [6, 7, 16], 16: [6, 8]}
+   265	    atoms = [a for a in mol.GetAtoms() if a.GetAtomicNum() in replacements]
+   266	    if not atoms:
+   267	        return mol
+   268	    atom = random.choice(atoms)
+   269	    new_atom_num = random.choice(replacements[atom.GetAtomicNum()])
+   270	    atom.SetAtomicNum(new_atom_num)
+   271	    Chem.SanitizeMol(mol)
+   272	    return mol
+   273	
+   274	
+   275	def _remove_terminal(mol):
+   276	    """删除一个末端原子。"""
+   277	    terminals = [a for a in mol.GetAtoms() if a.GetDegree() == 1 and not a.IsInRing()]
+   278	    if not terminals:
+   279	        return mol
+   280	    atom = random.choice(terminals)
+   281	    emol = Chem.EditableMol(mol)
+   282	    emol.RemoveAtom(atom.GetIdx())
+   283	    new_mol = emol.GetMol()
+   284	    Chem.SanitizeMol(new_mol)
+   285	    return new_mol
+   286	
+   287	
+   288	def _insert_linker(mol):
+   289	    """在两个片段之间插入一个小连接子。"""
+   290	    linkers = ["C", "O", "N"]
+   291	    linker = random.choice(linkers)
+   292	    linker_mol = Chem.MolFromSmiles(linker)
+   293	    if linker_mol is None:
+   294	        return mol
+   295	
+   296	    combo = Chem.CombineMols(mol, linker_mol)
+   297	    emol = Chem.EditableMol(combo)
+   298	    atoms = list(mol.GetAtoms())
+   299	    if len(atoms) < 2:
+   300	        return mol
+   301	    a1, a2 = random.sample(atoms, 2)
+   302	    linker_idx = combo.GetNumAtoms() - 1
+   303	    emol.AddBond(a1.GetIdx(), linker_idx, Chem.BondType.SINGLE)
+   304	    emol.AddBond(a2.GetIdx(), linker_idx, Chem.BondType.SINGLE)
+   305	    new_mol = emol.GetMol()
+   306	    try:
+   307	        Chem.SanitizeMol(new_mol)
+   308	    except Exception:
+   309	        return mol
+   310	    return new_mol
+   311	
+   312	
+   313	def _scaffold_hop(mol):
+   314	    """Scaffold Hopping 算子（H010）：替换核心骨架，保留侧链装饰。
+   315	
+   316	    文献依据：
+   317	    - Deep Lead Optimization (JACS 2024, §3.1): Scaffold Hopping 是先导化合物
+   318	      优化的四个核心子任务之一，定义为"替换核心骨架同时保留有利取代基"
+   319	    - 综述 §3.2: Scaffold hopping 是命中化合物到先导化合物过渡中的关键操作
+   320	
+   321	    算法流程：
+   322	    1. BRICS 分解分子 → 得到片段列表
+   323	    2. 识别最大片段作为"核心骨架"
+   324	    3. 从 SCAFFOLDS 库选择不同于当前骨架的新骨架
+   325	    4. 在新骨架上寻找合理连接点，将侧链重连
+   326	    5. 验证生成分子的化学合理性
+   327	    """
+   328	    if mol is None or mol.GetNumAtoms() < 8:
+   329	        # 过小的分子无法做有意义的骨架替换
+   330	        return None
+   331	
+   332	    try:
+   333	        # Step 1: BRICS 分解（使用 BRICSDecompose 返回 SMILES 集合）
+   334	        from rdkit.Chem.BRICS import BRICSDecompose
+   335	        frag_smiles_set = BRICSDecompose(mol)
+   336	
+   337	        if not frag_smiles_set or len(frag_smiles_set) < 2:
+   338	            # BRICS 无法分解 → 回退到 Murcko 骨架分析
+   339	            core = MurckoScaffold.GetScaffoldForMol(mol)
+   340	            if core is None or core.GetNumAtoms() < 3:
+   341	                return None
+   342	            # 用 Murcko 骨架作为核心
+   343	            frag_list = [core]
+   344	            # 获取侧链：移除 Murcko 骨架后剩余部分
+   345	            side_chains = Chem.DeleteSubstructs(mol, core)
+   346	            if side_chains is not None and side_chains.GetNumAtoms() > 0:
+   347	                frag_list.append(side_chains)
+   348	            if len(frag_list) < 2:
+   349	                return None
+   350	            # Murcko 路径：直接用 mol 对象，跳过 BRICS 处理
+   351	            valid_frags = frag_list
+   352	            side_frags_raw = [frag_list[1]] if len(frag_list) > 1 else []
+   353	            core_frag = frag_list[0]
+   354	        else:
+   355	            # BRICS 路径：将 SMILES 转换为 Mol 对象
+   356	            frag_mols = {}
+   357	            for smi in frag_smiles_set:
+   358	                fm = Chem.MolFromSmiles(smi)
+   359	                if fm is not None and fm.GetNumAtoms() >= 2:
+   360	                    # 计算非 dummy 原子数
+   361	                    nd = sum(1 for a in fm.GetAtoms() if a.GetAtomicNum() != 0)
+   362	                    if nd >= 2:
+   363	                        frag_mols[fm] = nd
+   364	
+   365	            if len(frag_mols) < 2:
+   366	                return None
+   367	
+   368	            # Step 2: 按非 dummy 原子数排序，最大的作为核心骨架
+   369	            sorted_frags = sorted(frag_mols.items(), key=lambda x: x[1], reverse=True)
+   370	            core_frag = sorted_frags[0][0]
+   371	
+   372	            # 侧链：保留原始 mol（含 dummy atom）用于识别连接点
+   373	            side_frags_raw = [f for f, _ in sorted_frags[1:]]
+   374	
+   375	            empty = set()
+   376	            valid_frags = [f for f, _ in sorted_frags]
+   377	            # Make core_smiles for later comparison
+   378	            core_smiles_nodummy = Chem.MolToSmiles(core_frag, canonical=True)
+   379	
+   380	        # Get core SMILES (for similarity check later)
+   381	        try:
+   382	            core_smiles = Chem.MolToSmiles(core_frag, canonical=True)
+   383	        except Exception:
+   384	            core_smiles = ""
+   385	
+   386	        # Step 3: 从 SCAFFOLDS 库中选择新骨架
+   387	        # 排除与当前骨架过于相似的（Tanimoto < 0.4）以鼓励多样性
+   388	        candidate_scaffolds = []
+   389	        core_fp = None
+   390	        try:
+   391	            core_fp = AllChem.GetMorganFingerprintAsBitVect(core_frag, 2, nBits=1024)
+   392	        except Exception:
+   393	            pass
+   394	
+   395	        for s_smi in SCAFFOLDS:
+   396	            if s_smi == core_smiles:
+   397	                continue
+   398	            if core_fp is not None:
+   399	                try:
+   400	                    s_mol = Chem.MolFromSmiles(s_smi)
+   401	                    if s_mol is None:
+   402	                        continue
+   403	                    s_fp = AllChem.GetMorganFingerprintAsBitVect(s_mol, 2, nBits=1024)
+   404	                    sim = TanimotoSimilarity(core_fp, s_fp)
+   405	                    if sim < 0.4:  # 选择足够不同的骨架
+   406	                        candidate_scaffolds.append(s_smi)
+   407	                except Exception:
+   408	                    candidate_scaffolds.append(s_smi)
+   409	            else:
+   410	                candidate_scaffolds.append(s_smi)
+   411	
+   412	        if not candidate_scaffolds:
+   413	            # 如果没有足够不同的骨架，允许更相似的
+   414	            candidate_scaffolds = [s for s in SCAFFOLDS if s != core_smiles]
+   415	
+   416	        if not candidate_scaffolds:
+   417	            return None
+   418	
+   419	        new_scaffold_smi = random.choice(candidate_scaffolds)
+   420	        new_scaffold = Chem.MolFromSmiles(new_scaffold_smi)
+   421	        if new_scaffold is None:
+   422	            return None
+   423	
+   424	        # Step 4: 将侧链连接到新骨架
+   425	        # 在新骨架上找可连接原子（碳原子，度 < 4）
+   426	        scaffold_atoms = []
+   427	        for atom in new_scaffold.GetAtoms():
+   428	            if atom.GetAtomicNum() == 6 and atom.GetDegree() < 4:
+   429	                scaffold_atoms.append(atom)
+   430	
+   431	        if not scaffold_atoms:
+   432	            # 放宽到任何度 < 4 的原子
+   433	            for atom in new_scaffold.GetAtoms():
+   434	                if atom.GetDegree() < 4 and atom.GetAtomicNum() in (6, 7, 8):
+   435	                    scaffold_atoms.append(atom)
+   436	
+   437	        if not scaffold_atoms:
+   438	            return None
+   439	
+   440	        # 逐个连接侧链（最多连接3个，避免过度复杂）
+   441	        combo = new_scaffold
+   442	        n_sides = min(len(side_frags_raw), 3)
+   443	        attached_atoms = set()
+   444	
+   445	        for i in range(n_sides):
+   446	            side = side_frags_raw[i]
+   447	
+   448	            # Step 4a: 找到侧链的连接点（与 dummy atom 相邻的真实原子）
+   449	            side_attachment_atoms = []
+   450	            dummy_indices = []
+   451	            for atom in side.GetAtoms():
+   452	                if atom.GetAtomicNum() == 0:
+   453	                    dummy_indices.append(atom.GetIdx())
+   454	                    for nbr in atom.GetNeighbors():
+   455	                        if nbr.GetAtomicNum() != 0:
+   456	                            side_attachment_atoms.append(nbr)
+   457	
+   458	            if not side_attachment_atoms:
+   459	                # 没有 dummy atom 时，退回到通用连接点查找
+   460	                for atom in side.GetAtoms():
+   461	                    if atom.GetAtomicNum() != 0 and atom.GetDegree() < 4:
+   462	                        if atom.GetAtomicNum() == 6 and not atom.IsInRing():
+   463	                            side_attachment_atoms.insert(0, atom)
+   464	                        elif atom.GetAtomicNum() in (6, 7, 8) and atom.GetDegree() < 4:
+   465	                            side_attachment_atoms.append(atom)
+   466	
+   467	            if not side_attachment_atoms:
+   468	                continue
+   469	
+   470	            # Step 4b: 从侧链中移除 dummy atom，得到干净的侧链片段
+   471	            side_clean = Chem.RWMol(side)
+   472	            for di in sorted(dummy_indices, reverse=True):
+   473	                side_clean.RemoveAtom(di)
+   474	            side_clean = side_clean.GetMol()
+   475	            # 不进行 sanitize，保留自由基用于成键
+   476	
+   477	            # 由于移除了 dummy 原子，侧链中原子索引可能偏移
+   478	            # 重新计算连接点在干净侧链中的索引
+   479	            old_to_new = {}
+   480	            new_idx = 0
+   481	            for old_idx in range(side.GetNumAtoms()):
+   482	                if old_idx not in dummy_indices:
+   483	                    old_to_new[old_idx] = new_idx
+   484	                    new_idx += 1
+   485	
+   486	            side_attach_new_indices = [
+   487	                old_to_new[a.GetIdx()]
+   488	                for a in side_attachment_atoms
+   489	                if a.GetIdx() in old_to_new
+   490	            ]
+   491	            if not side_attach_new_indices:
+   492	                continue
+   493	
+   494	            # Step 4c: 选择骨架上的可用连接点
+   495	            available_scaffold = [a for a in scaffold_atoms
+   496	                                  if a.GetIdx() not in attached_atoms]
+   497	            if not available_scaffold:
+   498	                break
+   499	
+   500	            scaffold_anchor = random.choice(available_scaffold)
+   501	            side_anchor_new_idx = random.choice(side_attach_new_indices)
+   502	
+   503	            # Step 4d: 组合分子并添加键
+   504	            new_combo = Chem.CombineMols(combo, side_clean)
+   505	            emol = Chem.EditableMol(new_combo)
+   506	
+   507	            combo_natoms = combo.GetNumAtoms()
+   508	            side_anchor_global_idx = combo_natoms + side_anchor_new_idx
+   509	
+   510	            emol.AddBond(scaffold_anchor.GetIdx(), side_anchor_global_idx,
+   511	                         Chem.BondType.SINGLE)
+   512	
+   513	            try:
+   514	                combo = emol.GetMol()
+   515	                Chem.SanitizeMol(combo)
+   516	                attached_atoms.add(scaffold_anchor.GetIdx())
+   517	            except Exception:
+   518	                # 这个侧链连接失败，继续尝试下一个
+   519	                continue
+   520	
+   521	        # Step 5: 最终验证
+   522	        try:
+   523	            Chem.SanitizeMol(combo)
+   524	            new_smiles = Chem.MolToSmiles(combo, canonical=True)
+   525	            # SMILES 往返验证
+   526	            verify_mol = Chem.MolFromSmiles(new_smiles)
+   527	            if verify_mol is None:
+   528	                return None
+   529	            # 确保生成的是与原始分子不同的结构
+   530	            orig_smiles = Chem.MolToSmiles(mol, canonical=True)
+   531	            if new_smiles == orig_smiles:
+   532	                return None
+   533	            return combo
+   534	        except Exception:
+   535	            return None
+   536	
+   537	    except Exception:
+   538	        return None
+   539	
+   540	
+   541	def _crossover_mol(mol1, mol2):
+   542	    """分子 Crossover 重组算子（H013）：交换两个父代分子的侧链装饰。
+   543	
+   544	    文献依据:
+   545	    - MOOSE-Chem (Yang et al., 2025): "Evolutionary operators include crossover
+   546	      between parent molecules, fragment swapping, and scaffold hopping"
+   547	    - MolLEO (Wang et al., 2024b): LLM 驱动的重组操作
+   548	    - Deep Lead Optimization (JACS 2024): Side-chain decoration 和 Scaffold Hopping
+   549	      可组合产生新化学型
+   550	
+   551	    算法（Murcko 骨架交换）:
+   552	    1. 取 parent2 的 Murcko 骨架作为新核心
+   553	    2. 从 parent1 移除 Murcko 骨架得到侧链
+   554	    3. 将侧链连接到新核心上
+   555	    4. 验证产物
+   556	    """
+   557	    if mol1 is None or mol2 is None:
+   558	        return None
+   559	    if mol1.GetNumAtoms() < 8 or mol2.GetNumAtoms() < 8:
+   560	        return None
+   561	
+   562	    try:
+   563	        # Step 1: 取 parent2 的 Murcko 骨架
+   564	        core2 = MurckoScaffold.GetScaffoldForMol(mol2)
+   565	        if core2 is None or core2.GetNumAtoms() < 3:
+   566	            return None
+   567	
+   568	        # Step 2: 从 parent1 移除其 Murcko 骨架，得到侧链
+   569	        core1 = MurckoScaffold.GetScaffoldForMol(mol1)
+   570	        if core1 is None or core1.GetNumAtoms() < 3:
+   571	            return None
+   572	
+   573	        side_chains = Chem.DeleteSubstructs(mol1, core1)
+   574	        if side_chains is None or side_chains.GetNumAtoms() == 0:
+   575	            # 尝试获取非环侧链
+   576	            side_atoms = []
+   577	            for a in mol1.GetAtoms():
+   578	                if not a.IsInRing() and a.GetDegree() == 1:
+   579	                    side_atoms.append(a.GetIdx())
+   580	            if not side_atoms:
+   581	                return None
+   582	            # 用 RWMol 提取侧链
+   583	            rw = Chem.RWMol(mol1)
+   584	            atoms_to_keep = set()
+   585	            for idx in side_atoms:
+   586	                atom = mol1.GetAtomWithIdx(idx)
+   587	                # 沿链追溯直到遇到环原子
+   588	                visited = set()
+   589	                stack = [idx]
+   590	                while stack:
+   591	                    aid = stack.pop()
+   592	                    if aid in visited:
+   593	                        continue
+   594	                    visited.add(aid)
+   595	                    a = mol1.GetAtomWithIdx(aid)
+   596	                    if a.IsInRing() and aid not in side_atoms:
+   597	                        continue
+   598	                    atoms_to_keep.add(aid)
+   599	                    for nbr in a.GetNeighbors():
+   600	                        if nbr.GetIdx() not in visited and not nbr.IsInRing():
+   601	                            stack.append(nbr.GetIdx())
+   602	            atoms_to_remove = set(range(mol1.GetNumAtoms())) - atoms_to_keep
+   603	            for aid in sorted(atoms_to_remove, reverse=True):
+   604	                rw.RemoveAtom(aid)
+   605	            side_chains = rw.GetMol()
+   606	            if side_chains.GetNumAtoms() == 0:
+   607	                return None
+   608	
+   609	        # Step 3: 找连接点
+   610	        # 在 core2 上找可连接原子
+   611	        core2_atoms = []
+   612	        for a in core2.GetAtoms():
+   613	            if a.GetAtomicNum() == 6 and a.GetDegree() < 4:
+   614	                core2_atoms.append(a)
+   615	        if not core2_atoms:
+   616	            for a in core2.GetAtoms():
+   617	                if a.GetDegree() < 4:
+   618	                    core2_atoms.append(a)
+   619	        if not core2_atoms:
+   620	            return None
+   621	
+   622	        # 连接侧链到核心（最多2个侧链连接点）
+   623	        combo = core2
+   624	        n_attached = 0
+   625	        max_attach = min(3, side_chains.GetNumAtoms() // 2 + 1)
+   626	        attached_indices = set()
+   627	
+   628	        for frag in Chem.GetMolFrags(side_chains, asMols=True):
+   629	            if n_attached >= max_attach:
+   630	                break
+   631	            if frag.GetNumAtoms() < 1:
+   632	                continue
+   633	
+   634	            # 找侧链连接点
+   635	            frag_anchors = []
+   636	            for a in frag.GetAtoms():
+   637	                if a.GetAtomicNum() != 0 and a.GetDegree() < a.GetExplicitValence():
+   638	                    frag_anchors.append(a)
+   639	            if not frag_anchors:
+   640	                for a in frag.GetAtoms():
+   641	                    if a.GetAtomicNum() != 0:
+   642	                        frag_anchors.append(a)
+   643	            if not frag_anchors:
+   644	                continue
+   645	
+   646	            # 找可用核心连接点
+   647	            available_core = [a for a in core2_atoms if a.GetIdx() not in attached_indices]
+   648	            if not available_core:
+   649	                break
+   650	
+   651	            # 组合并添加键
+   652	            new_combo = Chem.CombineMols(combo, frag)
+   653	            emol = Chem.EditableMol(new_combo)
+   654	            core_anchor = random.choice(available_core)
+   655	            frag_anchor = random.choice(frag_anchors)
+   656	            frag_global_idx = combo.GetNumAtoms() + frag_anchor.GetIdx()
+   657	
+   658	            try:
+   659	                emol.AddBond(core_anchor.GetIdx(), frag_global_idx, Chem.BondType.SINGLE)
+   660	                combo = emol.GetMol()
+   661	                Chem.SanitizeMol(combo)
+   662	                attached_indices.add(core_anchor.GetIdx())
+   663	                n_attached += 1
+   664	            except Exception:
+   665	                continue
+   666	
+   667	        if n_attached == 0:
+   668	            return None
+   669	
+   670	        # Step 4: 最终验证
+   671	        try:
+   672	            Chem.SanitizeMol(combo)
+   673	            new_smiles = Chem.MolToSmiles(combo, canonical=True)
+   674	            verify = Chem.MolFromSmiles(new_smiles)
+   675	            if verify is None:
+   676	                return None
+   677	            # 确保与父代不同
+   678	            s1 = Chem.MolToSmiles(mol1, canonical=True)
+   679	            s2 = Chem.MolToSmiles(mol2, canonical=True)
+   680	            if new_smiles in (s1, s2):
+   681	                return None
+   682	            return combo
+   683	        except Exception:
+   684	            return None
+   685	
+   686	    except Exception:
+   687	        return None
+   688	
+   689	
+   690	def _brics_decompose_pool(smiles_list):
+   691	    """对分子池做 BRICS 分解，收集唯一片段（H018）。
+   692	
+   693	    文献依据:
+   694	    - JACS 2024: BRICS 16种可断裂键是分子碎片化的标准工具
+   695	    - MOOSE-Chem (Yang et al., 2025): 片段重组是进化的核心操作
+   696	
+   697	    Args:
+   698	        smiles_list: SMILES 字符串列表
+   699	
+   700	    Returns:
+   701	        list[str]: 唯一的 BRICS 片段 SMILES（含 attachment point 标记如 [1*]）
+   702	    """
+   703	    all_frags = set()
+   704	    for smi in smiles_list:
+   705	        mol = Chem.MolFromSmiles(smi)
+   706	        if mol is None:
+   707	            continue
+   708	        try:
+   709	            frags = BRICS.BRICSDecompose(mol)
+   710	            for f in frags:
+   711	                # 过滤掉太小或纯 attachment point 的片段
+   712	                f_mol = Chem.MolFromSmiles(f)
+   713	                if f_mol is None:
+   714	                    continue
+   715	                n_heavy = f_mol.GetNumHeavyAtoms()
+   716	                if n_heavy >= 2:
+   717	                    all_frags.add(f)
+   718	        except Exception:
+   719	            continue
+   720	    return list(all_frags)
+   721	
+   722	
+   723	def _brics_recombine(fragment_smiles_list, n_molecules, max_attempts=500):
+   724	    """BRICS 片段重组生成新分子（H018）。
+   725	
+   726	    从 BRICS 片段库中随机采样 2-4 个片段，用 BRICS Build 组合成新分子。
+   727	    这实现了真正的化学片段重组（fragment recombination），而非字符串拼接。
+   728	
+   729	    文献依据:
+   730	    - MOOSE-Chem (Yang et al., 2025): 重组(recombination)算子是进化核心驱动力
+   731	    - MolLEO (Wang et al., 2024b): 多进化算子组合比单一算子更有效
+   732	    - JACS 2024: BRICS 分解→重组是 Fragment Replacement 标准方法
+   733	
+   734	    Args:
+   735	        fragment_smiles_list: BRICS 片段 SMILES 列表（含 attachment points）
+   736	        n_molecules: 目标生成分子数
+   737	        max_attempts: 最大尝试次数
+   738	
+   739	    Returns:
+   740	        list[str]: 生成的唯一有效 SMILES 列表
+   741	    """
+   742	    if len(fragment_smiles_list) < 2:
+   743	        return []
+   744	
+   745	    # 预解析片段为 Mol 对象
+   746	    frag_mols = []
+   747	    for f_smi in fragment_smiles_list:
+   748	        m = Chem.MolFromSmiles(f_smi)
+   749	        if m is not None:
+   750	            frag_mols.append(m)
+   751	
+   752	    if len(frag_mols) < 2:
+   753	        return []
+   754	
+   755	    molecules = set()
+   756	    attempts = 0
+   757	
+   758	    while len(molecules) < n_molecules and attempts < max_attempts:
+   759	        attempts += 1
+   760	
+   761	        # 随机选 2-4 个片段
+   762	        n_frags = random.randint(2, min(4, len(frag_mols)))
+   763	        selected = random.sample(frag_mols, n_frags)
+   764	
+   765	        # BRICS Build 生成所有可能的组合
+   766	        try:
+   767	            built = BRICS.BRICSBuild(selected)
+   768	        except Exception:
+   769	            continue
+   770	
+   771	        # 取前几个有效分子（避免组合爆炸）
+   772	        n_taken = 0
+   773	        for bmol in built:
+   774	            if bmol is None:
+   775	                continue
+   776	            if n_taken >= 3:
+   777	                break
+   778	            try:
+   779	                Chem.SanitizeMol(bmol)
+   780	                smi = Chem.MolToSmiles(bmol, canonical=True)
+   781	                # 排除仅由单个小片段组成的分子（无实际重组）
+   782	                if smi in molecules:
+   783	                    continue
+   784	                # 过滤无效 SMILES
+   785	                check_mol = Chem.MolFromSmiles(smi)
+   786	                if check_mol is None or check_mol.GetNumHeavyAtoms() < 8:
+   787	                    continue
+   788	                # 类药性质过滤
+   789	                props = evaluate_molecule(smi)
+   790	                if passes_filters(props):
+   791	                    molecules.add(smi)
+   792	                    n_taken += 1
+   793	            except Exception:
+   794	                continue
+   795	
+   796	    return list(molecules)
+   797	
+   798	
+   799	def _build_fragment_db_from_scaffolds():
+   800	    """从 SCAFFOLDS 库构建 BRICS 片段库（H018 回退方案）。
+   801	
+   802	    当没有对接成功的分子池时，从硬编码骨架库 BRICS 分解得到片段。
+   803	
+   804	    Returns:
+   805	        list[str]: BRICS 片段 SMILES 列表
+   806	    """
+   807	    all_frags = set()
+   808	    for s_smi in SCAFFOLDS:
+   809	        mol = Chem.MolFromSmiles(s_smi)
+   810	        if mol is None:
+   811	            continue
+   812	        try:
+   813	            # 先变异增加多样性再分解
+   814	            for _ in range(3):
+   815	                mutated = _mutate_mol(mol)
+   816	                if mutated is not None:
+   817	                    try:
+   818	                        Chem.SanitizeMol(mutated)
+   819	                        frags = BRICS.BRICSDecompose(mutated)
+   820	                        for f in frags:
+   821	                            f_mol = Chem.MolFromSmiles(f)
+   822	                            if f_mol and f_mol.GetNumHeavyAtoms() >= 2:
+   823	                                all_frags.add(f)
+   824	                    except Exception:
+   825	                        pass
+   826	        except Exception:
+   827	            continue
+   828	    return list(all_frags)
+   829	
+   830	
+   831	def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
+   832	                       fragment_pool=None):
+   833	    """生成候选药物分子。
+   834	
+   835	    策略:
+   836	        - "mutate": 从种子骨架变异
+   837	        - "combine": BRICS 片段重组（H018 修复：不再字符串拼接）
+   838	        - "random": 随机 SMILES 生成（非常基础）
+   839	
+   840	    H018 改进:
+   841	        combine 策略从字符串拼接改为 BRICS 片段重组。
+   842	        当提供 fragment_pool 时，从对接成功的分子池取片段（已验证化学型）；
+   843	        否则从 SCAFFOLDS 库的变异产物中提取片段。
+   844	
+   845	    Args:
+   846	        strategy: 生成策略
+   847	        n_molecules: 目标分子数
+   848	        scaffold: 可选种子骨架
+   849	        fragment_pool: 可选的 SMILES 列表，用于 BRICS 分解（combine 策略使用）
+   850	    """
+   851	    molecules = set()
+   852	    attempts = 0
+   853	    max_attempts = n_molecules * 20
+   854	
+   855	    if strategy == "mutate":
+   856	        seeds = SCAFFOLDS if scaffold is None else [scaffold]
+   857	        # H021: 40% 概率从激酶铰链骨架采样，提升 TYK2 hinge 探索
+   858	        # 仅在无显式 scaffold 参数时生效（保留 scaffold 参数的精确控制）
+   859	        _use_kinase_bias = (scaffold is None and random.random() < 0.4)
+   860	        while len(molecules) < n_molecules and attempts < max_attempts:
+   861	            attempts += 1
+   862	            if _use_kinase_bias:
+   863	                # 每次迭代重新随机决定是否使用激酶偏置（保持多样性）
+   864	                if random.random() < 0.4:
+   865	                    seed = random.choice(KINASE_HINGE_SCAFFOLDS)
+   866	                else:
+   867	                    seed = random.choice(seeds)
+   868	            else:
+   869	                seed = random.choice(seeds)
+   870	            n_mut = random.randint(1, 4)
+   871	            new_smiles = random_mutate_smiles(seed, n_mut)
+   872	            if new_smiles and new_smiles not in molecules:
+   873	                props = evaluate_molecule(new_smiles)
+   874	                if passes_filters(props):
+   875	                    molecules.add(new_smiles)
+   876	
+   877	    elif strategy == "combine":
+   878	        # H018 修复: 不再字符串拼接，使用 BRICS 片段重组
+   879	        if fragment_pool and len(fragment_pool) >= 2:
+   880	            # 从对接分子池提取 BRICS 片段 → 重组
+   881	            frag_smiles = _brics_decompose_pool(fragment_pool)
+   882	        else:
+   883	            # 回退: 从 SCAFFOLDS 库构建片段库
+   884	            frag_smiles = _build_fragment_db_from_scaffolds()
+   885	
+   886	        if len(frag_smiles) >= 2:
+   887	            recombined = _brics_recombine(frag_smiles, n_molecules)
+   888	            molecules.update(recombined)
+   889	
+   890	        # 如果 BRICS 重组产量不足，补充变异分子（H021: 激酶偏置）
+   891	        if len(molecules) < n_molecules:
+   892	            seeds = SCAFFOLDS if scaffold is None else [scaffold]
+   893	            while len(molecules) < n_molecules and attempts < max_attempts:
+   894	                attempts += 1
+   895	                # H021: 40% 概率从激酶铰链骨架采样
+   896	                if scaffold is None and random.random() < 0.4:
+   897	                    seed = random.choice(KINASE_HINGE_SCAFFOLDS)
+   898	                else:
+   899	                    seed = random.choice(seeds)
+   900	                n_mut = random.randint(1, 4)
+   901	                new_smiles = random_mutate_smiles(seed, n_mut)
+   902	                if new_smiles and new_smiles not in molecules:
+   903	                    props = evaluate_molecule(new_smiles)
+   904	                    if passes_filters(props):
+   905	                        molecules.add(new_smiles)
+   906	
+   907	    elif strategy == "random":
+   908	        # 非常基础：随机组合片段（H021: 激酶偏置）
+   909	        while len(molecules) < n_molecules and attempts < max_attempts:
+   910	            attempts += 1
+   911	            # H021: 40% 概率从激酶铰链骨架采样
+   912	            if scaffold is None and random.random() < 0.4:
+   913	                frag = random.choice(KINASE_HINGE_SCAFFOLDS)
+   914	            else:
+   915	                frag = random.choice(SCAFFOLDS)
+   916	            new_smiles = random_mutate_smiles(frag, random.randint(2, 5))
+   917	            if new_smiles and new_smiles not in molecules:
+   918	                props = evaluate_molecule(new_smiles)
+   919	                if passes_filters(props):
+   920	                    molecules.add(new_smiles)
+   921	
+   922	    result = [evaluate_molecule(s) for s in molecules]
+   923	    result.sort(key=lambda x: x["qed"], reverse=True)
+   924	    return result
+   925	
+   926	
+   927	def _diverse_selection(candidates, n_select, diversity_weight=0.3):
+   928	    """多样性保持选择（H011）：使用贪心 MMD 算法选择候选分子。
+   929	
+   930	    文献依据:
+   931	    - MOOSE-Chem (Yang et al., 2025): "Diverse initial population is essential
+   932	      for evolutionary search to avoid premature convergence"
+   933	    - MolLEO (Wang et al., 2024b): 多目标进化优化中多样性是核心维度
+   934	
+   935	    算法: Maximum Minimal Distance (MMD) 贪心选择
+   936	    1. 计算所有分子的 Morgan 指纹
+   937	    2. 从结合能最优分子开始
+   938	    3. 迭代选择: 综合评分 = (1-w)×BE_norm + w×diversity_norm
+   939	       其中 diversity_norm = min(Tanimoto_distance to already selected)
+   940	
+   941	    Args:
+   942	        candidates: list[dict], 每个含 "smiles", "binding_energy"
+   943	        n_select: 选择数量
+   944	        diversity_weight: 多样性权重 (0=纯BE, 1=纯多样性)
+   945	
+   946	    Returns:
+   947	        list[dict]: 按综合评分排序的选择结果
+   948	    """
+   949	    if len(candidates) <= n_select:
+   950	        return list(candidates)
+   951	
+   952	    # 预计算指纹
+   953	    fps = []
+   954	    for c in candidates:
+   955	        try:
+   956	            mol = Chem.MolFromSmiles(c["smiles"])
+   957	            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024)
+   958	            fps.append(fp)
+   959	        except Exception:
+   960	            fps.append(None)
+   961	
+   962	    # 归一化结合能到 [0, 1]（越低越好 → 归一化后 1 为最好）
+   963	    energies = [c.get("binding_energy", 999) for c in candidates]
+   964	    e_min, e_max = min(energies), max(energies)
+   965	    if e_max > e_min:
+   966	        be_norm = [(e_max - e) / (e_max - e_min) for e in energies]
+   967	    else:
+   968	        be_norm = [0.5] * len(energies)
+   969	
+   970	    selected = []
+   971	    selected_indices = set()
+   972	
+   973	    # Step 1: 选择结合能最优分子作为起点
+   974	    best_idx = min(range(len(candidates)), key=lambda i: energies[i])
+   975	    selected.append(candidates[best_idx])
+   976	    selected_indices.add(best_idx)
+   977	
+   978	    # Step 2: 贪心选择剩余分子
+   979	    for _ in range(1, n_select):
+   980	        best_score = -1
+   981	        best_idx = -1
+   982	
+   983	        for i, cand in enumerate(candidates):
+   984	            if i in selected_indices:
+   985	                continue
+   986	            if fps[i] is None:
+   987	                continue
+   988	
+   989	            # 计算与已选集合的最小 Tanimoto 距离（距离 = 1 - 相似度）
+   990	            max_sim = 0.0
+   991	            for si in selected_indices:
+   992	                if fps[si] is not None:
+   993	                    sim = TanimotoSimilarity(fps[i], fps[si])
+   994	                    if sim > max_sim:
+   995	                        max_sim = sim
+   996	            diversity_norm = 1.0 - max_sim  # 距离作为多样性分数
+   997	
+   998	            # 综合评分
+   999	            score = (1 - diversity_weight) * be_norm[i] + diversity_weight * diversity_norm
+  1000	            if score > best_score:
+<system>327 lines read from file starting from line 1. End of file reached.</system>     1	"""分子对接模块：使用 AutoDock Vina 计算结合自由能。
+     2	
+     3	改进点（H029）:
+     4	- 引入多构象对接增强（multi-conformer docking）
+     5	- 文献依据:
+     6	  - Coscientist (Boiko et al., 2023): "performing experiments multiple times"
+     7	    消除单次实验的随机偏差
+     8	  - GNINA Benchmarking (Molecules, 2025): 构象采样质量直接影响对接精度
+     9	  - 计算化学基本原则: 构象系综对接优于单构象对接
+    10	"""
+    11	import os
+    12	import sys
+    13	import tempfile
+    14	from rdkit import Chem, rdBase
+    15	from rdkit.Chem import AllChem
+    16	from meeko import MoleculePreparation, PDBQTWriterLegacy
+    17	from vina import Vina
+    18	from config import RECEPTOR_PDBQT, DOCKING_CENTER, DOCKING_SIZE, DOCKING_EXHAUSTIVENESS
+    19	from receptor import prepare_receptor
+    20	
+    21	# 压制 RDKit 错误输出
+    22	rdBase.DisableLog('rdApp.error')
+    23	rdBase.DisableLog('rdApp.warning')
+    24	
+    25	
+    26	def smiles_to_pdbqt(smiles: str, output_path: str = None):
+    27	    """使用 RDKit + Meeko 将 SMILES 转换为 PDBQT 文件。"""
+    28	    mol = Chem.MolFromSmiles(smiles)
+    29	    if mol is None:
+    30	        return None
+    31	
+    32	    mol = Chem.AddHs(mol)
+    33	    ret = AllChem.EmbedMolecule(mol, randomSeed=42)
+    34	    if ret != 0:
+    35	        ret = AllChem.EmbedMolecule(mol, AllChem.ETKDGv3())
+    36	    if ret != 0:
+    37	        return None
+    38	    try:
+    39	        AllChem.MMFFOptimizeMolecule(mol, maxIters=200)
+    40	    except Exception:
+    41	        pass
+    42	
+    43	    preparator = MoleculePreparation()
+    44	    setup_list = preparator.prepare(mol)
+    45	    if not setup_list:
+    46	        return None
+    47	
+    48	    pdbqt_string = PDBQTWriterLegacy.write_string(setup_list[0])[0]
+    49	
+    50	    if output_path is None:
+    51	        fd, output_path = tempfile.mkstemp(suffix=".pdbqt")
+    52	        os.close(fd)
+    53	
+    54	    with open(output_path, "w") as f:
+    55	        f.write(pdbqt_string)
+    56	
+    57	    return output_path
+    58	
+    59	
+    60	def smiles_to_pdbqt_multi_conformer(smiles: str, n_conformers: int = 5):
+    61	    """生成多个 3D 构象并转换为 PDBQT 文件列表（H029）。
+    62	
+    63	    文献依据:
+    64	    - Coscientist (Boiko et al., 2023): 重复实验消除随机偏差
+    65	    - GNINA Benchmarking (Molecules, 2025): 构象采样影响对接精度
+    66	    - 计算化学基本原则: 构象系综对接优于单构象
+    67	
+    68	    实现:
+    69	    1. RDKit ETKDGv3 生成 N 个构象
+    70	    2. MMFF94 优化每个构象
+    71	    3. Meeko 转换为 PDBQT
+    72	
+    73	    Args:
+    74	        smiles: 配体 SMILES 字符串
+    75	        n_conformers: 目标构象数
+    76	
+    77	    Returns:
+    78	        list[str] | None: PDBQT 文件路径列表，失败返回 None
+    79	    """
+    80	    mol = Chem.MolFromSmiles(smiles)
+    81	    if mol is None:
+    82	        return None
+    83	
+    84	    mol = Chem.AddHs(mol)
+    85	
+    86	    # 使用 ETKDGv3 生成多个构象
+    87	    params = AllChem.ETKDGv3()
+    88	    params.randomSeed = 42
+    89	    params.numThreads = 0  # 自动
+    90	    params.pruneRmsThresh = 0.5  # RMSD 剪枝阈值，保持构象多样性
+    91	
+    92	    conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
+    93	    if not conf_ids:
+    94	        # 回退到单构象
+    95	        ret = AllChem.EmbedMolecule(mol, params)
+    96	        if ret != 0:
+    97	            return None
+    98	        conf_ids = [0]
+    99	
+   100	    pdbqt_paths = []
+   101	    for conf_id in conf_ids:
+   102	        try:
+   103	            # 优化当前构象
+   104	            AllChem.MMFFOptimizeMolecule(mol, confId=conf_id, maxIters=200)
+   105	        except Exception:
+   106	            pass
+   107	
+   108	        # 提取单个构象为独立 Mol 对象
+   109	        conf_mol = Chem.Mol(mol, False, conf_id)
+   110	
+   111	        # 用 Meeko 准备 PDBQT
+   112	        preparator = MoleculePreparation()
+   113	        try:
+   114	            setup_list = preparator.prepare(conf_mol)
+   115	            if not setup_list:
+   116	                continue
+   117	            pdbqt_string = PDBQTWriterLegacy.write_string(setup_list[0])[0]
+   118	        except Exception:
+   119	            continue
+   120	
+   121	        fd, output_path = tempfile.mkstemp(suffix=".pdbqt")
+   122	        with os.fdopen(fd, "w") as f:
+   123	            f.write(pdbqt_string)
+   124	        pdbqt_paths.append(output_path)
+   125	
+   126	    return pdbqt_paths if pdbqt_paths else None
+   127	
+   128	
+   129	def dock_molecule(smiles: str, center=None, size=None, exhaustiveness=None, seed: int = 0,
+   130	                  n_conformers: int = 1):
+   131	    """对单个分子进行对接，返回结合能（kcal/mol）。
+   132	
+   133	    H029 改进：支持多构象对接增强。
+   134	    当 n_conformers > 1 时，生成多个 3D 构象，对每个独立对接，
+   135	    取最优结合能作为结果。这模拟了"构象系综对接"策略，
+   136	    减少单构象可能错过最优结合模式的风险。
+   137	
+   138	    参数:
+   139	        smiles: 配体 SMILES
+   140	        center, size: 对接盒子参数
+   141	        exhaustiveness: Vina 搜索精度
+   142	        seed: 随机种子（0 = 使用默认 42）
+   143	        n_conformers: 生成的构象数量（默认 1，即单构象；设为 >1 启用多构象）
+   144	
+   145	    返回字典包含:
+   146	        - binding_energy: 最佳构象能量（负值=越好）
+   147	        - poses: 构象能量列表
+   148	        - success: 是否成功
+   149	        - error: 失败原因
+   150	        - n_conformers_tried: 实际尝试的构象数（H029 新增）
+   151	        - best_conformer_idx: 最优构象索引（H029 新增）
+   152	    """
+   153	    receptor = prepare_receptor()
+   154	
+   155	    if center is None:
+   156	        center = DOCKING_CENTER
+   157	    if size is None:
+   158	        size = DOCKING_SIZE
+   159	    if exhaustiveness is None:
+   160	        exhaustiveness = DOCKING_EXHAUSTIVENESS
+   161	
+   162	    vina_seed = seed if seed != 0 else 42
+   163	
+   164	    # H029: 多构象对接增强
+   165	    if n_conformers > 1:
+   166	        pdbqt_paths = smiles_to_pdbqt_multi_conformer(smiles, n_conformers=n_conformers)
+   167	        if not pdbqt_paths:
+   168	            return {"success": False, "error": "多构象配体准备失败"}
+   169	
+   170	        best_energy = float('inf')
+   171	        best_poses = None
+   172	        best_idx = -1
+   173	        all_successful = []
+   174	
+   175	        for i, ligand_pdbqt in enumerate(pdbqt_paths):
+   176	            if ligand_pdbqt is None:
+   177	                continue
+   178	            try:
+   179	                v = Vina(sf_name="vina", seed=vina_seed, verbosity=0)
+   180	                v.set_receptor(receptor)
+   181	                v.set_ligand_from_file(ligand_pdbqt)
+   182	                v.compute_vina_maps(center=center, box_size=size)
+   183	                v.dock(exhaustiveness=exhaustiveness, n_poses=5)
+   184	                energies = v.energies(n_poses=1)
+   185	                energy = float(energies[0][0])
+   186	                all_successful.append((i, energy))
+   187	                if energy < best_energy:
+   188	                    best_energy = energy
+   189	                    best_poses = energies.tolist()
+   190	                    best_idx = i
+   191	            except Exception:
+   192	                continue
+   193	            finally:
+   194	                if ligand_pdbqt and ligand_pdbqt.startswith(tempfile.gettempdir()):
+   195	                    try:
+   196	                        os.remove(ligand_pdbqt)
+   197	                    except Exception:
+   198	                        pass
+   199	
+   200	        if best_idx < 0:
+   201	            return {"success": False, "error": "所有构象对接均失败"}
+   202	
+   203	        return {
+   204	            "success": True,
+   205	            "binding_energy": round(best_energy, 3),
+   206	            "poses": best_poses,
+   207	            "n_conformers_tried": len(all_successful),
+   208	            "best_conformer_idx": best_idx,
+   209	            "conformer_energies": [e for _, e in all_successful],
+   210	        }
+   211	
+   212	    # 单构象模式（原有逻辑，保持向后兼容）
+   213	    ligand_pdbqt = smiles_to_pdbqt(smiles)
+   214	    if ligand_pdbqt is None:
+   215	        return {"success": False, "error": "配体准备失败"}
+   216	
+   217	    try:
+   218	        v = Vina(sf_name="vina", seed=vina_seed, verbosity=0)
+   219	        v.set_receptor(receptor)
+   220	        v.set_ligand_from_file(ligand_pdbqt)
+   221	        v.compute_vina_maps(center=center, box_size=size)
+   222	        v.dock(exhaustiveness=exhaustiveness, n_poses=5)
+   223	        energies = v.energies(n_poses=1)
+   224	        best_energy = float(energies[0][0])
+   225	
+   226	        # 清理临时文件
+   227	        if ligand_pdbqt.startswith(tempfile.gettempdir()):
+   228	            os.remove(ligand_pdbqt)
+   229	
+   230	        return {
+   231	            "success": True,
+   232	            "binding_energy": round(best_energy, 3),
+   233	            "poses": energies.tolist(),
+   234	            "n_conformers_tried": 1,
+   235	            "best_conformer_idx": 0,
+   236	        }
+   237	    except Exception as e:
+   238	        if ligand_pdbqt and ligand_pdbqt.startswith(tempfile.gettempdir()):
+   239	            try:
+   240	                os.remove(ligand_pdbqt)
+   241	            except Exception:
+   242	                pass
+   243	        return {"success": False, "error": str(e)}
+   244	
+   245	
+   246	def dock_molecule_consensus(smiles: str, center=None, size=None, exhaustiveness=None,
+   247	                            n_runs: int = 3, seeds: list = None, n_conformers: int = 1):
+   248	    """共识对接：多次独立对接取中位数结合能（H009）。
+   249	
+   250	    Coscientist 核心模式："performing experiments multiple times" —
+   251	    通过不同随机种子执行 N 次独立对接，消除单次运行的随机偏差，
+   252	    取中位数作为共识评分。
+   253	
+   254	    H029 改进：支持多构象对接，每个 seed 下取多构象最优。
+   255	
+   256	    返回:
+   257	        - success: 是否有足够成功的对接（>=2/3）
+   258	        - binding_energy: 中位数结合能（kcal/mol）
+   259	        - all_energies: 所有成功对接的能量列表
+   260	        - std_energy: 多次运行的能量标准差
+   261	        - n_success: 成功对接次数
+   262	    """
+   263	    import statistics
+   264	    if seeds is None:
+   265	        seeds = [42, 123, 456]
+   266	    seeds = seeds[:n_runs]
+   267	
+   268	    energies = []
+   269	    success_count = 0
+   270	    for seed in seeds:
+   271	        result = dock_molecule(smiles, center, size, exhaustiveness, seed=seed,
+   272	                              n_conformers=n_conformers)
+   273	        if result.get("success"):
+   274	            energies.append(result["binding_energy"])
+   275	            success_count += 1
+   276	
+   277	    if success_count < 2:
+   278	        # 不足两次成功：降级为单次结果或失败
+   279	        if success_count == 1:
+   280	            return {
+   281	                "success": True,
+   282	                "binding_energy": energies[0],
+   283	                "all_energies": energies,
+   284	                "std_energy": 0.0,
+   285	                "n_success": 1,
+   286	            }
+   287	        return {"success": False, "error": f"共识对接失败: {success_count}/{n_runs}"}
+   288	
+   289	    med_energy = round(statistics.median(energies), 3)
+   290	    std_energy = round(statistics.stdev(energies) if success_count > 1 else 0.0, 3)
+   291	    return {
+   292	        "success": True,
+   293	        "binding_energy": med_energy,
+   294	        "all_energies": energies,
+   295	        "std_energy": std_energy,
+   296	        "n_success": success_count,
+   297	    }
+   298	
+   299	
+   300	def batch_dock(molecules, center=None, size=None, n_conformers: int = 1):
+   301	    """批量对接分子并返回结果。
+   302	
+   303	    H029 改进：支持 n_conformers 参数传递到 dock_molecule。
+   304	    """
+   305	    results = []
+   306	    total_count = len(molecules)
+   307	    completed_count = 0
+   308	    success_count = 0
+   309	    for i, mol_info in enumerate(molecules):
+   310	        smiles = mol_info["smiles"]
+   311	        print(f"[对接] {i+1}/{total_count}: {smiles[:40]}...")
+   312	        result = dock_molecule(smiles, center, size, n_conformers=n_conformers)
+   313	        result["smiles"] = smiles
+   314	        result.update(mol_info)
+   315	        results.append(result)
+   316	        completed_count += 1
+   317	        if result.get("success"):
+   318	            success_count += 1
+   319	        # 进度日志集成
+   320	        if hasattr(sys.stdout, "log_event"):
+   321	            sys.stdout.log_event(
+   322	                "docking_progress",
+   323	                current=completed_count,
+   324	                total=total_count,
+   325	                success_rate=success_count / max(completed_count, 1),
+   326	            )
+   327	    return results
+
+[2026-05-21T15:31:40.547205] 迭代进度: 0/3 (初始: 21)
+让我检查 pipeline 代码，了解进化过程中的排序和选择逻辑。/home/dministrator/Lab/clones/molcraft-agent/src/generator.py
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py
+<system>264 lines read from file starting from line 1000. End of file reached.</system>  1000	            if score > best_score:
+  1001	                best_score = score
+  1002	                best_idx = i
+  1003	
+  1004	        if best_idx >= 0:
+  1005	            selected.append(candidates[best_idx])
+  1006	            selected_indices.add(best_idx)
+  1007	
+  1008	    # 按结合能排序返回
+  1009	    selected.sort(key=lambda x: x.get("binding_energy", 999))
+  1010	    return selected
+  1011	
+  1012	
+  1013	def generate_with_docking_guidance(
+  1014	    docking_fn,
+  1015	    n_molecules=50,
+  1016	    batch_size=10,
+  1017	    n_generations=3,
+  1018	    top_k=5,
+  1019	    strategy="mutate",
+  1020	    scaffold=None,
+  1021	):
+  1022	    """对接引导的分子生成（H002 + H011 多样性保持 + H018 BRICS 重组）。
+  1023	
+  1024	    核心思想：将分子对接作为适应度函数，嵌入生成循环中。
+  1025	    每批生成少量分子 → 对接评估 → 多样性保持选择 → 变异产生下一代。
+  1026	    这避免了盲生成大量低质量分子，同时防止过早收敛。
+  1027	
+  1028	    H011 改进：种子选择加入多样性保持（贪心 MMD 算法），
+  1029	    避免纯结合能选择导致的过早收敛。
+  1030	
+  1031	    H018 改进：
+  1032	    - combine 策略使用 BRICS 片段重组（非字符串拼接）
+  1033	    - crossover 概率从 15% 提升到 25%（MOOSE-Chem: 重组是核心进化算子）
+  1034	    - 后续代加入 BRICS 片段重组变体（从当前种子池取片段重组）
+  1035	
+  1036	    Args:
+  1037	        docking_fn: 对接函数，接收 SMILES 字符串，返回 dict 包含 "binding_energy"
+  1038	        n_molecules: 目标生成分子总数
+  1039	        batch_size: 每批生成的候选分子数
+  1040	        n_generations: 进化代数
+  1041	        top_k: 每代按结合能保留的 top_k，剩余 (n_seeds - top_k) 由多样性选择
+  1042	        strategy: 初始生成策略
+  1043	        scaffold: 可选种子骨架
+  1044	
+  1045	    Returns:
+  1046	        list[dict]: 通过过滤且对接成功的分子信息列表，按结合能排序
+  1047	    """
+  1048	    import sys
+  1049	
+  1050	    all_evaluated = []  # 所有经过对接评估的分子
+  1051	    current_seeds = None
+  1052	
+  1053	    for gen in range(n_generations):
+  1054	        batch_mols = []
+  1055	        attempts = 0
+  1056	        max_attempts = batch_size * 30
+  1057	
+  1058	        if gen == 0:
+  1059	            # 初始代：用指定策略生成
+  1060	            if strategy == "combine":
+  1061	                # H018: BRICS 片段重组 — 从 SCAFFOLDS 库构建片段库
+  1062	                frag_smiles = _build_fragment_db_from_scaffolds()
+  1063	                if len(frag_smiles) >= 2:
+  1064	                    recombined = _brics_recombine(frag_smiles, batch_size * 2)
+  1065	                    for smi in recombined:
+  1066	                        if smi not in {m["smiles"] for m in batch_mols}:
+  1067	                            props = evaluate_molecule(smi)
+  1068	                            if passes_filters(props):
+  1069	                                batch_mols.append(props)
+  1070	                                if len(batch_mols) >= batch_size:
+  1071	                                    break
+  1072	            
+  1073	            # 如果 combine 产量不足或非 combine 策略，用 mutate 补充
+  1074	            if len(batch_mols) < batch_size:
+  1075	                seeds = SCAFFOLDS if scaffold is None else [scaffold]
+  1076	                while len(batch_mols) < batch_size and attempts < max_attempts:
+  1077	                    attempts += 1
+  1078	                    seed = random.choice(seeds)
+  1079	                    n_mut = random.randint(1, 4)
+  1080	                    new_smiles = random_mutate_smiles(seed, n_mut)
+  1081	                    if new_smiles and new_smiles not in {m["smiles"] for m in batch_mols}:
+  1082	                        props = evaluate_molecule(new_smiles)
+  1083	                        if passes_filters(props):
+  1084	                            batch_mols.append(props)
+  1085	        else:
+  1086	            # H018: 后续代三种算子 — 变异（60%）/ Crossover（25%）/ BRICS 重组（15%）
+  1087	            seed_smiles_list = [s["smiles"] for s in current_seeds]
+  1088	            while len(batch_mols) < batch_size and attempts < max_attempts:
+  1089	                attempts += 1
+  1090	                rand_val = random.random()
+  1091	
+  1092	                if rand_val < 0.25 and len(seed_smiles_list) >= 2:
+  1093	                    # H013+H018: Crossover — 双亲片段交换重组（25%，原 15%）
+  1094	                    s1, s2 = random.sample(seed_smiles_list, 2)
+  1095	                    mol1 = Chem.MolFromSmiles(s1)
+  1096	                    mol2 = Chem.MolFromSmiles(s2)
+  1097	                    if mol1 and mol2:
+  1098	                        result = _crossover_mol(mol1, mol2)
+  1099	                        if result is not None:
+  1100	                            new_smiles = Chem.MolToSmiles(result, canonical=True)
+  1101	                        else:
+  1102	                            continue
+  1103	                    else:
+  1104	                        continue
+  1105	                elif rand_val < 0.40 and len(seed_smiles_list) >= 3:
+  1106	                    # H018: BRICS 片段重组 — 从种子池取片段重新组合（15%）
+  1107	                    # 体现 MOOSE-Chem "recombination from population" 思想
+  1108	                    frag_smiles = _brics_decompose_pool(
+  1109	                        random.sample(seed_smiles_list, min(5, len(seed_smiles_list)))
+  1110	                    )
+  1111	                    if len(frag_smiles) >= 2:
+  1112	                        recombined = _brics_recombine(frag_smiles, 1)
+  1113	                        new_smiles = recombined[0] if recombined else None
+  1114	                    else:
+  1115	                        new_smiles = None
+  1116	                    if new_smiles is None:
+  1117	                        continue
+  1118	                else:
+  1119	                    seed_smiles = random.choice(seed_smiles_list)
+  1120	                    n_mut = random.randint(1, 3)  # 后续代变异强度略低
+  1121	                    new_smiles = random_mutate_smiles(seed_smiles, n_mut)
+  1122	
+  1123	                if new_smiles and new_smiles not in {m["smiles"] for m in batch_mols}:
+  1124	                    props = evaluate_molecule(new_smiles)
+  1125	                    if passes_filters(props):
+  1126	                        batch_mols.append(props)
+  1127	
+  1128	        # 对接评估
+  1129	        docked_batch = []
+  1130	        for mol_info in batch_mols:
+  1131	            smiles = mol_info["smiles"]
+  1132	            try:
+  1133	                dock_result = docking_fn(smiles)
+  1134	                if dock_result.get("success"):
+  1135	                    mol_info["binding_energy"] = dock_result.get("binding_energy")
+  1136	                    mol_info["docking_success"] = True
+  1137	                    docked_batch.append(mol_info)
+  1138	            except Exception:
+  1139	                continue
+  1140	
+  1141	        # 按结合能排序（越低越好）
+  1142	        docked_batch.sort(key=lambda x: x.get("binding_energy", 999))
+  1143	
+  1144	        # 累积到全局池
+  1145	        all_evaluated.extend(docked_batch)
+  1146	
+  1147	        # H011: 多样性保持选择种子
+  1148	        # 策略: 50% 种子来自纯 BE（确保选择压力），50% 来自多样性选择（确保探索性）
+  1149	        n_be_seeds = max(1, top_k // 2)
+  1150	        n_diverse_seeds = max(1, top_k - n_be_seeds)
+  1151	        n_total_seeds = min(top_k, len(docked_batch))
+  1152	
+  1153	        # 纯 BE 种子
+  1154	        be_seeds = docked_batch[:n_be_seeds]
+  1155	
+  1156	        # 多样性种子（从剩余分子中选择）
+  1157	        remaining = docked_batch[n_be_seeds:]
+  1158	        if remaining and n_diverse_seeds > 0:
+  1159	            diverse_seeds = _diverse_selection(
+  1160	                remaining, min(n_diverse_seeds, len(remaining)), diversity_weight=0.5
+  1161	            )
+  1162	        else:
+  1163	            diverse_seeds = []
+  1164	
+  1165	        # 合并种子（去重）
+  1166	        seed_smiles_set = {s["smiles"] for s in be_seeds}
+  1167	        current_seeds = list(be_seeds)
+  1168	        for s in diverse_seeds:
+  1169	            if s["smiles"] not in seed_smiles_set:
+  1170	                seed_smiles_set.add(s["smiles"])
+  1171	                current_seeds.append(s)
+  1172	
+  1173	        # 确保有足够种子
+  1174	        if len(current_seeds) < n_total_seeds:
+  1175	            for cand in docked_batch:
+  1176	                if cand["smiles"] not in seed_smiles_set:
+  1177	                    seed_smiles_set.add(cand["smiles"])
+  1178	                    current_seeds.append(cand)
+  1179	                if len(current_seeds) >= n_total_seeds:
+  1180	                    break
+  1181	
+  1182	        current_seeds = current_seeds[:n_total_seeds]
+  1183	
+  1184	        # 计算多样性指标
+  1185	        if len(docked_batch) >= 2:
+  1186	            avg_sim = _avg_pairwise_similarity(docked_batch[:min(20, len(docked_batch))])
+  1187	        else:
+  1188	            avg_sim = 0.0
+  1189	
+  1190	        print(
+  1191	            f"[H002+H011] Gen {gen+1}/{n_generations}: generated {len(batch_mols)}, "
+  1192	            f"docked {len(docked_batch)}, best {docked_batch[0]['binding_energy'] if docked_batch else 'N/A'}, "
+  1193	            f"seeds {len(current_seeds)} (BE={n_be_seeds} diverse={len(diverse_seeds)}), "
+  1194	            f"avg_pairwise_sim={avg_sim:.3f}",
+  1195	            file=sys.stderr,
+  1196	        )
+  1197	
+  1198	    # 全局去重 + 多样性最终排序
+  1199	    seen = set()
+  1200	    unique = []
+  1201	    for m in all_evaluated:
+  1202	        smi = m["smiles"]
+  1203	        if smi not in seen:
+  1204	            seen.add(smi)
+  1205	            unique.append(m)
+  1206	
+  1207	    unique.sort(key=lambda x: x.get("binding_energy", 999))
+  1208	
+  1209	    # H011: 最终选择也加入多样性 — 从 top 2*n_molecules 中做多样性选择
+  1210	    # 确保最终的分子集合既有高结合能又有多样性
+  1211	    candidate_pool = unique[:min(n_molecules * 2, len(unique))]
+  1212	    if len(candidate_pool) > n_molecules:
+  1213	        # 保留 top 60% 纯BE + 40% 多样性
+  1214	        n_be = int(n_molecules * 0.6)
+  1215	        n_div = n_molecules - n_be
+  1216	        be_final = candidate_pool[:n_be]
+  1217	        remaining_pool = candidate_pool[n_be:]
+  1218	        if remaining_pool and n_div > 0:
+  1219	            div_final = _diverse_selection(
+  1220	                remaining_pool, min(n_div, len(remaining_pool)), diversity_weight=0.5
+  1221	            )
+  1222	        else:
+  1223	            div_final = []
+  1224	
+  1225	        # 合并: BE 种子 + 多样性种子
+  1226	        final_set = set(m["smiles"] for m in be_final)
+  1227	        result = list(be_final)
+  1228	        for m in div_final:
+  1229	            if m["smiles"] not in final_set:
+  1230	                final_set.add(m["smiles"])
+  1231	                result.append(m)
+  1232	        # 如果不够，从剩余中补充
+  1233	        for m in candidate_pool:
+  1234	            if len(result) >= n_molecules:
+  1235	                break
+  1236	            if m["smiles"] not in final_set:
+  1237	                final_set.add(m["smiles"])
+  1238	                result.append(m)
+  1239	        result.sort(key=lambda x: x.get("binding_energy", 999))
+  1240	        return result[:n_molecules]
+  1241	
+  1242	    return candidate_pool[:n_molecules]
+  1243	
+  1244	
+  1245	def _avg_pairwise_similarity(molecules):
+  1246	    """计算分子集合的平均成对 Tanimoto 相似度（H011 辅助）。"""
+  1247	    if len(molecules) < 2:
+  1248	        return 0.0
+  1249	    fps = []
+  1250	    for m in molecules:
+  1251	        try:
+  1252	            mol = Chem.MolFromSmiles(m.get("smiles", ""))
+  1253	            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=1024)
+  1254	            fps.append(fp)
+  1255	        except Exception:
+  1256	            fps.append(None)
+  1257	
+  1258	    sims = []
+  1259	    for i in range(len(fps)):
+  1260	        for j in range(i + 1, len(fps)):
+  1261	            if fps[i] is not None and fps[j] is not None:
+  1262	                sims.append(TanimotoSimilarity(fps[i], fps[j]))
+  1263	    return sum(sims) / len(sims) if sims else 0.0
+
+[2026-05-21T15:32:09.311456] 迭代进度: 0/3 (初始: 21)
+现在我看到了关键：进化过程中的排序（`docked_batch.sort(key=lambda x: x.get("binding_energy", 999))`）是纯结合能排序，这使得 Vina 的疏水偏置直接影响种子选择。让我提出 H030 假设，搜索支撑文献。<system>ERROR: Failed to fetch URL. Status: 404. This may indicate the page is not accessible or the server is down.</system>/home/dministrator/Lab/clones/molcraft-agent/tools/build_evomap.py
+/home/dministrator/Lab/clones/molcraft-agent/tools/pipeline.py
+<system>479 lines read from file starting from line 1. End of file reached.</system>     1	#!/usr/bin/env python3
+     2	"""一键运行完整药物研发流程（进化迭代版）。
+     3	
+     4	改进点（H001）:
+     5	- 引入进化式迭代生成：生成 → 对接 → 选择 → 变异 → 再对接
+     6	- 文献依据:
+     7	  - MOOSE-Chem (Yang et al., 2025): 进化算法导航组合空间
+     8	  - Coscientist (Boiko et al., 2023): 基于实验结果的迭代反思
+     9	  - MolLEO (Wang et al., 2024b): LLM作为变异和重组算子
+    10	"""
+    11	import sys
+    12	import os
+    13	import json
+    14	import csv
+    15	import tempfile
+    16	import uuid
+    17	import argparse
+    18	from datetime import datetime
+    19	
+    20	sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
+    21	
+    22	from rdkit import Chem
+    23	from generator import generate_molecules, random_mutate_smiles, generate_with_docking_guidance
+    24	from docking import batch_dock, dock_molecule, dock_molecule_consensus
+    25	from synthesis_v2 import plan_synthesis_v2
+    26	from receptor import prepare_receptor
+    27	from event_schema import MoleculeEvent, MetricsEvent
+    28	
+    29	
+    30	def log(msg, log_lines):
+    31	    ts = datetime.now().isoformat()
+    32	    line = f"[{ts}] {msg}"
+    33	    log_lines.append(line)
+    34	    print(line, file=sys.stderr)
+    35	
+    36	
+    37	def count_rings(smiles: str) -> int:
+    38	    """Count the number of rings in a molecule."""
+    39	    from rdkit import Chem
+    40	    mol = Chem.MolFromSmiles(smiles)
+    41	    if mol is None:
+    42	        return 0
+    43	    return Chem.rdMolDescriptors.CalcNumRings(mol)
+    44	
+    45	
+    46	
+    47	def run_evolutionary_pipeline(
+    48	    n_generate=50,
+    49	    n_top=10,
+    50	    strategy="mutate",
+    51	    n_generations=2,
+    52	    n_offspring_per_seed=3,
+    53	    output_dir="output",
+    54	    use_docking_guidance=True,
+    55	    generator="mutate",
+    56	    logger=None,  # Optional EventLogger instance
+    57	):
+    58	    """运行进化式迭代药物研发流程。
+    59	
+    60	    Args:
+    61	        n_generate: 每代生成的分子数量
+    62	        n_top: 最终保留的top N分子
+    63	        strategy: 生成策略
+    64	        n_generations: 进化代数（包括初始代）
+    65	        n_offspring_per_seed: 每个种子产生的变异体数量
+    66	        output_dir: 输出目录
+    67	        use_docking_guidance: 是否使用 H002 对接引导生成
+    68	        generator: 生成器选择 - "mutate"(RDKit), "diffusion"(PocketXMol), "hybrid"(混合)
+    69	        logger: 可选的 EventLogger 实例，用于结构化日志输出
+    70	    """
+    71	    os.makedirs(output_dir, exist_ok=True)
+    72	    log_lines = []
+    73	
+    74	    log("=" * 60, log_lines)
+    75	    log("MolCraft Agent 进化迭代版开始执行", log_lines)
+    76	    log(f"配置: n_generate={n_generate}, n_generations={n_generations}, "
+    77	        f"n_offspring={n_offspring_per_seed}, strategy={strategy}, "
+    78	        f"docking_guidance={use_docking_guidance}, generator={generator}", log_lines)
+    79	    log("=" * 60, log_lines)
+    80	
+    81	    # 步骤 1: 准备受体
+    82	    log("步骤 1: 准备受体", log_lines)
+    83	    prepare_receptor()
+    84	    log("受体准备完成", log_lines)
+    85	
+    86	    # 进化迭代
+    87	    all_docked = []  # 累积所有对接成功的分子
+    88	    current_seeds = None  # 当前代的种子
+    89	
+    90	    for gen in range(n_generations):
+    91	        log("-" * 60, log_lines)
+    92	        log(f"进化第 {gen + 1}/{n_generations} 代", log_lines)
+    93	        log("-" * 60, log_lines)
+    94	
+    95	        if gen == 0:
+    96	            # 初始代
+    97	            if generator in ("diffusion", "hybrid"):
+    98	                diffusion_mols = _generate_diffusion(n_generate, log_lines)
+    99	                if diffusion_mols:
+   100	                    log(f"扩散模型生成了 {len(diffusion_mols)} 个分子", log_lines)
+   101	                else:
+   102	                    log("扩散模型生成失败或不可用", log_lines)
+   103	
+   104	                if generator == "diffusion":
+   105	                    mols = diffusion_mols if diffusion_mols else generate_molecules(
+   106	                        strategy=strategy, n_molecules=n_generate,
+   107	                    )
+   108	                else:  # hybrid
+   109	                    n_diffusion = len(diffusion_mols) if diffusion_mols else 0
+   110	                    n_rdkit = max(n_generate - n_diffusion, n_generate // 2)
+   111	                    rdkit_mols = generate_molecules(strategy=strategy, n_molecules=n_rdkit)
+   112	                    mols = (diffusion_mols or []) + rdkit_mols
+   113	                    log(f"混合模式: 扩散 {n_diffusion} + RDKit {len(rdkit_mols)}", log_lines)
+   114	            elif use_docking_guidance:
+   115	                # H002: 使用对接引导生成
+   116	                log(f"初始代: 使用对接引导生成 (batch_size=10, n_generations=3)", log_lines)
+   117	                mols = generate_with_docking_guidance(
+   118	                    docking_fn=dock_molecule,
+   119	                    n_molecules=n_generate,
+   120	                    batch_size=10,
+   121	                    n_generations=3,
+   122	                    top_k=5,
+   123	                    strategy=strategy,
+   124	                )
+   125	                log(f"对接引导生成完成，获得 {len(mols)} 个分子", log_lines)
+   126	            else:
+   127	                log(f"初始代: 生成候选分子 (strategy={strategy}, n={n_generate})", log_lines)
+   128	                mols = generate_molecules(strategy=strategy, n_molecules=n_generate)
+   129	        else:
+   130	            # 后续代：从上一代top种子变异生成
+   131	            log(f"第 {gen + 1} 代: 从 top {len(current_seeds)} 种子变异生成", log_lines)
+   132	            mols = _generate_offspring(current_seeds, n_offspring_per_seed)
+   133	
+   134	        log(f"本代生成 {len(mols)} 个通过过滤的分子", log_lines)
+   135	
+   136	        # 对接（如果用了 docking_guidance，mols 已经包含对接结果）
+   137	        if use_docking_guidance and gen == 0:
+   138	            # 初始代已对接，直接使用
+   139	            successful = [d for d in mols if d.get("docking_success")]
+   140	            successful.sort(key=lambda x: x.get("binding_energy", 999))
+   141	            log(f"对接引导生成已包含对接结果，成功 {len(successful)}/{len(mols)}", log_lines)
+   142	        else:
+   143	            log(f"第 {gen + 1} 代: 分子对接", log_lines)
+   144	            docked = batch_dock(mols)
+   145	            successful = [d for d in docked if d.get("success")]
+   146	            successful.sort(key=lambda x: x.get("binding_energy", 999))
+   147	            log(f"对接成功 {len(successful)}/{len(mols)} 个分子", log_lines)
+   148	
+   149	        # 累积到全局池
+   150	        all_docked.extend(successful)
+   151	        all_docked.sort(key=lambda x: x.get("binding_energy", 999))
+   152	
+   153	        # 选择下一代种子（取本代top，避免过度收敛）
+   154	        n_seeds = min(20, len(successful))
+   155	        current_seeds = successful[:n_seeds]
+   156	        log(f"选择 {n_seeds} 个种子进入下一代", log_lines)
+   157	        if successful:
+   158	            log(f"本代最佳结合能: {successful[0].get('binding_energy')} kcal/mol", log_lines)
+   159	            log(f"全局最佳结合能: {all_docked[0].get('binding_energy')} kcal/mol", log_lines)
+   160	
+   161	    # 最终选择
+   162	    log("-" * 60, log_lines)
+   163	    log("最终选择: 从所有代中选择 top 分子", log_lines)
+   164	
+   165	    # 去重（按SMILES）
+   166	    seen = set()
+   167	    unique_docked = []
+   168	    for d in all_docked:
+   169	        smi = d.get("smiles", "")
+   170	        if smi and smi not in seen:
+   171	            seen.add(smi)
+   172	            unique_docked.append(d)
+   173	
+   174	    unique_docked.sort(key=lambda x: x.get("binding_energy", 999))
+   175	
+   176	    # H009 + H029: 共识对接 — 对 top 候选分子用多次独立对接 + 多构象取中位数
+   177	    # Coscientist 模式："performing experiments multiple times"
+   178	    # H029 改进：每次对接使用 3 个构象取最优，进一步消除构象采样偏差
+   179	    # 消除单次对接的随机噪声，提升最终排名可靠性
+   180	    N_CONSENSUS = min(n_top * 2, len(unique_docked))
+   181	    log(f"共识对接 (H009+H029): 对 top {N_CONSENSUS} 候选执行 3 次独立对接 x 3 构象取中位数...", log_lines)
+   182	    consensus_top = unique_docked[:N_CONSENSUS]
+   183	    consensus_results = []
+   184	    for i, candidate in enumerate(consensus_top):
+   185	        smiles = candidate.get("smiles", "")
+   186	        if not smiles:
+   187	            continue
+   188	        cresult = dock_molecule_consensus(smiles, n_conformers=3)
+   189	        if cresult.get("success"):
+   190	            candidate["binding_energy"] = cresult["binding_energy"]
+   191	            candidate["consensus_std"] = cresult.get("std_energy", 0.0)
+   192	            candidate["consensus_n"] = cresult.get("n_success", 0)
+   193	            consensus_results.append(candidate)
+   194	            log(f"  [{i+1}/{N_CONSENSUS}] {smiles[:40]}... "
+   195	                f"median={cresult['binding_energy']:.3f} std={cresult['std_energy']:.3f} "
+   196	                f"(n={cresult['n_success']})", log_lines)
+   197	
+   198	    # 按中位数结合能重新排序
+   199	    consensus_results.sort(key=lambda x: x.get("binding_energy", 999))
+   200	
+   201	    # 合并回 unique_docked：共识候选用新分数，其余保持不变
+   202	    consensus_smiles = {r["smiles"] for r in consensus_results}
+   203	    remaining = [d for d in unique_docked if d.get("smiles") not in consensus_smiles]
+   204	    unique_docked = consensus_results + remaining
+   205	
+   206	    # H012: 路线质量评分（LARC Agent-as-a-Judge 模式）
+   207	    # 对候选池做逆合成规划 → 评分 → 复合排序
+   208	    from synthesis_v2 import score_route_quality
+   209	
+   210	    candidate_pool_size = min(n_top * 3, len(unique_docked))
+   211	    candidate_pool = unique_docked[:candidate_pool_size]
+   212	    log(f"去重后共 {len(unique_docked)} 个独特分子，候选池 {candidate_pool_size} 个进行路线评分", log_lines)
+   213	
+   214	    if not candidate_pool:
+   215	        log("错误: 没有分子对接成功", log_lines)
+   216	        sys.exit(1)
+   217	
+   218	    # 逆合成规划 + 路线质量评分
+   219	    log(f"为候选池 {len(candidate_pool)} 个分子规划合成路线并评分", log_lines)
+   220	    scored_candidates = []
+   221	    for mol in candidate_pool:
+   222	        smiles = mol["smiles"]
+   223	        syn = plan_synthesis_v2(smiles)
+   224	        route = syn.get("route", f"{smiles}>>{smiles}") if syn.get("success") else f"{smiles}>>{smiles}"
+   225	        is_trivial = syn.get("trivial", False) or route == f"{smiles}>>{smiles}"
+   226	        quality = score_route_quality(route, smiles)
+   227	        scored_candidates.append({
+   228	            "mol_smiles": smiles,
+   229	            "route": route,
+   230	            "binding_energy": mol.get("binding_energy"),
+   231	            "qed": mol.get("qed"),
+   232	            "trivial": is_trivial,
+   233	            "route_quality": quality,
+   234	            "syn_steps": syn.get("steps", 0),
+   235	        })
+   236	
+   237	        if logger is not None:
+   238	            composite = 0.0  # will be recalculated in H012 scoring below
+   239	            logger.log_molecule(MoleculeEvent(
+   240	                mol_smiles=smiles,
+   241	                binding_energy=mol.get("binding_energy") or 0.0,
+   242	                composite_score=composite,
+   243	                syn_steps=syn.get("steps", 0),
+   244	                sa_score=syn.get("sa_score"),
+   245	                qed=mol.get("qed") or 0.0,
+   246	                rings=count_rings(smiles),
+   247	                trivial=is_trivial,
+   248	                route_quality=quality,
+   249	                docking_std=mol.get("consensus_std"),
+   250	            ))
+   251	
+   252	    # H012 复合评分: 0.8×BE_norm + 0.2×route_quality
+   253	    energies_all = [c["binding_energy"] for c in scored_candidates if c["binding_energy"] is not None]
+   254	    if energies_all:
+   255	        e_min, e_max = min(energies_all), max(energies_all)
+   256	        if e_max > e_min:
+   257	            for c in scored_candidates:
+   258	                if c["binding_energy"] is not None:
+   259	                    be_norm = (e_max - c["binding_energy"]) / (e_max - e_min)
+   260	                else:
+   261	                    be_norm = 0.0
+   262	                c["composite_score"] = 0.8 * be_norm + 0.2 * c["route_quality"]
+   263	        else:
+   264	            for c in scored_candidates:
+   265	                c["composite_score"] = c["route_quality"]
+   266	
+   267	        # 按复合评分排序（越高越好）
+   268	        scored_candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
+   269	        log(f"复合评分排序完成 (0.8×BE + 0.2×路线质量)", log_lines)
+   270	
+   271	    # 选择 top N
+   272	    final_top = scored_candidates[:n_top]
+   273	    results = []
+   274	    trivial_count = 0
+   275	    for c in final_top:
+   276	        if c["trivial"]:
+   277	            trivial_count += 1
+   278	        results.append({
+   279	            "mol_smiles": c["mol_smiles"],
+   280	            "route": c["route"],
+   281	            "binding_energy": c["binding_energy"],
+   282	            "qed": c["qed"],
+   283	            "trivial": c["trivial"],
+   284	        })
+   285	        log(f"  {c['mol_smiles'][:50]}... BE={c['binding_energy']} "
+   286	            f"steps={c['syn_steps']} quality={c['route_quality']:.2f} "
+   287	            f"composite={c['composite_score']:.3f}"
+   288	            f"{' [TRIVIAL]' if c['trivial'] else ''}", log_lines)
+   289	
+   290	    # 统计
+   291	    energies = [r["binding_energy"] for r in results if r["binding_energy"] is not None]
+   292	    if energies:
+   293	        avg_energy = sum(energies) / len(energies)
+   294	        log(f"Top {len(results)} 平均结合能: {avg_energy:.3f} kcal/mol", log_lines)
+   295	        log(f"最佳结合能: {min(energies):.3f} kcal/mol", log_lines)
+   296	        log(f"Trivial route 比例: {trivial_count}/{len(results)} ({trivial_count/len(results)*100:.1f}%)", log_lines)
+   297	
+   298	    # 保存 CSV：先写临时文件，验证后原子替换，避免部分写入文件
+   299	    csv_path = os.environ.get("MOLCRAFT_CSV_PATH", os.path.join(output_dir, "result.csv"))
+   300	    csv_dir = os.path.dirname(os.path.abspath(csv_path)) or output_dir
+   301	    fd, temp_csv = tempfile.mkstemp(prefix="result.", suffix=".csv.tmp", dir=csv_dir)
+   302	    os.close(fd)
+   303	
+   304	    try:
+   305	        with open(temp_csv, "w", newline="", encoding="utf-8") as f:
+   306	            writer = csv.DictWriter(f, fieldnames=["mol_smiles", "route"])
+   307	            writer.writeheader()
+   308	            for row in results:
+   309	                writer.writerow({"mol_smiles": row["mol_smiles"], "route": row["route"]})
+   310	
+   311	        # 原子替换：只有完整写入成功后才替换正式文件
+   312	        os.replace(temp_csv, csv_path)
+   313	        log(f"结果已保存到 {csv_path}", log_lines)
+   314	    except Exception as e:
+   315	        if os.path.exists(temp_csv):
+   316	            os.unlink(temp_csv)
+   317	        log(f"CSV 写入失败: {e}", log_lines)
+   318	        raise
+   319	
+   320	    # 结构化日志：通过 EventLogger 输出 metrics
+   321	    if logger is not None:
+   322	        energies = [r["binding_energy"] for r in results if r["binding_energy"] is not None]
+   323	        steps = [r.get("syn_steps", 0) for r in results]
+   324	        logger.log_metrics(MetricsEvent(
+   325	            molecule_count=len(results),
+   326	            non_trivial_count=len(results) - trivial_count,
+   327	            trivial_count=trivial_count,
+   328	            avg_binding_energy=sum(energies) / len(energies) if energies else None,
+   329	            min_binding_energy=min(energies) if energies else None,
+   330	            avg_syn_steps=sum(steps) / len(steps) if steps else None,
+   331	            docking_success_rate=0.0,
+   332	        ))
+   333	
+   334	    # 打印摘要
+   335	    log("=" * 60, log_lines)
+   336	    log("流程完成", log_lines)
+   337	    log(f"最佳结合能: {results[0]['binding_energy']} kcal/mol", log_lines)
+   338	    log(f"输出文件: {csv_path}", log_lines)
+   339	    log("=" * 60, log_lines)
+   340	
+   341	    return results
+   342	
+   343	
+   344	def _generate_diffusion(n_molecules, log_lines):
+   345	    """调用 PocketXMol 扩散模型 HTTP API 生成口袋感知分子。
+   346	
+   347	    Returns:
+   348	        list[dict] | None: 生成的分子列表（格式与 generate_molecules 兼容），失败返回 None
+   349	    """
+   350	    import urllib.request
+   351	    import urllib.error
+   352	    from src import config as _config
+   353	
+   354	    api_url = _config.DIFFUSION_API_URL
+   355	    if not api_url:
+   356	        log("DIFFUSION_API_URL 未配置，跳过扩散模型生成", log_lines)
+   357	        return None
+   358	
+   359	    try:
+   360	        pdb_path = _config.TARGET_PDB
+   361	        if not os.path.exists(pdb_path):
+   362	            log(f"PDB 文件不存在: {pdb_path}", log_lines)
+   363	            return None
+   364	        pdb_content = open(pdb_path).read()
+   365	
+   366	        request_body = json.dumps({
+   367	            "pdb_content": pdb_content,
+   368	            "n_molecules": n_molecules,
+   369	            "pocket_center": _config.DOCKING_CENTER,
+   370	            "pocket_radius": max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0,
+   371	        }, ensure_ascii=False).encode("utf-8")
+   372	
+   373	        url = f"{api_url.rstrip('/')}/generate"
+   374	        req = urllib.request.Request(
+   375	            url, data=request_body,
+   376	            headers={"Content-Type": "application/json"},
+   377	            method="POST",
+   378	        )
+   379	
+   380	        log(f"调用扩散模型 API: {url} (n={n_molecules})", log_lines)
+   381	        with urllib.request.urlopen(req, timeout=_config.DIFFUSION_TIMEOUT) as resp:
+   382	            result = json.loads(resp.read().decode("utf-8"))
+   383	
+   384	        molecules = result.get("molecules", [])
+   385	        gen_time = result.get("generation_time_seconds", 0)
+   386	        log(f"扩散模型返回 {len(molecules)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
+   387	
+   388	        # 转换为与 generate_molecules 兼容的格式
+   389	        converted = []
+   390	        for m in molecules:
+   391	            smiles = m.get("smiles", "")
+   392	            if not smiles:
+   393	                continue
+   394	            mol = Chem.MolFromSmiles(smiles)
+   395	            if mol is None or len(Chem.GetMolFrags(mol)) > 1:
+   396	                continue
+   397	            converted.append({
+   398	                "smiles": smiles,
+   399	                "qed": m.get("qed"),
+   400	                "mw": m.get("mw"),
+   401	                "logp": m.get("logp"),
+   402	                "sa_score": m.get("sa_score"),
+   403	            })
+   404	
+   405	        return converted if converted else None
+   406	
+   407	    except urllib.error.URLError as e:
+   408	        log(f"扩散模型 API 连接失败: {e}", log_lines)
+   409	        return None
+   410	    except Exception as e:
+   411	        log(f"扩散模型生成异常: {e}", log_lines)
+   412	        return None
+   413	
+   414	
+   415	def _generate_offspring(seeds, n_offspring_per_seed):
+   416	    """从种子分子生成变异后代。
+   417	
+   418	    利用对接成功的种子作为起点，通过随机变异产生新分子。
+   419	    这模拟了进化算法中的"选择+变异"步骤。
+   420	    """
+   421	    import random
+   422	    from evaluator import evaluate_molecule, passes_filters
+   423	
+   424	    offspring = []
+   425	    attempts = 0
+   426	    max_attempts = len(seeds) * n_offspring_per_seed * 20
+   427	
+   428	    while len(offspring) < len(seeds) * n_offspring_per_seed and attempts < max_attempts:
+   429	        attempts += 1
+   430	        seed = random.choice(seeds)
+   431	        seed_smiles = seed.get("smiles", "")
+   432	        if not seed_smiles:
+   433	            continue
+   434	
+   435	        # 变异强度：1-4个突变点
+   436	        n_mut = random.randint(1, 4)
+   437	        new_smiles = random_mutate_smiles(seed_smiles, n_mut)
+   438	
+   439	        if new_smiles and new_smiles != seed_smiles:
+   440	            # 检查是否为单片段（多片段 SMILES 会导致 Meeko 崩溃）
+   441	            mol_check = Chem.MolFromSmiles(new_smiles)
+   442	            if mol_check is None or len(Chem.GetMolFrags(mol_check)) > 1:
+   443	                continue
+   444	            props = evaluate_molecule(new_smiles)
+   445	            if passes_filters(props):
+   446	                offspring.append(props)
+   447	    
+   448	    return offspring
+   449	
+   450	
+   451	def main():
+   452	    parser = argparse.ArgumentParser(description="运行进化迭代版药物研发流程")
+   453	    parser.add_argument("--n-generate", type=int, default=50, help="每代生成分子数量 (默认: 50)")
+   454	    parser.add_argument("--n-top", type=int, default=10, help="保留 top N 分子 (默认: 10)")
+   455	    parser.add_argument("--strategy", choices=["mutate", "combine", "random"], default="mutate",
+   456	                        help="生成策略 (默认: mutate)")
+   457	    parser.add_argument("--n-generations", type=int, default=2, help="进化代数 (默认: 2)")
+   458	    parser.add_argument("--n-offspring", type=int, default=3, help="每个种子的变异体数量 (默认: 3)")
+   459	    parser.add_argument("--output-dir", type=str, default="output", help="输出目录")
+   460	    parser.add_argument("--no-docking-guidance", action="store_false", dest="use_docking_guidance",
+   461	                        help="禁用 H002 对接引导（不推荐，已验证会退化 0.4~0.8 kcal/mol）")
+   462	    parser.add_argument("--generator", choices=["mutate", "diffusion", "hybrid"], default="mutate",
+   463	                        help="生成器选择: mutate(RDKit变异), diffusion(PocketXMol扩散), hybrid(混合) (默认: mutate)")
+   464	    args = parser.parse_args()
+   465	
+   466	    run_evolutionary_pipeline(
+   467	        n_generate=args.n_generate,
+   468	        n_top=args.n_top,
+   469	        strategy=args.strategy,
+   470	        n_generations=args.n_generations,
+   471	        n_offspring_per_seed=args.n_offspring,
+   472	        output_dir=args.output_dir,
+   473	        use_docking_guidance=args.use_docking_guidance,
+   474	        generator=args.generator,
+   475	    )
+   476	
+   477	
+   478	if __name__ == "__main__":
+   479	    main()
+
+[2026-05-21T15:32:38.086013] 迭代进度: 0/3 (初始: 21)
+让我检查合成路线评分函数，理解当前 H012 复合评分为何未能防止 trivial route。9:  显著降低 trivial route 比例。
+646:        dict: {"success": bool, "route": str, "steps": int, "trivial": bool}
+653:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+658:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+662:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+675:            all_trivial = True
+680:                    if not sub.get("trivial", False):
+681:                        all_trivial = False
+686:                if not sub.get("trivial", False):
+692:            is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+698:                "trivial": is_trivial,
+718:                    all_trivial = True
+723:                            if not sub.get("trivial", False):
+724:                                all_trivial = False
+727:                        if not sub.get("trivial", False):
+736:                        "trivial": False,
+742:    return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+760:def score_route_quality(route_str: str, smiles: str) -> float:
+<system>80 lines read from file starting from line 760.</system>   760	def score_route_quality(route_str: str, smiles: str) -> float:
+   761	    """评估逆合成路线的化学合理性（H012）。
+   762	
+   763	    文献依据:
+   764	    - LARC (Baker et al., 2025): Agent-as-a-Judge 逆合成框架，
+   765	      路线质量评审是确保合成可行性的关键环节
+   766	    - ChemCrow (Bran et al., 2024): 工具输出质量评估决定下游决策可靠性
+   767	
+   768	    评分维度:
+   769	    1. 多步路线 vs 单步（多步更真实，+0.2）
+   770	    2. 反应物数量（多组分反应更合理，+0.1-0.2）
+   771	    3. 复杂度比（产物/反应物原子比 > 3 为可疑，-0.3）
+   772	    4. 单反应物路线（除非是简单的氧化/还原/水解，-0.2）
+   773	
+   774	    Returns:
+   775	        float: 0.0（不可行）到 1.0（非常可行）
+   776	    """
+   777	    if not route_str or route_str == f"{smiles}>>{smiles}":
+   778	        return 0.0  # 平凡路线 = 最低质量
+   779	
+   780	    steps = route_str.split(" | ")
+   781	    step_scores = []
+   782	
+   783	    for step in steps:
+   784	        if " >> " not in step and ">>" not in step:
+   785	            continue
+   786	
+   787	        # 解析反应物和产物
+   788	        sep = " >> " if " >> " in step else ">>"
+   789	        parts = step.split(sep, 1)
+   790	        if len(parts) != 2:
+   791	            continue
+   792	        reactants_str, product_str = parts
+   793	        reactants = [r.strip() for r in reactants_str.split(".") if r.strip()]
+   794	
+   795	        score = 0.5  # 默认中等
+   796	
+   797	        # 1. 多反应物路线更真实（大多数合成反应涉及2+组分）
+   798	        if len(reactants) >= 2:
+   799	            score += 0.2
+   800	        elif len(reactants) == 1:
+   801	            # 单反应物路线须谨慎 — 检查是否为简单官能团转化
+   802	            r_mol = Chem.MolFromSmiles(reactants[0])
+   803	            p_mol = Chem.MolFromSmiles(product_str)
+   804	            if r_mol and p_mol:
+   805	                r_atoms = r_mol.GetNumAtoms()
+   806	                p_atoms = p_mol.GetNumAtoms()
+   807	                if p_atoms > r_atoms + 5:
+   808	                    # 单反应物生成更大产物 — 极不可能
+   809	                    score -= 0.3
+   810	                elif p_atoms <= r_atoms:
+   811	                    # 单反应物生成等大或更小产物 — 可能是脱保护/还原/氧化
+   812	                    score += 0.1
+   813	
+   814	        # 2. 反应物复杂度检查
+   815	        r_total_atoms = 0
+   816	        for r in reactants:
+   817	            r_mol = Chem.MolFromSmiles(r)
+   818	            if r_mol:
+   819	                r_total_atoms += r_mol.GetNumAtoms()
+   820	
+   821	        p_mol = Chem.MolFromSmiles(product_str)
+   822	        if p_mol and r_total_atoms > 0:
+   823	            ratio = p_mol.GetNumAtoms() / r_total_atoms
+   824	            if ratio > 3.0:
+   825	                # 产物远大于反应物之和 — 不可行的单步转化
+   826	                score -= 0.3
+   827	            elif ratio > 2.0:
+   828	                score -= 0.1
+   829	
+   830	        # 3. 检查是否为同一分子（无转化）
+   831	        if len(reactants) == 1 and reactants[0] == product_str:
+   832	            score = 0.0
+   833	
+   834	        step_scores.append(max(0.0, min(1.0, score)))
+   835	
+   836	    if not step_scores:
+   837	        return 0.0
+   838	
+   839	    # 平均分 + 多步路线奖励
+
+[2026-05-21T15:33:06.806769] 迭代进度: 0/3 (初始: 21)
+
+[2026-05-21T15:33:35.599826] 迭代进度: 0/3 (初始: 21)
+明白了问题的全貌。H012 复合评分 `0.8*BE + 0.2*route_quality` 中路线质量权重不足，trivial 路由分子即使 `route_quality=0` 仍因 Vina 疏水偏置带来的优异 BE 登顶。现在让我搜索支持 LogP 惩罚的最新文献。<system>The returned content is the main text content extracted from the page.</system>---
+title: A maverick: Environmentally relevant concentrations of nonylphenol attenuate the plasmid-mediated conjugative transfer of antibiotic resistance genes
+author: Si-Zhou Liang; Ya-Jun Chang; Philip Semaha; Li-Zhu Liu; Yan Gao; Zhi Wang; Wei-Guo Zhang
+url: https://pmc.ncbi.nlm.nih.gov/articles/PMC11345678/
+hostname: ncbi.nlm.nih.gov
+description: Nonylphenol (NP) attenuate the plasmid-mediated conjugative transfer of ARGs. The effect of NP on ARGs conjugation is different from other reported organic pollutants. Conventional mechanism cannot demonstrate this phenomenon. Dispersant function of ...
+sitename: Water Research X
+date: 2024-07-26
+---
+Highlights
+-
+•
+Nonylphenol (NP) attenuate the plasmid-mediated conjugative transfer of ARGs.
+-
+•
+The effect of NP on ARGs conjugation is different from other reported organic pollutants.
+-
+•
+Conventional mechanism cannot demonstrate this phenomenon.
+-
+•
+Dispersant function of NP is responsible for the decline of conjugative transfer.
+Keywords: Antibiotic resistance genes, Nonylphenol, Conjugative transfer, Public health
+Abstract
+Given that many organic pollutants have been reported to facilitate the plasmid-mediated conjugative transfer of antibiotic resistance genes (ARGs), it was naturally deduced that nonylphenol (NP) can also have this kind of effect. Whereas, this study demonstrates an entirely different result that environmentally relevant concentrations of NP attenuate plasmid-mediated ARGs conjugative transfer (maximum inhibition rate 64 %), further study show that NP exposure had no significant effect on bacterial growth, cell vitality, oxidative stress response, and expression of conjugation-relevant genes, which were reported to closely relate to the conjugative transfer in numerous studies. Conclusively, it was found that the dispersant function of NP impeded the occurrence of cell mating, thus was responsible for the decline of conjugative transfer. This study shows a new perspective on understanding the effect of organic pollutants like NP on the ARGs horizontal dissemination in environment.
+Graphical abstract
+Introduction
+Antibiotic resistance genes (ARGs) in the environment are a global concern, that pose significant threats to human health and ecological balance (Martinez, 2008; Zhuang et al., 2021). Induced by widespread antibiotics use in healthcare, aquaculture, and livestock farms, large quantities of antibiotic resistant bacteria (ARB) and their resistance genes are released into the environments (Pruden et al., 2013). Water bodies, including oceans, rivers, lakes, ponds and groundwater, are plagued by ARGs contamination (Hatos and Martiny, 2015; Yang et al., 2017; Wang et al., 2020; Leff et al., 2023), which was mainly due to the discharge of untreated or inadequately treated wastewater containing antibiotics and ARB (Rizzo, et al., 2013). In addition, runoffs from agricultural fields treated with livestock manure-derived soil amendments can also introduce ARGs into waterbodies (Zhang et al., 2021). Evidently, ARGs persistence in aquatic environments poses a health risk to human beings through water consumption and recreational use (Saibu et al., 2024).
+Nonylphenol (NP) serves as nonionic surfactants in various industrial, agricultural, and domestic applications, functioning as surfactants, wetting agents, stabilizers, or emulsifiers. NP finds widespread use in food packaging and daily products, including hair dyes, textile printing, and pesticides, etc. (Soares et al., 2008; Zhang et al., 2023). It's not easily biodegradable in nature, meaning it can persist in the environment over an extended period. NP contamination in water has drawn worldwide concern because it can enter the human body through drinking and polluted aquatic foods consumption (Hong et al., 2020; Bhandari et al., 2021). It can interfere with the endocrine and reproductive systems, to cause infertility, precocious puberty, and abnormal development of sexual organs, especially for children (Soares et al., 2008; Zhang et al., 2023; Cambien et al., 2023). NP is now detected in all kinds of waterbodies and wastewater streams, the concentrations of which range from several nanograms per liter to several hundred nanograms per liter (Ieda et al., 2005; Kim et al., 2005), even more micrograms per liter (Zhang et al., 2012; Lei et al., 2021). Therefore, the combined contamination of ARGs and NP is common in waterbodies. Previous studies showed that many environmentally relevant concentrations of non-antibiotic organic pollutants, such as, sertraline, duloxetine, fluoxetine, bupropion, trichloromethane, dichloroacetonitrile, and prochloraz promoted the plasmid-mediated ARGs conjugative transfer (Ding et al., 2022; Guo et al., 2022; He et al., 2022). So, at first it was hypothesized that environmentally relevant concentrations of NP also had this kind of effect. Whereas, this study demonstrated an entirely different result that environmentally relevant concentrations of NP attenuate plasmid-mediated ARGs conjugative transfer. Whereupon, the mechanisms underlying this phenomenon were explored from cell morphology, physiology, and molecular biology perspectives. This study highlights the different role and mechanisms of NP in influencing the plasmid-mediated ARGs conjugative transfer by comparison with other reported organic pollutants.
+Results and discussion
+Effects of NP exposure on the conjugative transfer
+Previous studies documented that many organic pollutants can promote plasmid-mediated conjugative transfer (Ding et al., 2022; Guo et al., 2022; He et al., 2022). Naturally, it was easily deduced that NP had a similar effect, but the result in this study was entirely different. As shown in Fig. 1 and S1, NP exposure significantly decreased the conjugative transfer frequency mediated by ARGs-carrying RP4 plasmid, moreover, the higher the concentration of NP, the more obvious the inhibition. The inhibition effect was more obvious at 8 h and 12 h by comparison with that at 4 h. The lowest conjugative transfer occurred at 10 μg/L of NP, with 0.36 times than that of control.
+Effects of NP exposure on the bacterial growth, cell vitality, and membrane structure
+In previous studies, the organic pollutants, heavy metals, and nanoparticles intensively influenced the conjugative transfer through interference with bacterial growth, cell vitality, and membrane structure (Qiu et al., 2012; Wang et al., 2020; Ding et al., 2022; Guo et al., 2022; He et al., 2022). This study showed that NP exposure did not significantly affect bacterial growth and cell vitality (ATPase) (Fig. 2A and B), but caused moderate damage to the membrane structure. TEM showed that the membrane contour became relatively fuzzy when exposed to NP compared to the control (Fig. 2C and D). As an important surfactant, the hydrocarbon chain of NP can bond to the hydrophobic group of phospholipid bilayers, interfering with the stricture of the cell membrane, which is a barrier to the plasmid-mediated ARGs horizontal transfer (Qiu et al., 2012; Ding et al., 2022; Li et al., 2022). In other words, moderate damage to the cell membrane contributes to a function-weakened barrier, thus facilitating the ARGs-carrying plasmid transfer from the donor to the recipient (Qiu et al., 2012; Wang et al., 2020; Pu et al., 2021). However, in this study, a function-weakened membrane did not promote conjugative transfer. Thus, there must be other mechanisms which exert a crucial role in attenuating the conjugative transfer.
+Effects of NP exposure on the cellular oxidant and antioxidant properties
+When microbes are exposed to environmental stress such as organic pollutants, heavy metals, and nanoparticles, the overaccumulation of ROS can cause peroxidation damage to the cell membrane, which can also weaken the barrier function of a membrane (Qiu et al., 2012; Ding et al., 2022; Li et al., 2022). In this study, the NP exposure had no significant effects on ROS concentration, antioxidase activities (CAT, POD, SOD, and T-AOC), and MDA concentration (Fig. 3). These results demonstrated that the moderate damage to the cell membrane had no relationship with the cellular oxidation system.
+Effects of NP exposure on the expression of conjugation-relevant genes
+The global regulatory genes korA, korB, and trbA exert an important role in negatively regulating the RP4-mediated ARGs conjugative transfer (Samuels et al., 2000; Zhang et al., 2018; Li et al., 2022). The expression of korA and korB can synergistically inhibit the expression of trfAp, a promoter which initiates the expression of mating-relevant genes. Another gene trbA is also known as playing a negative role in the process of conjugative transfer. The trbBp and traF are the positive regulatory genes involved in the stage of bacteria mating, while other two genes, trfAp and traJ play a positive role in the stage of plasmid transfer and replication. Numerous studies have demonstrated that organic pollutants, heavy metals, and nanoparticles, can promote the conjugative transfer through down-expressing negative regulatory genes and up-expressing positive regulatory genes (Qiu et al., 2012; Wang et al., 2020; Ding et al., 2022; Guo et al., 2022; He et al., 2022). However, in this study, the expression of these conjugation-relevant genes performed no obvious changes when exposed to NP (Fig. 4).
+Dispersant function of NP was responsible for the decline of conjugative transfer
+Previous studies documented that conjugative transfer increased when exposed to organic pollutants, such as trichloromethane, dichloroacetonitrile, prochloraz, triclosan, sertraline, duloxetine, fluoxetine, bupropion, escitalopram, etc. (Ding et al., 2022; Guo et al., 2022; He et al., 2022). Logically, it was easily deduced that NP can also have this kind of effect. Interestingly, this study showed an entirely different result with the finding that environmentally relevant concentrations of NP attenuated the ARGs conjugative transfer. The possible underlying mechanisms such as bacterial growth, cell vitality, cell membrane, oxidative stress response system, and expression of conjugation-relevant genes which were commonly discussed in the previous studies were investigated in this study. However, the results showed that NP exposure had no significant effects on these aforementioned biological properties, except for cell membrane structure. These results cannot elucidate the phenomenon that why environmentally relevant concentrations of NP attenuated the conjugative transfer.
+The premise of the occurrence of plasmid-mediated ARGs conjugative transfer is the cell-to-cell contact, so the ability of cell mating is crucial for the occurrence of conjugative transfer (Qiu et al., 2012; Li et al., 2022). Whereupon, the ability of cell mating characterized by the ability of biofilm formation was determined in this study. The result showed that the ability of biofilm formation significantly decreased when exposed to NP, and the higher the concentration of NP was, the more difficult the biofilm formed (Fig. 5A). To validate this result, the SEM experiment was conducted, the images of which showed that fewer cells were in mating status when exposed to NP in comparison to those in the control group (Fig. 5B and C). The cell mobility, extracellular polymers (EPS), and quorum sensing (QS) could contribute to the biofilm formation (Wang et al., 2020; Ding et al., 2022). Whereupon, the effects of NP exposure the expression of two typical flagella-related genes (flgE and fliC) and three QS-related genes (luxS, lsrR, and lsrK), as well as the concentrations of EPS were investigated in this study. As shown in Fig. 6, NP exposure exerted no significant effects on these genes expression and the EPS concentration. But what caused the decline in biofilm formation ability? It is common knowledge that NP is a famous dispersant, therefore the dispersibility of bacteria in the conjugation solution was greatly increased when exposed to NP, which impeded the biofilm formation. This change decreased the number of mating cells, thus attenuating the plasmid-mediated ARGs conjugative transfer.
+Conclusions
+This study demonstrated that NP exposure attenuated plasmid-mediated ARGs conjugative transfer. While the underlying mechanisms was further explored, the results showed that NP exposure did not change the bacterial growth, cell vitality, oxidative stress response systems and expression of conjugation-relevant genes, which were documented to be closely related to the conjugative transfer in numerous studies. Given that NP has the function of dispersant, the decline in the number of cell-mating between the donors and recipients was responsible for the attenuation of conjugative transfer.
+Materials and methods
+Bacterial strain and culture condition
+The study used Escherichia coli HB101, carrying a broad host-range conjugative plasmid RP4 as the donor bacterial strain, RP4 plasmid contained resistance genes against ampicillin (Amp), kanamycin (Kan), and tetracycline (Tet). E. coli K12 MG1655 with rifampicin (Rif) resistance was used as the recipient bacteria. Lysogeny broth (LB) medium with 30 mg/L Tet for the donors and 30 mg/L Rif for the recipients were used to preculture the bacteria at 37 °C overnight, respectively. After harvesting via centrifuging at 5000 rpm for 5 min, the cells were washed twice with sterile phosphate-buffered saline (PBS, 0.01 mol/L, pH 7.2). The collected cells were then resuspended in PBS, and OD600 was adjusted to 1.0 for ready-to-use.
+Conjugation system
+The conjugation system was set according to Li et al. Both of the final concentration of donor and recipient in the conjugation solution were 1 × 107 CFU/mL. The final volume of conjugation system was 30 mL. Environmentally relevant concentrations of NP (4-n-NP) were set as 0, 0.01, 0.1, 1.0, and 10.0 μg/L respectively, according to the previous studies. Five parallel conjugation experiments for each group were conducted simultaneously. LB agar plates containing 30 mg/L Rif were used to determine the number of recipients; LB agar plates containing 50 mg/L Amp, 30 mg/L Kan, 30 mg/L Tet, and 30 mg/L Rif were used to determine the number of transconjugants. The conjugative transfer frequency at 6 h, 8 h, and 12 h was presented as the numbers of transconjugants per recipient cells (Ding et al., 2022).
+Determination of the bacterial growth and cell vitality
+LB medium was used to culture the donor E. coli HB101 and recipient E. coli K12 MG1655 at 30 °C. Gradient concentrations of NP were set as 0, 0.01, 0.1, 1.0, and 10.0 μg/L respectively. Five parallel conjugation experiments for each group were conducted simultaneously. The bacterial growth was determined by monitoring the cell density at OD 600 with a spectrophotometer after eight hours conjugation. The activity of ATPase was used to indicate the influence of NP on cell vitality and was determined by a commercial kit (Nanjing Jiancheng Bioengineering Institute, Nanjing, China) according to the manufacturer's instructions.
+Cell morphology
+The mating status was captured by scanning electron microscopy (SEM) (EVO LS10, ZEISS, Germany) according to Li et al. (2022). Images of the cell membrane structure were visualized using transmission electron microscopy (TEM) (HT7700 Exalens, Hitachi, Japan) at 200 kV after eight hours conjugation (Qiu et al., 2012). The detailed information of sample preparation is described at Text S1.
+Determination of oxidative and antioxidative properties
+A commercial kit (Nanjing Jiancheng Bioengineering Institute, Nanjing, China) containing a fluorochrome of 2,7-dichlorodihydrofluorescein diacetate was used to determine ROS after eight hours conjugation. The ROS concentration was analyzed via a flow cytometer (CytoFLEX, Beckman Coulter, USA). The concentration of malondialdehyde (MDA), and the activities of superoxide dismutase (SOD), peroxidase (POD), and catalase (CAT), and the total antioxidant capacity (T-AOC) were measured also using commercial kits (Nanjing Jiancheng Bioengineering Institute, Nanjing, China) according to the manufacturer's instructions.
+Expression of conjugation-relevant genes, mobility-relevant genes, and QS-relevant genes
+Total RNA extraction and cDNA synthesis were according to Ding et al. (2022) and Li et al. (2022). The expression of conjugation-relevant genes, mobility-relevant genes, and quorum sensing (QS)-relevant genes was evaluated using quantitative reverse transcription polymerase chain reaction (qRT-PCR) after eight hours conjugation. Three global regulatory genes that negatively regulate conjugative transfer (korA, korB, and trbA), two positive regulatory genes involved in mating pair formation (trbBp and traF), two positive regulatory genes involved in plasmid transfer and replication (trfAp and traJ), two typical flagella-related genes (flgE and fliC), and three QS-related genes (luxS, lsrR, and lsrK) were quantified in this study. The 16S rRNA gene was used to normalize gene expression. The fold-change in gene expression was calculated using the method of 2−ΔΔCt (Livak and Schmittgen, 2001). The PCR primer sets for each target gene are listed in Table S1.
+where Ct NPT is the threshold number of target genes in the NP treatment groups; Ct NPR is the threshold number of reference gene (16S rRNA) in the NP treatment groups; Ct CKT is the threshold number of target genes in the control group; Ct CKR is the threshold number of reference gene (16S rRNA) in the control group.
+Quantitative biofilm assay
+Quantitative biofilm assay was modified from the method described by Wakimoto et al. (2004). To obtain the biofilm, the medium was gently sucked out after 8 h conjugation, and the biofilm attached to the flask wall was immediately immobilized with methanol, then dyed with 1 % crystal violet solution at room temperature for 5 min. After removing the crystal violet solution, 33 % (v/v) acetic acid was added. The flasks were incubated at 37 °C for 30 min, then the absorbance was measured at 590 nm by spectrophotometer. The sample without bacteria incubation were set as the negative control.
+EPS extraction
+EPS extraction was according to the method described by Wang et al. (2020). In detail, conjugation solutions were centrifuged for 15 min (12,000 rpm, 4 °C), and the cell pellets were washed thrice with 0.9 % NaCl solution. Then the cell pellets were resuspended in 10 mL double-distilled water and 8 mL ethylenediaminetetraacetic acid disodium (2 %) for 4 h at 4 °C. Remaining cells were removed by centrifugation of the above supernatant for 30 min (12,000 rpm, 4 °C). Finally, double- distilled water was used to dialyze the acquired supernatant for 24 h and cellulose acetate membrane (0.45 μm) for filtrating. The supernatant was used as the EPS fraction for chemical analyses. The contents of proteins and carbohydrates were determined by Lowry method and anthrone method, the content of nucleic acids was determined using a UV spectrophotometer. The total content of EPS was measured with the sum of the three components.
+Statistical analysis
+SPSS Statistics 29.0 (SPSS, Chicago, USA) was used for all data analysis. Differences between groups were analyzed using the ANOVA tests with post hoc adjustments was used to assess significant differences between groups. A value of p < 0.05 was considered significant.
+CRediT authorship contribution statement
+Si-Zhou Liang: Writing – review & editing, Writing – original draft, Methodology, Investigation, Data curation. Ya-Jun Chang: Writing – review & editing, Writing – original draft, Project administration, Methodology, Investigation, Data curation. Philip Semaha: Writing – review & editing, Writing – original draft, Methodology, Investigation. Li-Zhu Liu: Investigation. Yan Gao: Writing – review & editing. Zhi Wang: Writing – review & editing, Writing – original draft, Validation, Data curation, Conceptualization. Wei-Guo Zhang: Writing – review & editing, Writing – original draft, Visualization, Validation, Supervision, Software, Resources, Project administration, Methodology, Investigation, Funding acquisition, Formal analysis, Data curation, Conceptualization.
+Declaration of competing interest
+The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
+Acknowledgment
+This work was supported by National Natural Science Foundation (U23A2059); Jiangsu Agriculture Science and Technology Innovation Fund (CX (22)3001; CX (21)2012).
+Footnotes
+Supplementary material associated with this article can be found, in the online version, at doi:10.1016/j.wroa.2024.100241.
+Appendix. Supplementary materials
+Data availability
+Data will be made available on request
+References
+- Bhandari G., Bagheri A.R., Bhatt P., Bilal M. Occurrence, potential ecological risks, and degradation of endocrine disrupter, nonylphenol, from the aqueous environment. Chemosphere. 2021;275 doi: 10.1016/j.chemosphere.2021.130013. [DOI] [PubMed] [Google Scholar]
+- Cambien G., Dupuis A., Guihenneuc J., Bauwens M., Belmouaz M., Ayraud-Thevenot S. Endocrine disruptors in dialysis therapies: a literature review. Environ. Int. 2023;178 doi: 10.1016/j.envint.2023.108100. [DOI] [PubMed] [Google Scholar]
+- Ding P., Lu J., Wang Y., Schembri M.A., Guo J. Antidepressants promote the spread of antibiotic resistance via horizontally conjugative gene transfer. Environ. Microbiol. 2022;24(11):5261–5276. doi: 10.1111/1462-2920.16165. [DOI] [PMC free article] [PubMed] [Google Scholar]
+- Guo A., Zhou Q., Bao Y., Qian F., Zhou X. Prochloraz alone or in combination with nano-CuO promotes the conjugative transfer of antibiotic resistance genes between Escherichia coli in pure water. J. Hazard, Mater. 2022;424(Pt D) doi: 10.1016/j.jhazmat.2021.127761. [DOI] [PubMed] [Google Scholar]
+- Hatosy S.M., Martiny A.C. The ocean as a global reservoir of antibiotic resistance genes. Appl. Environ. Microbiol. 2015;81(21):7593–7599. doi: 10.1128/AEM.00736-15. [DOI] [PMC free article] [PubMed] [Google Scholar]
+- He K., Xue B., Yang X., Wang S., Li C., Zhang X., et al. Low-concentration of trichloromethane and dichloroacetonitrile promote the plasmid-mediated horizontal transfer of antibiotic resistance genes. J. Hazard. Mater. 2022;425 doi: 10.1016/j.jhazmat.2021.128030. [DOI] [PubMed] [Google Scholar]
+- Hong Y.J., Feng C.L., Yan Z.F., Wang Y., Liu D.Q., Liao W., et al. Nonylphenol occurrence, distribution, toxicity and analytical methods in freshwater. Environ. Chem. Lett. 2020;18:2095–2106. [Google Scholar]
+- Ieda T., Horii Y., Petrick G., Yamashita N., Ochiai N., Kannan K. Analysis of nonylphenol isomers in a technical mixture and in water by comprehensive two-dimensional gas chromatography-mass spectrometry. Environ. Sci. Technol. 2005;39(18):7202–7207. doi: 10.1021/es050568d. [DOI] [PubMed] [Google Scholar]
+- Kim Y.S., Katase T., Horii Y., Yamashita N., Makino M., Uchiyama T., et al. Estrogen equivalent concentration of individual isomer-specific 4-nonylphenol in Ariake sea water, Japan. Mar. Pollut. Bull. 2005;51(8–12):850–856. doi: 10.1016/j.marpolbul.2005.07.014. [DOI] [PubMed] [Google Scholar]
+- Leff L.G., Fasina K., Engohang-Ndong J. Detecting antibiotic resistance genes in anthropogenically impacted streams and rivers. Curr. Opin. Biotechnol. 2023;79 doi: 10.1016/j.copbio.2022.102878. [DOI] [PubMed] [Google Scholar]
+- Lei K., Pan H.Y., Zhu Y., Chen W., Lin C.Y. Pollution characteristics and mixture risk prediction of phenolic environmental estrogens in rivers of the Beijing-Tianjin-Hebei urban agglomeration, China. Sci. Total Environ. 2021;787 doi: 10.1016/j.scitotenv.2021.147646. [DOI] [PubMed] [Google Scholar]
+- Li W., Zhang W.G., Zhang M.S., Lei Z.F., Li P.F., Ma Y., et al. Environmentally relevant concentrations of mercury facilitate the horizontal transfer of plasmid-mediated antibiotic resistance genes. Sci. Total Environ. 2022;852 doi: 10.1016/j.scitotenv.2022.158272. [DOI] [PubMed] [Google Scholar]
+- Livak K.J., Schmittgen T.D. Analysis of relative gene expression data using real time quantitive PCR and the 2−△△CT method. Methods. 2001;25:402–408. doi: 10.1006/meth.2001.1262. [DOI] [PubMed] [Google Scholar]
+- Martinez J.L. Antibiotics and antibiotic resistance genes in natural environments. Science. 2008;321:365–367. doi: 10.1126/science.1159483. [DOI] [PubMed] [Google Scholar]
+- Pruden A., Larsson D.G., Amézquita A., Collignon P., Brandt K.K., Graham D.W., et al. Management options for reducing the release of antibiotics and antibiotic resistance genes to the environment. Environ. Health Perspect. 2013;121(8):878–885. doi: 10.1289/ehp.1206446. [DOI] [PMC free article] [PubMed] [Google Scholar]
+- Pu Q., Fan X.T., Sun A.Q., Pan T., Li H., Bo Lassen S., et al. Co-effect of cadmium and iron oxide nanoparticles on plasmid-mediated conjugative transfer of antibiotic resistance genes. Environ. Int. 2021;152 doi: 10.1016/j.envint.2021.106453. [DOI] [PubMed] [Google Scholar]
+- Qiu Z., Yu Y., Chen Z., Jin M., Yang D., Zhao Z., et al. Nanoalumina promotes the horizontal transfer of multiresistance genes mediated by plasmids across genera. P. Natl. Acad. Sci. USA. 2012;109:4944–4949. doi: 10.1073/pnas.1107254109. [DOI] [PMC free article] [PubMed] [Google Scholar]
+- Rizzo L., Manaia C., Merlin C., Schwartz T., Dagot C., Ploy M.C., et al. Urban wastewater treatment plants as hotspots for antibiotic resistant bacteria and genes spread into the environment: a review. Sci. Total Environ. 2013;447:345–360. doi: 10.1016/j.scitotenv.2013.01.032. [DOI] [PubMed] [Google Scholar]
+- Saibu S., Uhanie Perera I., Suzuki S., Rodo X., Fujiyoshi S., Maruyama F. Resistomes in freshwater bioaerosols and their impact on drinking and recreational water safety: a perspective. Environ. Int. 2024;183 doi: 10.1016/j.envint.2023.108377. 2024. [DOI] [PubMed] [Google Scholar]
+- Samuels A.L., Lanka E., Davies J.E. Conjugative junctions in RP4-mediated mating of Escherichia coli. J. Bacteriol. 2000;182(10):2709–2715. doi: 10.1128/jb.182.10.2709-2715.2000. [DOI] [PMC free article] [PubMed] [Google Scholar]
+- Soares A., Guieysse B., Jefferson B., Cartmell E., Lester J.N. Nonylphenol in the environment: a critical review on occurrence, fate, toxicity and treatment in wastewaters. Environ. Int. 2008;34(7):1033–1049. doi: 10.1016/j.envint.2008.01.004. [DOI] [PubMed] [Google Scholar]
+- Wakimoto N., Nishi J., Sheikh J., Nataro J.P., Sarantuya J., Iwashita M., et al. Quantitative biofilm assay using a microtiter plate to screen for enteroaggregative Escherichia coli. Am. J. Trop. Med. Hyg. 2004;71(5):687–690. [PubMed] [Google Scholar]
+- Wang Q., Liu L., Hou Z., Wang L., Ma D., Yang G., et al. Heavy metal copper accelerates the conjugative transfer of antibiotic resistance genes in freshwater microcosms. Sci. Total Environ. 2020;717 doi: 10.1016/j.scitotenv.2020.137055. [DOI] [PubMed] [Google Scholar]
+- Yang Y., Liu W., Xu C., Wei B., Wang J. Antibiotic resistance genes in lakes from middle and lower reaches of the Yangtze River, China: effect of land use and sediment characteristics. Chemosphere. 2017;178:19–25. doi: 10.1016/j.chemosphere.2017.03.041. [DOI] [PubMed] [Google Scholar]
+- Zhang C., Eganhouse R.P., Pontolillo J., Cozzarelli I.M., Wang Y. Determination of nonylphenol isomers in landfill leachate and municipal wastewater using steam distillation extraction coupled with comprehensive two-dimensional gas chromatography/time-of-flight mass spectrometry. J. Chromatogr. A. 2012;1230:110–116. doi: 10.1016/j.chroma.2011.12.109. [DOI] [PubMed] [Google Scholar]
+- Zhang J., Liu L., Ning X., Lin M., Lai X. Isomer-specific analysis of nonylphenol and their transformation products in environment: a review. Sci. Total. Environ. 2023;901 doi: 10.1016/j.scitotenv.2023.165982. [DOI] [PubMed] [Google Scholar]
+- Zhang M.S., Li W., Zhang W.G., Li Y.T., Li J.Y., Gao Y. Agricultural land-use change exacerbates the dissemination of antibiotic resistance genes via surface runoffs in Lake Tai Basin, China. Ecotoxicol. Environ. Saf. 2021;220 doi: 10.1016/j.ecoenv.2021.112328. [DOI] [PubMed] [Google Scholar]
+- Zhang Y., Gu A.Z., Cen T., Li X., He M., Li D., et al. Sub-inhibitory concentrations of heavy metals facilitate the horizontal transfer of plasmid-mediated antibiotic resistance genes in water environment. Environ. Pollut. 2018;237:74–82. doi: 10.1016/j.envpol.2018.01.032. [DOI] [PubMed] [Google Scholar]
+- Zhuang M., Achmon Y., Cao Y., Liang X., Chen L., Wang H., et al. Distribution of antibiotic resistance genes in the environment. Environ Pollut. 2021;285 doi: 10.1016/j.envpol.2021.117402. [DOI] [PubMed] [Google Scholar]
+Associated Data
+This section collects any data citations, data availability statements, or supplementary materials included in this article.
+Supplementary Materials
+Data Availability Statement
+Data will be made available on request<system>ERROR: Failed to fetch URL. Status: 404. This may indicate the page is not accessible or the server is down.</system>
+[2026-05-21T15:34:04.246983] 迭代进度: 0/3 (初始: 21)
+
+[2026-05-21T15:34:32.248196] 迭代进度: 0/3 (初始: 21)
+文献搜索完成。现在基于所有信息完成诊断并撰写假设。关键发现：
+
+1. **Vina 疏水偏置**（skill 明确记录）：过度奖励非极性表面积埋藏
+2. **当前复合评分** (`0.8*BE + 0.2*route_quality`)：trivial 分子即使 `route_quality=0` 仍因 Vina 偏置带来的优秀 BE 挤入 top-N
+3. **知识库已有方向**："needs LogP penalty in composite scoring"
+
+让我输出诊断文档并提出 H030 假设。<system>File successfully overwritten. Current size: 4735 bytes.</system>阶段二诊断完成。进入阶段三：代码演进。{"stage": "诊断", "duration_seconds": 297.6, "message": "阶段「诊断」完成，耗时 297.6s"}{"stage": "代码演进", "message": "阶段「代码演进」开始"}
+[2026-05-21T15:35:02.248953] 迭代进度: 0/3 (初始: 21)
