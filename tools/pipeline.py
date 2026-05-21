@@ -173,18 +173,19 @@ def run_evolutionary_pipeline(
 
     unique_docked.sort(key=lambda x: x.get("binding_energy", 999))
 
-    # H009: 共识对接 — 对 top 候选分子用多次独立对接取中位数
+    # H009 + H029: 共识对接 — 对 top 候选分子用多次独立对接 + 多构象取中位数
     # Coscientist 模式："performing experiments multiple times"
+    # H029 改进：每次对接使用 3 个构象取最优，进一步消除构象采样偏差
     # 消除单次对接的随机噪声，提升最终排名可靠性
     N_CONSENSUS = min(n_top * 2, len(unique_docked))
-    log(f"共识对接: 对 top {N_CONSENSUS} 候选执行 3 次独立对接取中位数...", log_lines)
+    log(f"共识对接 (H009+H029): 对 top {N_CONSENSUS} 候选执行 3 次独立对接 x 3 构象取中位数...", log_lines)
     consensus_top = unique_docked[:N_CONSENSUS]
     consensus_results = []
     for i, candidate in enumerate(consensus_top):
         smiles = candidate.get("smiles", "")
         if not smiles:
             continue
-        cresult = dock_molecule_consensus(smiles)
+        cresult = dock_molecule_consensus(smiles, n_conformers=3)
         if cresult.get("success"):
             candidate["binding_energy"] = cresult["binding_energy"]
             candidate["consensus_std"] = cresult.get("std_energy", 0.0)

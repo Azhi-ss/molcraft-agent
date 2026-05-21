@@ -128,16 +128,17 @@
 
 ---
 
-## Current Baseline (TYK2 5C01 — CORRECTED DOCKING COORDINATES)
+## Current Baseline (TYK2 5C01 — H029 VERIFIED)
 
-> Updated Round 5 (H028 VERIFIED).
+> Updated Round X (H029 VERIFIED).
 
 | Metric | Value |
 |--------|-------|
-| Best BE | -9.19 |
-| Avg BE | -8.42 |
-| Trivial ratio | 0/10 |
-| Dominant chemistry | Suzuki biaryl + quinazoline/imidazopyridine scaffolds |
+| Best BE | **-10.099** |
+| Avg BE | **-9.412** |
+| Trivial ratio | 2/10 ⚠️ |
+| Dominant chemistry | Polycyclic aromatics (pyrene/phenanthrene derivatives) |
+| Note | Trivial regression due to Vina hydrophobic bias; needs LogP penalty in composite scoring |
 
 ---
 
@@ -151,3 +152,4 @@
 | H026 | Expanded large aromatic scaffold library (anthracene, phenanthrene, etc.) | ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989. Large scaffolds unused by pipeline, MW filter blocks them. Discovered Suzuki SMARTS bug in process. |
 | H027 | Relaxed molecular filters (max_rings 7→9, max_sa 6.0→7.0) | ✅ VERIFIED — Best BE +2.0%, Avg +4.2% |
 | H028 | Fix Suzuki SMARTS specificity (prevent intra-ring false matches) | ✅ VERIFIED — Trivial ratio restored to 0/10. BE -9.19 within baseline variance. Suzuki [c;R][c;R]→[c;R]!@[c;R] prevents false matches on fused rings. |
+| H029 | Multi-conformer docking enhancement (3 conformers × 3 seeds consensus) | ✅ VERIFIED — Best BE -9.19→-10.099 (+9.9%), Avg -8.42→-9.412 (+11.8%). Only used in consensus stage to control cost. Trivial ratio regression (2/10) due to Vina hydrophobic bias selecting polycyclic aromatics. |
