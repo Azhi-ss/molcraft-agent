@@ -1,25 +1,30 @@
 #!/usr/bin/env python3
-"""PocketXMol GPU Inference Server.
+"""PocketXMol GPU Inference Server — Async Job Mode.
 
-FastAPI service that exposes PocketXMol molecule generation via HTTP API.
-Deploy on a GPU server and set DIFFUSION_API_URL on the Agent machine.
+FastAPI service with async job queue. POST /generate creates a job and returns
+immediately; Agent polls GET /job/{id} for status and GET /job/{id}/result for output.
 
 Usage:
     cd /root/PocketXMol
-    pip install fastapi uvicorn
-    python /path/to/server/main.py --pxm-dir /root/PocketXMol --port 8000
+    pip install fastapi uvicorn pyyaml
+    python server/main.py --pxm-dir /root/PocketXMol --port 8000
 
 Endpoints:
-    GET  /health  - Health check
-    POST /generate - Generate molecules for a protein pocket
+    GET  /health          - Health + GPU check
+    POST /generate        - Submit job → {job_id, status: "running"}
+    GET  /job/{job_id}    - Job status {status, elapsed_s, message}
+    GET  /job/{job_id}/result - Final molecules (or 404/503 if not ready)
 """
 import argparse
+import csv
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import uuid
 import yaml
 from pathlib import Path
 from typing import Optional
@@ -29,10 +34,14 @@ from pydantic import BaseModel, Field
 
 app = FastAPI(title="PocketXMol Inference Server")
 
-# Configured at startup
+# ── Global state ──
 _PXM_DIR: str = ""
 _DEVICE: str = "cuda:0"
 _CHECKPOINT_EXISTS: bool = False
+_jobs: dict[str, dict] = {}
+_jobs_lock = threading.Lock()
+
+# ── Models ──
 
 
 class GenerateRequest(BaseModel):
@@ -46,6 +55,12 @@ class GenerateRequest(BaseModel):
     task: str = Field(default="dock_smallmol", description="Task type")
 
 
+class GenerateAccepted(BaseModel):
+    status: str
+    job_id: str
+    message: str = ""
+
+
 class MoleculeResult(BaseModel):
     smiles: str
     score: float = 0.0
@@ -55,56 +70,138 @@ class MoleculeResult(BaseModel):
     sa_score: Optional[float] = None
 
 
-class GenerateResponse(BaseModel):
+class JobStatus(BaseModel):
+    status: str  # "running" | "completed" | "failed"
+    elapsed_seconds: float
+    molecule_count: int = 0
+    message: str = ""
+
+
+class JobResult(BaseModel):
     status: str
     molecules: list[MoleculeResult]
     generation_time_seconds: float
-    message: str = ""
 
 
 class HealthResponse(BaseModel):
     status: str
     model_loaded: bool
     gpu_available: bool
+    active_jobs: int
     device: str = ""
     pxm_dir: str = ""
+
+
+# ── Endpoints ──
 
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     import torch
+    with _jobs_lock:
+        active = sum(1 for j in _jobs.values() if j["status"] == "running")
     return HealthResponse(
         status="ok" if _CHECKPOINT_EXISTS else "checkpoint_missing",
         model_loaded=_CHECKPOINT_EXISTS,
         gpu_available=torch.cuda.is_available(),
+        active_jobs=active,
         device=_DEVICE,
         pxm_dir=_PXM_DIR,
     )
 
 
-@app.post("/generate", response_model=GenerateResponse)
-def generate_molecules(request: GenerateRequest):
+@app.post("/generate", response_model=GenerateAccepted, status_code=202)
+def submit_generation(request: GenerateRequest):
     if not _CHECKPOINT_EXISTS:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Model checkpoint not found at {_PXM_DIR}/data/trained_models/pxm/checkpoints/pocketxmol.ckpt",
-        )
+        raise HTTPException(status_code=503, detail="Model checkpoint not found")
 
-    start_time = time.time()
+    job_id = uuid.uuid4().hex[:12]
+
+    with _jobs_lock:
+        _jobs[job_id] = {
+            "status": "running",
+            "created_at": time.time(),
+            "result": None,
+            "error": None,
+            "thread": None,
+        }
+
+    thread = threading.Thread(
+        target=_run_job,
+        args=(job_id, request),
+        daemon=True,
+    )
+    thread.start()
+
+    with _jobs_lock:
+        _jobs[job_id]["thread"] = thread
+
+    print(f"[Job {job_id}] Accepted: n={request.n_molecules}", flush=True)
+    return GenerateAccepted(
+        status="running",
+        job_id=job_id,
+        message=f"Job accepted, {request.n_molecules} molecules requested",
+    )
+
+
+@app.get("/job/{job_id}", response_model=JobStatus)
+def get_job_status(job_id: str):
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+    elapsed = time.time() - job["created_at"]
+    mol_count = len(job["result"]) if job["result"] else 0
+    return JobStatus(
+        status=job["status"],
+        elapsed_seconds=round(elapsed, 1),
+        molecule_count=mol_count,
+        message=job["error"] or "",
+    )
+
+
+@app.get("/job/{job_id}/result", response_model=JobResult)
+def get_job_result(job_id: str):
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    if job["status"] == "running":
+        elapsed = time.time() - job["created_at"]
+        raise HTTPException(
+            status_code=202,
+            detail=f"Job still running ({elapsed:.0f}s elapsed)",
+        )
+    if job["status"] == "failed":
+        raise HTTPException(status_code=500, detail=job["error"] or "Unknown error")
+
+    elapsed = job.get("finished_at", time.time()) - job["created_at"]
+    return JobResult(
+        status="completed",
+        molecules=job["result"] or [],
+        generation_time_seconds=round(elapsed, 1),
+    )
+
+
+# ── Background job runner ──
+
+
+def _run_job(job_id: str, request: GenerateRequest):
+    """Run PocketXMol inference in background, update job on completion."""
+    start = time.time()
+    pdb_path = None
     outdir = None
 
     try:
-        # Write PDB to temp file
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".pdb", delete=False, prefix="pxm_input_"
         ) as f:
             f.write(request.pdb_content)
             pdb_path = f.name
 
-        # Create temp output dir
         outdir = tempfile.mkdtemp(prefix="pxm_output_")
 
-        # Generate task-specific YAML config
         config_path = _write_task_config(
             pdb_path=pdb_path,
             outdir=outdir,
@@ -114,38 +211,53 @@ def generate_molecules(request: GenerateRequest):
             task=request.task,
         )
 
-        # Run PocketXMol via subprocess
         _run_sample_use(config_path, outdir)
-
-        # Read SDF outputs → SMILES
         molecules = _parse_sdf_outputs(outdir)
 
-        gen_time = time.time() - start_time
-        return GenerateResponse(
-            status="success",
-            molecules=molecules,
-            generation_time_seconds=round(gen_time, 1),
-        )
+        elapsed = time.time() - start
+        with _jobs_lock:
+            _jobs[job_id]["status"] = "completed"
+            _jobs[job_id]["result"] = molecules
+            _jobs[job_id]["finished_at"] = time.time()
+
+        print(f"[Job {job_id}] Done: {len(molecules)} mols in {elapsed:.0f}s", flush=True)
 
     except Exception as e:
-        gen_time = time.time() - start_time
-        return GenerateResponse(
-            status="error",
-            molecules=[],
-            generation_time_seconds=round(gen_time, 1),
-            message=str(e),
-        )
+        elapsed = time.time() - start
+        with _jobs_lock:
+            _jobs[job_id]["status"] = "failed"
+            _jobs[job_id]["error"] = str(e)
+
+        print(f"[Job {job_id}] Failed ({elapsed:.0f}s): {e}", flush=True)
 
     finally:
-        # Clean up PDB input
-        try:
-            os.unlink(pdb_path)
-        except Exception:
-            pass
-        # Clean up output dir (optional — comment out to keep for debugging)
-        # if outdir:
-        #     import shutil
-        #     shutil.rmtree(outdir, ignore_errors=True)
+        if pdb_path:
+            try:
+                os.unlink(pdb_path)
+            except Exception:
+                pass
+
+
+# ── Background cleanup ──
+
+
+def _cleanup_old_jobs():
+    """Remove jobs older than 1 hour (daemon thread)."""
+    while True:
+        time.sleep(300)  # Every 5 minutes
+        cutoff = time.time() - 3600
+        with _jobs_lock:
+            stale = [
+                jid for jid, j in _jobs.items()
+                if j["created_at"] < cutoff and j["status"] != "running"
+            ]
+            for jid in stale:
+                del _jobs[jid]
+        if stale:
+            print(f"[Cleanup] Removed {len(stale)} old jobs", flush=True)
+
+
+# ── PocketXMol integration (unchanged logic) ──
 
 
 def _write_task_config(
@@ -156,24 +268,16 @@ def _write_task_config(
     pocket_radius: float,
     task: str,
 ) -> str:
-    """Generate a PocketXMol task YAML config dynamically.
-
-    For de novo molecule design (no ligand input), use sbdd_simple template.
-    For docking (with known ligand), use dock_smallmol template.
-    """
-    # Use sbdd_simple for de novo generation (no input ligand required)
     template_name = "sbdd_simple" if task in ("dock_smallmol", "sbdd") else task
     pxm_config_dir = os.path.join(_PXM_DIR, "configs", "sample", "examples")
     template_path = os.path.join(pxm_config_dir, f"{template_name}.yml")
 
-    # Load template if exists, otherwise use minimal config
     if os.path.exists(template_path):
         with open(template_path) as f:
             config = yaml.safe_load(f)
     else:
         config = {}
 
-    # Override with request parameters
     config.setdefault("sample", {})
     config["sample"]["num_mols"] = n_molecules
     config["sample"]["seed"] = 2024
@@ -181,7 +285,6 @@ def _write_task_config(
     config.setdefault("data", {})
     config["data"]["protein_path"] = pdb_path
     config["data"]["is_pep"] = False
-    # Remove input_ligand — we're doing de novo generation
     config["data"].pop("input_ligand", None)
 
     config["data"].setdefault("pocket_args", {})
@@ -195,7 +298,6 @@ def _write_task_config(
     config["transforms"].setdefault("featurizer_pocket", {})
     config["transforms"]["featurizer_pocket"]["center"] = pocket_center
 
-    # Ensure variable_mol_size for sbdd (controls generated molecule size)
     if "variable_mol_size" not in config["transforms"]:
         config["transforms"]["variable_mol_size"] = {
             "name": "variable_mol_size",
@@ -207,7 +309,6 @@ def _write_task_config(
             },
         }
 
-    # Set task type and noise
     config.setdefault("task", {})
     config["task"]["name"] = "sbdd"
     config["task"]["transform"] = {"name": "sbdd"}
@@ -215,7 +316,6 @@ def _write_task_config(
     config.setdefault("noise", {})
     config["noise"]["name"] = "sbdd"
 
-    # Write to temp file
     config_out = os.path.join(outdir, "task_config.yml")
     with open(config_out, "w") as f:
         yaml.dump(config, f, default_flow_style=False)
@@ -224,7 +324,6 @@ def _write_task_config(
 
 
 def _run_sample_use(config_path: str, outdir: str):
-    """Run PocketXMol's sample_use.py as a subprocess."""
     sample_script = os.path.join(_PXM_DIR, "scripts", "sample_use.py")
     model_config = os.path.join(_PXM_DIR, "configs", "sample", "pxm.yml")
 
@@ -236,13 +335,13 @@ def _run_sample_use(config_path: str, outdir: str):
         "--device", _DEVICE,
     ]
 
-    print(f"[PXM] Running: {' '.join(cmd)}", flush=True)
+    print(f"[PXM] Job start: {' '.join(cmd)}", flush=True)
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
-        timeout=1800,  # 30 min max
-        cwd=_PXM_DIR,  # Run from PocketXMol directory (imports depend on this)
+        timeout=1800,
+        cwd=_PXM_DIR,
     )
 
     if result.returncode != 0:
@@ -252,83 +351,31 @@ def _run_sample_use(config_path: str, outdir: str):
             f"STDERR: {result.stderr[-1000:]}"
         )
 
-    print(f"[PXM] Completed successfully", flush=True)
+    print(f"[PXM] Completed", flush=True)
 
 
 def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
-    """Read PocketXMol outputs: gen_info.csv for SMILES + main SDFs for properties."""
     from rdkit import Chem
     from rdkit.Chem import QED, Descriptors
 
     molecules = []
     out_path = Path(outdir)
 
-    # Find the run subdirectory (named like "task_config_pxm_*")
     run_dirs = sorted(out_path.glob("task_config_pxm_*"))
     if not run_dirs:
         return molecules
     run_dir = run_dirs[0]
 
-    # Strategy 1: Read gen_info.csv for SMILES (already reconstructed by PocketXMol)
     gen_csv = run_dir / "gen_info.csv"
-    smiles_from_csv: dict[str, dict] = {}  # smiles -> row data
     if gen_csv.exists():
-        import csv
         with open(gen_csv) as f:
             reader = csv.DictReader(f)
             for row in reader:
                 smi = row.get("smiles", "").strip()
-                if smi and Chem.MolFromSmiles(smi) is not None:
-                    smiles_from_csv[smi] = {
-                        "cfd": float(row.get("cfd_traj", 0) or 0),
-                        "cfd_pos": float(row.get("cfd_pos", 0) or 0),
-                        "filename": row.get("filename", ""),
-                    }
-
-    # If we have gen_info.csv SMILES, use those (most reliable)
-    if smiles_from_csv:
-        for smi, meta in smiles_from_csv.items():
-            mol = Chem.MolFromSmiles(smi)
-            if mol is None:
-                continue
-
-            qed_val = mw_val = logp_val = sa_val = None
-            try:
-                qed_val = round(QED.qed(mol), 3)
-                mw_val = round(Descriptors.MolWt(mol), 1)
-                logp_val = round(Descriptors.MolLogP(mol), 2)
-            except Exception:
-                pass
-            try:
-                from rdkit.Chem import RDConfig
-                sa_path = os.path.join(RDConfig.RDContribDir, "SA_Score")
-                if sa_path not in sys.path:
-                    sys.path.append(sa_path)
-                import sascorer
-                sa_val = round(sascorer.calculateScore(mol), 2)
-            except Exception:
-                pass
-
-            molecules.append(MoleculeResult(
-                smiles=smi,
-                score=round(meta["cfd"], 3),
-                qed=qed_val,
-                mw=mw_val,
-                logp=logp_val,
-                sa_score=sa_val,
-            ))
-        return molecules
-
-    # Strategy 2: Fallback — parse main SDF files only (not raw intermediates)
-    sdf_dir = run_dir / f"{run_dir.name}_SDF"
-    if sdf_dir.exists():
-        for sdf_file in sorted(sdf_dir.glob("[0-9]*.sdf")):
-            supplier = Chem.SDMolSupplier(str(sdf_file))
-            for mol in supplier:
-                if mol is None:
+                if not smi:
                     continue
-                smiles = Chem.MolToSmiles(mol, canonical=True)
-                if not smiles:
+                mol = Chem.MolFromSmiles(smi)
+                if mol is None:
                     continue
 
                 qed_val = mw_val = logp_val = sa_val = None
@@ -348,6 +395,42 @@ def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
                 except Exception:
                     pass
 
+                cfd = 0.0
+                try:
+                    cfd = float(row.get("cfd_traj", 0) or 0)
+                except Exception:
+                    pass
+
+                molecules.append(MoleculeResult(
+                    smiles=smi,
+                    score=round(cfd, 3),
+                    qed=qed_val,
+                    mw=mw_val,
+                    logp=logp_val,
+                    sa_score=sa_val,
+                ))
+        return molecules
+
+    # Fallback: parse SDF files
+    sdf_dir = run_dir / f"{run_dir.name}_SDF"
+    if sdf_dir.exists():
+        for sdf_file in sorted(sdf_dir.glob("[0-9]*.sdf")):
+            if "bad" in sdf_file.name:
+                continue
+            supplier = Chem.SDMolSupplier(str(sdf_file))
+            for mol in supplier:
+                if mol is None:
+                    continue
+                smiles = Chem.MolToSmiles(mol, canonical=True)
+                if not smiles:
+                    continue
+                qed_val = mw_val = logp_val = sa_val = None
+                try:
+                    qed_val = round(QED.qed(mol), 3)
+                    mw_val = round(Descriptors.MolWt(mol), 1)
+                    logp_val = round(Descriptors.MolLogP(mol), 2)
+                except Exception:
+                    pass
                 score = 0.0
                 for prop_name in ("confidence", "score", "cfd_traj"):
                     if mol.HasProp(prop_name):
@@ -356,7 +439,6 @@ def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
                             break
                         except Exception:
                             pass
-
                 molecules.append(MoleculeResult(
                     smiles=smiles,
                     score=score,
@@ -367,6 +449,9 @@ def _parse_sdf_outputs(outdir: str) -> list[MoleculeResult]:
                 ))
 
     return molecules
+
+
+# ── Entry point ──
 
 
 def main():
@@ -383,13 +468,11 @@ def main():
     _PXM_DIR = os.path.abspath(args.pxm_dir)
     _DEVICE = args.device
 
-    # Verify PocketXMol installation
     sample_script = os.path.join(_PXM_DIR, "scripts", "sample_use.py")
     if not os.path.exists(sample_script):
         print(f"[ERROR] sample_use.py not found at {sample_script}")
         sys.exit(1)
 
-    # Check model checkpoint (pxm_use for newer releases, pxm for older)
     ckpt_path = os.path.join(
         _PXM_DIR, "data", "trained_models", "pxm_use", "checkpoints", "pocketxmol.ckpt"
     )
@@ -399,15 +482,15 @@ def main():
         )
     _CHECKPOINT_EXISTS = os.path.exists(ckpt_path)
     if _CHECKPOINT_EXISTS:
-        print(f"[OK] Checkpoint found: {ckpt_path}")
+        print(f"[OK] Checkpoint: {ckpt_path}")
     else:
         print(f"[WARN] Checkpoint not found: {ckpt_path}")
-        print(f"       Download from https://zenodo.org/records/17801271")
-        print(f"       Extract: tar -zxvf model_weights.tar.gz -C {_PXM_DIR}")
-        print(f"       Server will start but /generate will return 503 until checkpoint is available")
+
+    # Start cleanup daemon
+    threading.Thread(target=_cleanup_old_jobs, daemon=True).start()
 
     import uvicorn
-    print(f"[OK] Starting server on {args.host}:{args.port}")
+    print(f"[OK] Starting on {args.host}:{args.port} (async jobs, device={_DEVICE})")
     uvicorn.run(app, host=args.host, port=args.port)
 
 

@@ -1,0 +1,1546 @@
+/home/dministrator/Lab/clones/molcraft-agent/.venv/lib/python3.12/site-packages/fastmcp/server/auth/providers/jwt.py:10: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import JsonWebKey, JsonWebToken
+[2026-05-21T16:07:23.748666] MolCraft Agent 启动
+============================================================
+模式: autoresearch（LLM 自主迭代实验）
+指令书: /home/dministrator/Lab/clones/molcraft-agent/program.md
+迭代记录: /home/dministrator/Lab/clones/molcraft-agent/docs/iteration_log.jsonl
+日志文件: /home/dministrator/Lab/clones/molcraft-agent/output/result.log
+配置: 最大 3 次迭代 | 最长 90 分钟
+[配置] 使用自定义 LLM: deepseek-v4-pro
+[配置] Provider: openai_legacy
+[配置] API Endpoint: https://api.deepseek.com/v1
+(yolo 模式下自动批准所有操作)
+
+好的，MolCraft Agent 启动。让我先完成启动检查。<system>Todo list updated</system><system>Command executed successfully.</system>=== 1. data/target.pdb ===
+-rw-r--r-- 1 dministrator dministrator 160138  5月 16 20:33 data/target.pdb
+=== 2. data/receptor.pdbqt ===
+-rw-r--r-- 1 dministrator dministrator 158815  5月 17 15:13 data/receptor.pdbqt
+=== 3. output/ ===
+total 4024
+drwxr-xr-x  3 dministrator dministrator   4096  5月 21 16:07 .
+drwxr-xr-x 23 dministrator dministrator   4096  5月 21 16:01 ..
+-rw-r--r--  1 dministrator dministrator 365827  5月 19 14:03 cytoscape.min.js
+-rw-r--r--  1 dministrator dministrator 279706  5月 19 13:30 d3.v7.min.js
+-rw-r--r--  1 dministrator dministrator  26107  5月 19 15:07 evomap.html
+-rw-r--r--  1 dministrator dministrator   6091  5月 21 01:22 fix_format.py
+-rw-r--r--  1 dministrator dministrator   3938  5月 21 01:22 gen_test_csv.py
+-rw-r--r--  1 dministrator dministrator  16468  5月 21 15:47 molecules.jsonl
+-rw-r--r--  1 dministrator dministrator 262533  5月 21 15:51 nohup_0521_1528.out
+-rw-r--r--  1 dministrator dministrator 142899  5月 21 16:03 nohup_0521_1553.out
+-rw-r--r--  1 dministrator dministrator  65501  5月 21 16:05 nohup_0521_1601.out
+-rw-r--r--  1 dministrator dministrator   1011  5月 21 16:07 nohup_0521_1607.out
+-rw-r--r--  1 dministrator dministrator 268579  5月 20 23:58 nohup2.out
+-rw-r--r--  1 dministrator dministrator 151170  5月 20 23:39 nohup.out
+-rw-r--r--  1 dministrator dministrator 331954  5月 21 00:51 nohup_round22-24.out
+-rw-r--r--  1 dministrator dministrator 207388  5月 21 15:21 nohup_skill_test.out
+-rw-r--r--  1 dministrator dministrator 525716  5月 20 03:56 result.171b2ca1.tmp.log
+-rw-------  1 dministrator dministrator   1632  5月 20 03:55 result.171b2ca1.tmp.pipeline.tmp.csv
+-rw-r--r--  1 dministrator dministrator  69566  5月 17 21:49 result_20260517_211034.zip
+-rw-------  1 dministrator dministrator   2250  5月 18 02:17 result_20260518_022200.zip
+-rw-r--r--  1 dministrator dministrator   5927  5月 20 00:45 result.38440d45.tmp.log
+-rw-r--r--  1 dministrator dministrator   1882  5月 21 16:07 result.5f952e02.tmp.log
+-rw-r--r--  1 dministrator dministrator 146960  5月 20 00:50 result.83326f29.tmp.log
+-rw-------  1 dministrator dministrator   1827  5月 21 15:47 result.csv
+-rw-r--r--  1 dministrator dministrator  22197  5月 21 15:21 result.f91b2a90.tmp.log
+-rw-r--r--  1 dministrator dministrator   1423  5月 20 00:15 result_fixed.csv
+-rw-r--r--  1 dministrator dministrator 374481  5月 17 17:11 result.json
+-rw-r--r--  1 dministrator dministrator  87040  5月 21 15:51 result.log
+-rw-r--r--  1 dministrator dministrator  82317  5月 20 23:58 result.log.bak
+-rw-r--r--  1 dministrator dministrator 216656  5月 20 23:32 result_round20_backup.log
+-rw-r--r--  1 dministrator dministrator 216656  5月 20 23:35 result_round21_backup.log
+-rw-r--r--  1 dministrator dministrator    198  5月 20 00:15 result_single.csv
+-rw-------  1 dministrator dministrator  17646  5月 21 15:51 result.zip
+-rw-------  1 dministrator dministrator  93593  5月 20 01:39 result.zip.bak
+-rw-r--r--  1 dministrator dministrator   3750  5月 21 01:22 route_analysis.csv
+drwxr-xr-x  3 dministrator dministrator   4096  5月 18 00:49 runs
+-rw-r--r--  1 dministrator dministrator  10660  5月 20 01:00 scoring_sim.py
+-rw-r--r--  1 dministrator dministrator   1098  5月 21 01:22 single_step_nobyproduct_result.csv
+-rw-r--r--  1 dministrator dministrator   1174  5月 21 01:22 single_step_result.csv
+=== 4. papers/ ===
+total 384
+drwxr-xr-x  3 dministrator dministrator   4096  5月 16 20:33 .
+drwxr-xr-x 23 dministrator dministrator   4096  5月 21 16:01 ..
+-rw-r--r--  1 dministrator dministrator 202702  5月 16 20:33 autonomous_agents_survey.md
+-rw-r--r--  1 dministrator dministrator 101052  5月 16 20:33 coscientist.md
+-rw-r--r--  1 dministrator dministrator  69827  5月 16 20:33 deep_lead_optimization_jacs.md
+drwxr-xr-x  2 dministrator dministrator   4096  5月 16 20:33 pdf
+=== 5. agent.yaml ===
+-rw-r--r-- 1 dministrator dministrator 1143  5月 20 23:16 agent.yaml
+version: 1
+agent:
+  extend: default
+  tools:
+    # Kimi CLI 默认工具
+    - "kimi_cli.tools.shell:Shell"
+    - "kimi_cli.tools.web:SearchWeb"
+    - "kimi_cli.tools.web:FetchURL"
+    - "kimi_cli.tools.file:ReadFile"
+    - "kimi_cli.tools.file:WriteFile"
+    - "kimi_cli.tools.file:Glob"
+    - "kimi_cli.tools.file:Grep"
+    - "kimi_cli.tools.file:StrReplaceFile"
+    - "kimi_cli.tools.todo:SetTodoList"
+    - "kimi_cli.tools.think:Think"
+
+    # MolCraft Agent 自定义化学工具
+    - "molcraft_agent.tools:IdentifyTarget"
+    - "molcraft_agent.tools:GenerateMolecules"
+    - "molcraft_agent.tools:DockMolecules"
+    - "molcraft_agent.tools:PlanSynthesis"
+    - "molcraft_agent.tools:EvaluateMolecule"
+    - "molcraft_agent.tools:RunPipeline"
+
+    # 迭代报告工具（Agent 主动报告迭代完成）
+    - "molcraft_agent.tools:ReportIteration"
+
+    # 扩散模型生成工具（PocketXMol，需 GPU 服务器）
+    - "molcraft_agent.tools:DiffusionGenerate"
+
+    # 阶段标记工具（Agent 四阶段：诊断、代码演进、实验验证、复盘）
+    - "molcraft_agent.tools:BeginStage"
+    - "molcraft_agent.tools:EndStage"
+=== 6. knowledge_base ===
+-rw-r--r-- 1 dministrator dministrator 7894  5月 21 16:02 docs/knowledge_base.md
+
+[2026-05-21T16:07:52.247317] 迭代进度: 0/3 (初始: 22)
+启动检查全部通过。`docs/knowledge_base.md` 已存在 → **非首次运行**，跳过论文全文阅读，以知识库为起点。让我读取知识库和相关技能文档。<system>166 lines read from file starting from line 1. End of file reached.</system>     1	# MolCraft Agent — Knowledge Base
+     2	
+     3	> Auto-generated strategy repository. Updated after each experimental round.
+     4	
+     5	---
+     6	
+     7	## Strategy Catalog
+     8	
+     9	### H001 — SA Score Filter Tightening
+    10	- **Source**: Deep Lead Optimization (JACS 2024)
+    11	- **Tech**: SA threshold 8.0→6.0, added max_rings=7, fused ring penalty 0.5→1.0, spiro 1.0→1.5, bridgehead 1.5→2.0
+    12	- **When to use**: When generating too many unsynthesizable molecules
+    13	- **Status**: ✅ VERIFIED
+    14	
+    15	### H002 — Docking-Guided Generation
+    16	- **Source**: MOOSE-Chem (Yang et al., 2025) + Coscientist (Boiko et al., 2023)
+    17	- **Tech**: Embed docking as fitness function in generation loop; batch_size=10, n_generations=3, top_k=5
+    18	- **When to use**: Always (default on). Verified +0.4~0.8 kcal/mol improvement
+    19	- **Status**: ✅ VERIFIED
+    20	
+    21	### H003 — Recursive Multi-Step Synthesis
+    22	- **Source**: LARC (Baker et al., 2025)
+    23	- **Tech**: max_depth=3 recursive retrosynthesis; continue breaking intermediates until simple
+    24	- **When to use**: Always (default in plan_synthesis_v2)
+    25	- **Status**: ✅ VERIFIED
+    26	
+    27	### H009 — Consensus Docking
+    28	- **Source**: Coscientist (Boiko et al., 2023) — "performing experiments multiple times"
+    29	- **Tech**: 3 independent docking runs with different seeds, median as consensus score
+    30	- **When to use**: For final top-N ranking
+    31	- **Status**: ✅ VERIFIED
+    32	
+    33	### H010 — Scaffold Hopping Mutation
+    34	- **Source**: Deep Lead Optimization (JACS 2024)
+    35	- **Tech**: BRICS decompose → identify core → replace with different scaffold → reattach side chains
+    36	- **When to use**: ~20% probability in mutation; improves scaffold diversity
+    37	- **Status**: ✅ VERIFIED
+    38	
+    39	### H011 — Diversity-Preserving Selection (MMD)
+    40	- **Source**: MOOSE-Chem (Yang et al., 2025)
+    41	- **Tech**: Greedy Maximum Minimal Distance selection with 0.7×BE + 0.3×diversity
+    42	- **When to use**: During seed selection in docking guidance (top_k=5 BE + rest diversity)
+    43	- **Status**: ✅ VERIFIED — Best BE improved +19.3%
+    44	
+    45	### H012 — Route Quality Scoring (Agent-as-a-Judge)
+    46	- **Source**: LARC (Baker et al., 2025)
+    47	- **Tech**: Multi-step route scoring: reactant count, complexity ratio, step count bonus
+    48	- **When to use**: Composite ranking 0.8×BE + 0.2×route_quality
+    49	- **Status**: ✅ VERIFIED
+    50	
+    51	### H013 — Crossover (Fragment Recombination)
+    52	- **Source**: MOOSE-Chem (Yang et al., 2025) + MolLEO (Wang et al., 2024b)
+    53	- **Tech**: Swap Murcko scaffolds between parent molecules, reattach side chains
+    54	- **When to use**: 25% probability in combine strategy and offspring generation
+    55	- **Status**: ✅ VERIFIED
+    56	
+    57	### H014 — Mass Balance Validation
+    58	- **Source**: LARC (Baker et al., 2025)
+    59	- **Tech**: Validate reactant/target heavy atom ratio 0.7–1.3; reject rules that only match partial fragments
+    60	- **When to use**: Run during _run_retro_rule; eliminates false matches
+    61	- **Status**: ✅ VERIFIED
+    62	
+    63	### H015 — Saturated N-Heterocycle Synthesis Rules
+    64	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    65	- **Tech**: Added THIQ, indoline, tetrahydroquinoline, saturated cyclic amine C-N cleavage, benzazepine rules
+    66	- **When to use**: Always in RETRO_RULES
+    67	- **Status**: ✅ VERIFIED — achieved 0/10 trivial routes
+    68	
+    69	### H016 — Diels-Alder Retro Rules
+    70	- **Source**: JACS 2024 (cycloaddition as key synthetic strategy)
+    71	- **Tech**: Cyclohexene→butadiene+dienophile, dihydropyran→oxa-diene+dienophile
+    72	- **When to use**: Always in RETRO_RULES
+    73	- **Status**: ✅ VERIFIED
+    74	
+    75	### H017 — Lactone/Epoxide/Pyrazole/sp3C-sp3C Rules
+    76	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    77	- **Tech**: Lactone hydrolysis, epoxide ring-opening, Knorr pyrazole, sp3 C-C Grignard retro, cyclic ether opening
+    78	- **When to use**: Always in RETRO_RULES
+    79	- **Status**: ✅ VERIFIED
+    80	
+    81	### H018 — BRICS Fragment Recombination (Fixed)
+    82	- **Source**: JACS 2024 (BRICS) + MOOSE-Chem (Yang et al., 2025)
+    83	- **Tech**: Replaced string concatenation with BRICSBuild; fragment pool from docked molecules
+    84	- **When to use**: combine strategy
+    85	- **Status**: ✅ VERIFIED — avg BE -8.609
+    86	
+    87	### H019 — Suzuki Byproduct Atom Balance
+    88	- **Source**: LARC (Baker et al., 2025) — atom conservation
+    89	- **Tech**: Added REACTION_BYPRODUCTS dict for Suzuki (B(OH)2+Br loss), Friedländer (2H2O loss)
+    90	- **When to use**: In _add_byproducts_for_balance
+    91	- **Status**: ❌ REJECTED — trivial ratio regressed (1/10)
+    92	
+    93	### H020 — Diaryl Amine / Indole / Benzofuran / Tetrazole / Isoxazole Rules
+    94	- **Source**: LARC (Baker et al., 2025) + JACS 2024
+    95	- **Tech**: Fischer indole, Rap-Stoermer benzofuran, tetrazole [3+2], isoxazole condensation
+    96	- **When to use**: Always in RETRO_RULES
+    97	- **Status**: ✅ VERIFIED
+    98	
+    99	### H022 — Expanded Scaffold Library (Bridge/Spiro/Fused Heterocycles)
+   100	- **Source**: MOOSE-Chem (Yang et al., 2025) + JACS 2024
+   101	- **Tech**: Added BCP, quinuclidine, tropane, spiro-piperidine, azaindole, imidazopyridine scaffolds
+   102	- **When to use**: Always in SCAFFOLDS
+   103	- **Status**: ✅ VERIFIED
+   104	
+   105	### H025 — Expanded Substituent Library (Polar Pharmacophores)
+   106	- **Source**: Deep Lead Optimization (JACS 2024) + Coscientist (2023)
+   107	- **Tech**: Added 5 polar substituents (C=O, CN, CH2OH, CH2NH2, SO2CH3) to _add_substituent
+   108	- **When to use**: When molecules lack hydrogen bond features
+   109	- **Status**: ❌ REJECTED — Best BE -9.153→-8.972, Avg -8.453→-8.325. Vina scoring favors hydrophobic/flat aromatics over polar hinge binders.
+   110	
+   111	### H027 — Relaxed Molecular Filters
+   112	- **Source**: Empirical (Round 18-19) — Vina rewards hydrophobic packing
+   113	- **Tech**: max_rings 7→9, max_sa 6.0→7.0 in passes_filters(); allows larger hydrophobic aromatics
+   114	- **When to use**: When current filters exclude >7-ring molecules that could pack better in Vina
+   115	- **Status**: ✅ VERIFIED — Best BE +2.0% (-9.153→-9.332), Avg +4.2% (-8.453→-8.810)
+   116	
+   117	### H026 — Expanded Large Aromatic Scaffold Library
+   118	- **Source**: JACS 2024 — scaffold diversity + Vina hydrophobic bias
+   119	- **Tech**: Added 12 large polycyclic aromatic scaffolds (anthracene, phenanthrene, pyrene, perylene, acridine, benzoquinolines, benzo[a]pyrene)
+   120	- **When to use**: N/A
+   121	- **Status**: ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989
+   122	
+   123	### H028 — Suzuki SMARTS Specificity Fix
+   124	- **Source**: Empirical (Round 4 debugging) — discovered Suzuki [c;R][c;R] falsely matching fused ring C-C bonds
+   125	- **Tech**: Changed SMARTS from [c;R][c;R] to [c;R]!@[c;R] to only match inter-ring (biaryl) bonds, not intra-ring fused bonds
+   126	- **When to use**: Always in RETRO_RULES
+   127	- **Status**: ✅ VERIFIED — Trivial ratio restored 1/10→0/10, BE -9.19 within baseline variance
+   128	
+   129	---
+   130	
+   131	## Current Baseline (TYK2 5C01 — H030 VERIFIED)
+   132	
+   133	> Updated Round X (H030 VERIFIED).
+   134	
+   135	| Metric | Value |
+   136	|--------|-------|
+   137	| Best BE | **-9.972** |
+   138	| Avg BE | **-8.757** |
+   139	| Trivial ratio | **0/10** ✅ |
+   140	| Dominant chemistry | Suzuki-coupled biaryl amides, pteridine derivatives, spiro/bridge heterocycles |
+   141	| Note | LogP-penalized composite scoring (0.75×BE+0.15×route+0.10×logp) eliminated trivial routes. Initial baseline -8.117→-9.972 (+22.9%). |
+   142	
+   143	---
+   144	
+   145	## Open / Pending Hypotheses
+   146	
+   147	| ID | Description | Priority |
+   148	|----|-------------|----------|
+   149	| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
+   150	| H023 | Multi-step route chemical validation (check intermediate stability) | LOW — deferred to future session |
+   151	
+   152	---
+   153	
+   154	## Session Conclusion (2026-05-21)
+   155	
+   156	> 停止条件已满足: (1) 累计 6 轮迭代超硬上限; (2) 初始基线提升 +22.9% (-8.117→-9.972) 且 0/10 trivial route。
+   157	
+   158	**最终交付**:
+   159	- `output/result.csv`: 10 个候选分子 + 逆合成路线
+   160	- `output/result.log`: JSONL 格式实验日志 (374 行)
+   161	- `output/result.zip`: 打包提交文件
+   162	- `docs/research_report.md`: 完整科研报告
+   163	
+   164	**待后续探索**: H023 (中间体稳定性验证) 是唯一剩余的可验证假设，属 MEDIUM→LOW 优先级。
+   165	
+   166	---
+<system>35 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-paper-analysis
+     3	description: 文献解析关注点。仅首次运行/陷入困境需要回原文查找时读取。包含参考论文中值得关注的具体章节和概念。
+     4	---
+     5	
+     6	# 文献解析指南
+     7	
+     8	首次运行或陷入困境后强制恢复时使用。
+     9	
+    10	## 综述论文关注点 (papers/autonomous_agents_survey.md)
+    11	
+    12	### Chemistry Agent 部分
+    13	- **ChemCrow**: 18个工具集成的化学 Agent
+    14	- **ChemAgents**: 分层多 Agent（Manager+Specialist）
+    15	- **ChemReasoner**: LLM + DFT 假设验证
+    16	- **LARC**: Agent-as-a-Judge 逆合成
+    17	- **MOOSE-Chem**: 自动假设生成
+    18	- **FROGENT**: 端到端药物设计
+    19	
+    20	### Multi-Agent 部分
+    21	- **TAIS**: 模拟研究团队
+    22	- **Agent Laboratory**: 文献 → 实验 → 论文
+    23	
+    24	### Self-Code Evolution
+    25	- **AI Scientist**: 自主代码生成与迭代
+    26	
+    27	## 解析产出
+    28	
+    29	1. `docs/literature_analysis_round_X.md` — 完整分析报告
+    30	2. `docs/knowledge_base.md` — 策略库（每条: 标题 + 来源 + 技术要点 + 适用场景 + 已尝试标记）
+    31	
+    32	## knowledge_base.md 格式
+    33	
+    34	每条策略包含: 标题, 来源论文, 技术要点, 适用场景, 尝试状态(VERIFIED/REJECTED/PENDING)
+    35	Agent 每轮验证后更新标记。后续轮次直接读此文件，不必重读论文全文。<system>38 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-hypothesis-template
+     3	description: 假设提出格式模板。需要写新的改进假设时读取。包含完整的假设结构和验证标准模板。
+     4	---
+     5	
+     6	# 假设格式模板
+     7	
+     8	提出新的改进假设时，必须完整填写以下所有部分：
+     9	
+    10	```
+    11	假设ID: HXXX
+    12	瓶颈: 简要描述具体瓶颈
+    13	文献支撑: 相关论文/方法
+    14	
+    15	───────────────── 推理链 ─────────────────
+    16	步骤 | 内容                  | 置信度 | 推理方式 | 依据来源
+    17	S1   | ...                   | 高/中/低 | 文献/演绎 | ...
+    18	S2   | ...                   | ...    | ...     | ...
+    19	...
+    20	综合置信度 = 所有步骤最低（木桶效应）
+    21	
+    22	───────────────── 验证标准 ─────────────────
+    23	Q1 如果核心指标提升 < 5%，是否仍保留？
+    24	答：是/否
+    25	理由：...
+    26	
+    27	Q2 如果指标下降，最可能的原因是什么？
+    28	答：...
+    29	理由：...
+    30	
+    31	Q3 本假设的最低可接受结果是什么？
+    32	答：...
+    33	
+    34	───────────────── 改进方案 ─────────────────
+    35	改动文件: src/xxx.py
+    36	改动内容: 具体改什么
+    37	验证指标: pipeline 跑 N 个分子，对比改前改后的结合能 + trivial 比例
+    38	```<system>46 lines read from file starting from line 1. End of file reached.</system>     1	---
+     2	name: molcraft-synthesis-rules
+     3	description: 逆合成 SMARTS 规则设计指南。当需要扩充 synthesis_v2.py 的 REACTION_RULES 时读取。包含 RDKit ReactionFromSmarts 语法、断键启发式、新规则设计步骤。
+     4	---
+     5	
+     6	# 逆合成 SMARTS 规则设计指南
+     7	
+     8	扩充 synthesis_v2.py 的 `REACTION_RULES` 列表时使用。
+     9	
+    10	## RDKit 语法
+    11	
+    12	```python
+    13	from rdkit.Chem import AllChem
+    14	# 格式: '反应物>>产物'
+    15	# [c:1] 标记原子映射，序号对应
+    16	rxn = AllChem.ReactionFromSmarts('[c:1][c:2]>>[c:1]Br.[c:2]B(O)O')  # Suzuki 逆反应
+    17	# REACTION_RULES 中每条: (匹配子结构SMARTS, 反应SMARTS)
+    18	```
+    19	
+    20	## 断键启发式
+    21	
+    22	| 键类型 | 可用的逆合成反应 |
+    23	|--------|----------------|
+    24	| 新 C-C | aldol, Claisen, Michael, Wittig, Grignard, Diels-Alder, Suzuki |
+    25	| 新 C-O | 酯化, 醚化(Williamson), Mitsunobu |
+    26	| 新 C-N | 还原胺化, 酰胺偶联, Buchwald, SNAr, Gabriel |
+    27	| 稠环断开 | Diels-Alder 逆反应, Friedel-Crafts 环化逆反应 |
+    28	| 桥环断开 | 分子内 SN2 逆反应, 自由基环化逆反应 |
+    29	| 螺环断开 | pinacol 重排逆反应, 半缩酮逆反应 |
+    30	| 杂环(吡啶/嘧啶/吲哚) | 逆 Pictet-Spengler, 逆 Bischler-Napieralski |
+    31	
+    32	## 新规则设计步骤
+    33	
+    34	1. 分析当前 result.csv/result.log 中 trivial route 分子的结构
+    35	2. 看哪些键类型被 BRICS 回退了
+    36	3. 对照上面启发式判断正确断键方式
+    37	4. 用 RDKit SMARTS 写匹配子结构和逆合成反应
+    38	5. 加到 synthesis_v2.py 的 `REACTION_RULES`: `("子结构SMARTS", "反应SMARTS")`
+    39	6. 跑 pipeline 验证 trivial 比例变化
+    40	
+    41	## 关键陷阱
+    42	
+    43	- SMARTS 中 `[c;R][c;R]` 会匹配环内 C-C 键（如苯环上的相邻碳）→ 用 `!@` 确保只匹配环间键: `[c;R]!@[c;R]`
+    44	- 产物 SMILES 中的原子映射编号必须连续（从 1 开始）
+    45	- 新规则可能意外匹配已有分子的其他部分 → 在子结构 SMARTS 中加环境约束（如 `[NH1]` 而非 `[N]`）
+    46	- 加规则后检查 _is_simple_molecule 是否误判复杂分子为简单
+[2026-05-21T16:08:20.769945] 迭代进度: 0/3 (初始: 22)
+知识库显示上一会话已达到优秀结果（Best BE -9.972, +22.9%），但现在是新会话。让我先评估当前状态，确定是否还有优化空间。<system>39 lines read from file starting from line 1. End of file reached.</system>     1	{"timestamp": "2026-05-17T17:50:32.137801+00:00", "tool": "run_pipeline", "round": 1, "params": {"n_generate": 60, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": false}, "result": {"molecule_count": 10, "best_be": -8.117, "avg_be": -7.8875, "trivial_ratio": 0.0}}
+     2	{"timestamp": "2026-05-17T17:59:21.280745+00:00", "tool": "run_pipeline", "round": 2, "params": {"n_generate": 60, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.43, "avg_be": -7.9007000000000005, "trivial_ratio": 0.0}}
+     3	{"timestamp": "2026-05-17T19:49:46.591839+00:00", "tool": "run_pipeline", "round": 3, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.335, "avg_be": -8.131499999999999, "trivial_ratio": 0.0}}
+     4	{"timestamp": "2026-05-18T05:34:45.536743+00:00", "tool": "run_pipeline", "round": 4, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.941, "avg_be": -8.9613, "trivial_ratio": 0.1}}
+     5	{"timestamp": "2026-05-18T13:36:13+08:00", "round": 1, "hypothesis": "H011", "success": true, "best_be": -9.941, "avg_be": -8.961, "trivial_ratio": 0.1, "summary": "Diversity-preserving selection (MMD greedy) improved best BE from -8.335 to -9.941 (+19.3%), avg BE from -8.131 to -8.961 (+10.2%)"}
+     6	{"timestamp": "2026-05-18T05:45:22.742418+00:00", "tool": "run_pipeline", "round": 5, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.896, "avg_be": -8.4176, "trivial_ratio": 0.1}}
+     7	{"timestamp": "2026-05-18T13:39:40.844797+00:00", "tool": "run_pipeline", "round": 6, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.17, "avg_be": -8.0613, "trivial_ratio": 0.1}}
+     8	{"timestamp": "2026-05-18T21:41:32+08:00", "round": 6, "hypothesis": "H014", "success": true, "best_be": -9.17, "avg_be": -8.0613, "trivial_ratio": 0.1, "summary": "Mass balance validation: eliminated Friedlander false matches, trivial ratio unchanged (different root cause - missing rules for saturated bicycles)"}
+     9	{"timestamp": "2026-05-18T13:55:29.506442+00:00", "tool": "run_pipeline", "round": 7, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.77, "avg_be": -8.012699999999999, "trivial_ratio": 0.1}}
+    10	{"timestamp": "2026-05-18T14:04:25.556346+00:00", "tool": "run_pipeline", "round": 8, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.074, "avg_be": -8.314400000000001, "trivial_ratio": 0.0}}
+    11	{"timestamp": "2026-05-18T22:06:24+08:00", "round": 7, "hypothesis": "H015", "success": true, "best_be": -9.074, "avg_be": -8.3144, "trivial_ratio": 0.0, "summary": "Saturated N-heterocycle rules + _is_simple_molecule fix: achieved 0/10 trivial routes for first time"}
+    12	{"timestamp": "2026-05-19T05:07:52.818322+00:00", "tool": "run_pipeline", "round": 9, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.591, "avg_be": -8.8529, "trivial_ratio": 0.0}}
+    13	{"timestamp": "2026-05-19T06:34:01.438457+00:00", "tool": "run_pipeline", "round": 10, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.292, "avg_be": -8.608799999999999, "trivial_ratio": 0.0}}
+    14	{"timestamp": "2026-05-19T14:16:02+08:00", "round": 10, "hypothesis": "H018", "success": true, "best_be": -9.292, "avg_be": -8.609, "trivial_ratio": 0.0, "summary": "BRICS fragment recombination + Crossover 15->25%: avg BE -8.609 (-2.8%), best -9.292, trivial 0/10"}
+    15	{"timestamp": "2026-05-19T06:49:37.441078+00:00", "tool": "run_pipeline", "round": 11, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.335, "avg_be": -8.5805, "trivial_ratio": 0.1}}
+    16	{"timestamp":"2026-05-19T14:50:00+08:00","round":11,"hypothesis":"H019","success":false,"best_be":-9.335,"avg_be":-8.581,"trivial_ratio":0.1,"summary":"Combine strategy: BE performance comparable to mutate (best -9.335 vs -9.292) but trivial route regression (1/10 vs 0/10) due to novel BRICS-recombined scaffold not covered by retrosynthesis rules"}
+    17	{"timestamp": "2026-05-19T17:07:20.359215+00:00", "tool": "run_pipeline", "round": 12, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.307, "avg_be": -8.6966, "trivial_ratio": 0.0}}
+    18	{"timestamp": "2026-05-19T17:15:54.193266+00:00", "tool": "run_pipeline", "round": 13, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.159, "avg_be": -8.6774, "trivial_ratio": 0.0}}
+    19	{"timestamp": "2026-05-19T17:24:40.968824+00:00", "tool": "run_pipeline", "round": 14, "params": {"n_generate": 50, "n_top": 10, "strategy": "combine", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -10.359, "avg_be": -9.494800000000001, "trivial_ratio": 0.0}}
+    20	{"timestamp": "2026-05-19T19:43:59.967922+00:00", "tool": "run_pipeline", "round": 15, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -10.119, "avg_be": -9.417300000000001, "trivial_ratio": 0.0}}
+    21	{"timestamp": "2026-05-19T19:55:00.915592+00:00", "tool": "run_pipeline", "round": 16, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.325, "avg_be": -8.397499999999999, "trivial_ratio": 0.0}}
+    22	{"timestamp": "2026-05-20T09:56:58.106946+00:00", "tool": "run_pipeline", "round": 17, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.767, "avg_be": -9.0914, "trivial_ratio": 0.0}}
+    23	{"timestamp": "2026-05-20T10:08:56.541766+00:00", "tool": "run_pipeline", "round": 18, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.039, "avg_be": -8.639999999999999, "trivial_ratio": 0.1}}
+    24	{"timestamp": "2026-05-20T14:37:53.563150+00:00", "tool": "run_pipeline", "round": 19, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.153, "avg_be": -8.453, "trivial_ratio": 0.0}}
+    25	{"timestamp": "2026-05-20T14:51:23.953375+00:00", "tool": "run_pipeline", "round": 20, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.972, "avg_be": -8.325199999999999, "trivial_ratio": 0.0}}
+    26	{"timestamp": "2026-05-20T15:03:19.704054+00:00", "tool": "run_pipeline", "round": 21, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -8.741, "avg_be": -8.196299999999999, "trivial_ratio": 0.1}}
+    27	{"timestamp": "2026-05-20T15:13:33.222024+00:00", "tool": "run_pipeline", "round": 22, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true}, "result": {"molecule_count": 10, "best_be": -9.332, "avg_be": -8.8102, "trivial_ratio": 0.0}}
+    28	{"timestamp": "2026-05-20T23:15:00+08:00", "round": 3, "hypothesis": "H027", "success": true, "best_be": -9.332, "avg_be": -8.810, "trivial_ratio": 0.0, "summary": "Relaxed filters (max_rings 7→9, max_sa 6.0→7.0): Best BE +2.0%, Avg +4.2%. Released imidazopyridine scaffolds with combined hydrophobic packing + hinge binding."}
+    29	{"timestamp": "2026-05-20T15:54:15.512756+00:00", "tool": "run_pipeline", "round": 23, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -8.434, "avg_be": -7.9679, "trivial_ratio": 0.1}}
+    30	{"timestamp": "2026-05-20T16:28:34.372384+00:00", "tool": "run_pipeline", "round": 24, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -8.389, "avg_be": -7.989400000000001, "trivial_ratio": 0.1}}
+    31	{"timestamp": "2026-05-20T16:47:54.912362+00:00", "tool": "run_pipeline", "round": 25, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -9.19, "avg_be": -8.419, "trivial_ratio": 0.0}}
+    32	{"timestamp":"2026-05-21T00:10:00+08:00","round":4,"hypothesis":"H026","success":false,"best_be":-8.389,"avg_be":-7.989,"trivial_ratio":0.1,"summary":"Expanded large aromatic scaffolds: Best BE -9.332→-8.389, Avg -8.810→-7.989. New scaffolds unused. REJECTED."}
+    33	{"timestamp":"2026-05-21T00:35:00+08:00","round":5,"hypothesis":"H028","success":true,"best_be":-9.19,"avg_be":-8.419,"trivial_ratio":0.0,"summary":"Fixed Suzuki SMARTS [c;R][c;R]→[c;R]!@[c;R]: Trivial ratio 1/10→0/10 restored. VERIFIED."}
+    34	{"timestamp": "2026-05-20T17:52:51.914646+00:00", "tool": "diffusion_generate", "round": 26, "params": {"n_molecules": 5, "pocket_center": [21.86, -0.41, 29.93]}, "result": {"output_count": 5, "gen_time": 27.9}}
+    35	{"timestamp": "2026-05-21T04:01:30.804929+00:00", "tool": "run_pipeline", "round": 27, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -10.099, "avg_be": -9.4121, "trivial_ratio": 0.2}}
+    36	{"timestamp": "2026-05-21T06:06:37.325600+00:00", "tool": "run_pipeline", "round": 28, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -9.253, "avg_be": -8.5121, "trivial_ratio": 0.2}}
+    37	{"timestamp": "2026-05-21T07:35:08.241151+00:00", "tool": "diffusion_generate", "round": 29, "params": {"n_molecules": 5, "pocket_center": [21.86, -0.41, 29.93]}, "result": {"output_count": 5, "gen_time": 27.0}}
+    38	{"timestamp": "2026-05-21T07:47:03.560521+00:00", "tool": "run_pipeline", "round": 30, "params": {"n_generate": 50, "n_top": 10, "strategy": "mutate", "n_generations": 2, "docking_guidance": true, "generator": "mutate"}, "result": {"molecule_count": 10, "best_be": -9.972, "avg_be": -8.756699999999999, "trivial_ratio": 0.0}}
+    39	{"timestamp":"2026-05-21T15:48:00+08:00","round":6,"hypothesis":"H030","success":true,"best_be":-9.972,"avg_be":-8.757,"trivial_ratio":0.0,"summary":"LogP-penalized composite scoring: Trivial ratio 2/10→0/10. Best BE -9.972 within 1.3% of H029 baseline. VERIFIED."}
+<system>11 lines read from file starting from line 1. End of file reached.</system>     1	mol_smiles,route
+     2	Nc1ccccc1-c1cc(C(=O)F)c(NC(=O)c2ccccc2Cl)cc1O,O=C(O)c1ccccc1Cl.Nc1cc(O)c(B(O)O)cc1C(=O)F>>O=C(Nc1cc(O)c(B(O)O)cc1C(=O)F)c1ccccc1Cl.O | Nc1ccccc1Br.O=C(Nc1cc(O)c(B(O)O)cc1C(=O)F)c1ccccc1Cl>>Nc1ccccc1-c1cc(C(=O)F)c(NC(=O)c2ccccc2Cl)cc1O.B(=O)O.Br
+     3	O=Cc1nc2nc(-c3ccccc3)ncc2nc1-c1ccccc1,O=Cc1nc2nc(O)ncc2nc1Br.Br>>O=Cc1nc2nc(Br)ncc2nc1Br.O | O=Cc1nc2nc(Br)ncc2nc1Br.OB(O)c1ccccc1>>O=Cc1nc2nc(Br)ncc2nc1-c1ccccc1.B(=O)O.Br | O=Cc1nc2nc(Br)ncc2nc1-c1ccccc1.OB(O)c1ccccc1>>O=Cc1nc2nc(-c3ccccc3)ncc2nc1-c1ccccc1.B(=O)O.Br
+     4	Nc1ccccc1-c1ccc(NC(=O)c2ccccc2F)c(C=O)c1,O=C(O)c1ccccc1F.Nc1ccc(B(O)O)cc1C=O>>O=Cc1cc(B(O)O)ccc1NC(=O)c1ccccc1F.O | Nc1ccccc1Br.O=Cc1cc(B(O)O)ccc1NC(=O)c1ccccc1F>>Nc1ccccc1-c1ccc(NC(=O)c2ccccc2F)c(C=O)c1.B(=O)O.Br
+     5	Nc1c(-c2nc(-c3ccccc3)ccc2C=O)ccc2c1O2,O=Cc1ccc(Br)nc1B(O)O.OB(O)c1ccccc1>>O=Cc1ccc(-c2ccccc2)nc1B(O)O.B(=O)O.Br | Nc1c(Br)ccc2c1O2.O=Cc1ccc(-c2ccccc2)nc1B(O)O>>Nc1c(-c2nc(-c3ccccc3)ccc2C=O)ccc2c1O2.B(=O)O.Br
+     6	Nc1ccccc1-c1ccc(NC(=O)c2ccccc2)c(C=O)c1,O=C(O)c1ccccc1.Nc1ccc(B(O)O)cc1C=O>>O=Cc1cc(B(O)O)ccc1NC(=O)c1ccccc1.O | Nc1ccccc1Br.O=Cc1cc(B(O)O)ccc1NC(=O)c1ccccc1>>Nc1ccccc1-c1ccc(NC(=O)c2ccccc2)c(C=O)c1.B(=O)O.Br
+     7	O=C1c2ccccc2NNc2cccc(Cl)c21,O=C1c2ccccc2NNc2cccc(O)c21.Cl>>O=C1c2ccccc2NNc2cccc(Cl)c21.O
+     8	CC1CCC2(CC1)Cc1cccc(Cl)c1C2,CC1CCC2(CC1)Cc1cccc(O)c1C2.Cl>>CC1CCC2(CC1)Cc1cccc(Cl)c1C2.O
+     9	Cc1c(N)ccc2c1CC1(CCC(F)CC1)N2,Cc1c(O)ccc2c1CC1(CCC(F)CC1)N2.Br>>Cc1c(Br)ccc2c1CC1(CCC(F)CC1)N2.O | Cc1c(Br)ccc2c1CC1(CCC(F)CC1)N2.N>>Cc1c(N)ccc2c1CC1(CCC(F)CC1)N2.Br
+    10	Nc1ccccc1C1CCC2NCNC2(C=O)C1,Nc1ccccc1C1CCC2NCNC2(CCl)C1.O>>Nc1ccccc1C1CCC2NCNC2(CO)C1.Cl | Nc1ccccc1C1CCC2NCNC2(CO)C1>>Nc1ccccc1C1CCC2NCNC2(C=O)C1.[H][H]
+    11	Fc1cccc2c1NC1(CCC(Cl)CC1)C2,Oc1cccc2c1NC1(CCC(Cl)CC1)C2.Cl>>Clc1cccc2c1NC1(CCC(Cl)CC1)C2.O | Clc1cccc2c1NC1(CCC(Cl)CC1)C2.F>>Fc1cccc2c1NC1(CCC(Cl)CC1)C2.Cl
+91:- **Status**: ❌ REJECTED — trivial ratio regressed (1/10)
+109:- **Status**: ❌ REJECTED — Best BE -9.153→-8.972, Avg -8.453→-8.325. Vina scoring favors hydrophobic/flat aromatics over polar hinge binders.
+121:- **Status**: ❌ REJECTED — Best BE -9.332→-8.389, Avg -8.810→-7.989
+
+[2026-05-21T16:08:49.263415] 迭代进度: 0/3 (初始: 22)
+知识库显示上一会话达到优秀结果。现在开始新的自主科研会话。先执行阶段一的必要步骤，然后进入阶段二诊断。<system>Todo list updated</system>{"stage": "诊断", "message": "阶段「诊断」开始"}<system>16 lines read from file starting from line 1. End of file reached.</system>     1	{"timestamp": "2026-05-19T05:07:52.785169+00:00", "molecules": [{"smiles": "CC(=O)c1ccc2cccc(-c3ccccc3)c2c1", "be": -9.591, "qed": 0.598, "trivial": false}, {"smiles": "CC(=O)c1ccccc1NC(=O)c1ccc(-c2ccccc2)cc1", "be": -9.364, "qed": 0.702, "trivial": false}, {"smiles": "Cc1ccc(Cc2ccc(S(=O)Nc3ccccc3)cc2SN)cc1", "be": -9.037, "qed": 0.621, "trivial": false}, {"smiles": "Cc1ccc(NC(=O)c2cc(CC(=O)O)cc3c2C3)c(N)c1", "be": -8.994, "qed": 0.644, "trivial": false}, {"smiles": "c1ccc(COc2cccc(-c3ccccc3)c2)cc1", "be": -8.899, "qed": 0.646, "trivial": false}, {"smiles": "O=Cc1ccc2c(c1)NCC(c1ccc(F)cc1)C2", "be": -8.606, "qed": 0.833, "trivial": false}, {"smiles": "Cc1ccc(C2CCCCC2(SN)C(=O)Nc2ccccc2)cc1", "be": -8.53, "qed": 0.797, "trivial": false}, {"smiles": "C=C(O)Cc1cc2c(c(C(=O)Nc3ccccc3)c1)C2", "be": -8.577, "qed": 0.71, "trivial": false}, {"smiles": "O=CC(O)c1cc2c(c(C(=O)Nc3ccccc3)c1)C2", "be": -8.478, "qed": 0.711, "trivial": false}, {"smiles": "O=C(O)Cc1cc2c(c(C(=O)Nc3ccccc3)c1)C2", "be": -8.453, "qed": 0.763, "trivial": false}]}
+     2	{"timestamp": "2026-05-19T06:34:01.437840+00:00", "run_id": "20260519_141602_389dfc", "molecules": [{"smiles": "NS1=CC(c2ccc(NC(=O)c3ccccc3O)cc2)=CC=C1", "be": -9.292, "qed": 0.756, "trivial": false}, {"smiles": "O=C(Nc1ccc(-c2ccccc2)cc1)c1ccccc1", "be": -9.192, "qed": 0.742, "trivial": false}, {"smiles": "Cc1ccc(-c2ccc(NC(=O)c3ccccc3)cc2)cc1", "be": -9.12, "qed": 0.728, "trivial": false}, {"smiles": "O=C(c1ccccc1)c1ccc(C2(O)CCCNC2)cc1", "be": -8.91, "qed": 0.85, "trivial": false}, {"smiles": "c1ccc(CNc2ccc(-c3ccccc3)cc2)cc1", "be": -8.811, "qed": 0.697, "trivial": false}, {"smiles": "c1ccc(-c2cccc3c2CCNC3)cc1", "be": -8.676, "qed": 0.761, "trivial": false}, {"smiles": "c1ccc(OCc2ccccc2-c2ccccc2)cc1", "be": -8.101, "qed": 0.646, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ncsc23)cc1", "be": -8.047, "qed": 0.593, "trivial": false}, {"smiles": "C=S(=O)(Nc1cccc(F)c1)C1=CN=S(C)C(C)=C1", "be": -7.958, "qed": 0.856, "trivial": false}, {"smiles": "C=S(=O)(Nc1cncc(F)c1)c1ccc(C)c(C)c1", "be": -7.981, "qed": 0.877, "trivial": false}]}
+     3	{"timestamp": "2026-05-19T06:49:37.440676+00:00", "run_id": "20260519_143457_f57b52", "molecules": [{"smiles": "O=C(Nc1cccc(-c2ccccc2)c1)c1ccccc1", "be": -9.335, "qed": 0.742, "trivial": false}, {"smiles": "O=C(Nc1ccccc1)c1ccccc1-c1ccccc1", "be": -9.036, "qed": 0.742, "trivial": false}, {"smiles": "Oc1cccc(-c2ccc3ccccc3c2)c1", "be": -8.898, "qed": 0.651, "trivial": false}, {"smiles": "Cc1ccc2c(c1N)Cc1ccccc1C2", "be": -9.192, "qed": 0.566, "trivial": true}, {"smiles": "Cc1ccc(S(=O)(=O)Nc2ccccc2C2(F)CCCCC2)cc1", "be": -8.615, "qed": 0.853, "trivial": false}, {"smiles": "Cc1ccc(-c2ccc(N)cc2Cl)cc1O", "be": -8.357, "qed": 0.74, "trivial": false}, {"smiles": "O=C(c1ccccc1)c1ccccc1-c1ccccc1", "be": -8.212, "qed": 0.628, "trivial": false}, {"smiles": "O=C(NC1(C2(F)COCCC2O)CCCCC1)c1ccccc1", "be": -8.086, "qed": 0.9, "trivial": false}, {"smiles": "O=Cc1ccc(-c2cc(O)cc(F)c2)cc1", "be": -8.108, "qed": 0.783, "trivial": false}, {"smiles": "c1cc2c(c(-c3cccc4c3OCCO4)c1)OCCN2", "be": -7.966, "qed": 0.864, "trivial": false}]}
+     4	{"timestamp": "2026-05-19T17:07:20.358822+00:00", "run_id": "20260520_004516_5af4bc", "molecules": [{"smiles": "O=C(Nc1ccncc1)c1cccc(-c2ccccc2)c1", "be": -9.307, "qed": 0.784, "trivial": false}, {"smiles": "O=C(Nc1ccncc1)c1cccc(-c2ccc(F)cc2)c1", "be": -9.269, "qed": 0.788, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ccccc23)cc1", "be": -9.037, "qed": 0.547, "trivial": false}, {"smiles": "Fc1ccc(-c2ccc3ncccc3c2)cc1", "be": -8.788, "qed": 0.606, "trivial": false}, {"smiles": "Fc1ccc(-c2cccc(CNc3ccncc3)c2)cc1", "be": -8.742, "qed": 0.76, "trivial": false}, {"smiles": "Fc1ccccc1-c1cccc2c1CNCC2", "be": -8.626, "qed": 0.789, "trivial": false}, {"smiles": "Oc1cnc2ccc(-c3ccccc3)cc2c1", "be": -8.56, "qed": 0.681, "trivial": false}, {"smiles": "Cc1cc(C2Nc3c(Cl)cc(F)cc32)ccc1F", "be": -8.217, "qed": 0.804, "trivial": false}, {"smiles": "Fc1ccccc1-c1ncc2ccccc2n1", "be": -8.2, "qed": 0.632, "trivial": false}, {"smiles": "Fc1ccc(-c2ccccc2F)cc1", "be": -8.22, "qed": 0.644, "trivial": false}]}
+     5	{"timestamp": "2026-05-19T17:15:54.192697+00:00", "run_id": "20260520_004516_5af4bc", "molecules": [{"smiles": "c1cc2c(c(-c3ccc4ccccc4c3)c1)N2", "be": -9.159, "qed": 0.464, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ccccc23)cc1", "be": -9.037, "qed": 0.547, "trivial": false}, {"smiles": "Cc1ccc(-c2cnc3ccccc3c2)cc1", "be": -8.797, "qed": 0.597, "trivial": false}, {"smiles": "Cc1ccc(-c2cccc3[nH]cnc23)c(O)c1", "be": -8.741, "qed": 0.666, "trivial": false}, {"smiles": "c1cc2c(c(-c3ncnc4ccccc34)c1)N2", "be": -8.575, "qed": 0.499, "trivial": false}, {"smiles": "COc1cc(-c2ccccc2)ccc1C(=O)c1ccccc1", "be": -8.504, "qed": 0.656, "trivial": false}, {"smiles": "NC(=O)C(C(=O)O)c1cccc(-c2ccc(Cl)cc2)c1", "be": -8.537, "qed": 0.849, "trivial": false}, {"smiles": "Clc1ccc(-c2ccc3c(c2)C3)c(Cl)c1", "be": -8.529, "qed": 0.579, "trivial": false}, {"smiles": "NC(=O)c1cccc(-c2ccc(Cl)c(F)c2)c1", "be": -8.497, "qed": 0.872, "trivial": false}, {"smiles": "Clc1cccc(-c2ccc3ncccc3n2)c1", "be": -8.398, "qed": 0.644, "trivial": false}]}
+     6	{"timestamp": "2026-05-19T17:24:40.968318+00:00", "run_id": "20260520_004516_5af4bc", "molecules": [{"smiles": "Fc1cccc(-c2cc3c(c(-c4cccc(F)c4)c2)CCNC3)c1", "be": -10.359, "qed": 0.704, "trivial": false}, {"smiles": "O=C(O)Cc1cc2c(c(-c3ccc4ccccc4c3)c1)CCNC2", "be": -10.26, "qed": 0.773, "trivial": false}, {"smiles": "Fc1cccc(-c2ccc3c(c2)C(F)C(F)CC3)c1F", "be": -9.87, "qed": 0.65, "trivial": false}, {"smiles": "Nc1ccc2cc(-c3cc(CC(=O)O)cc4c3CCNC4)ccc2c1", "be": -9.694, "qed": 0.643, "trivial": false}, {"smiles": "O=C(Nc1ccccc1)c1cccc(-c2ccccc2)c1", "be": -9.37, "qed": 0.742, "trivial": false}, {"smiles": "OC1c2cc(-c3cccc(F)c3)ccc2CCC1F", "be": -9.22, "qed": 0.826, "trivial": false}, {"smiles": "Fc1cccc(-c2ccc3c(c2)CC(F)CC3)c1", "be": -9.182, "qed": 0.7, "trivial": false}, {"smiles": "Fc1cccc2c(F)c(-c3ccccc3)ccc12", "be": -9.041, "qed": 0.574, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ccccc23)cc1", "be": -9.037, "qed": 0.547, "trivial": false}, {"smiles": "FC1CCc2ccc(-c3ccccc3)cc2C1", "be": -8.915, "qed": 0.684, "trivial": false}]}
+     7	{"timestamp": "2026-05-19T19:43:59.966765+00:00", "run_id": "20260520_032046_87b0fa", "molecules": [{"smiles": "Cc1cc(O)cc(-c2cccc(C(=O)c3cccc(O)c3)c2)c1", "be": -10.119, "qed": 0.709, "trivial": false}, {"smiles": "N=C(c1cccc(O)c1)c1cccc(-c2ccc(N)c(O)c2)c1", "be": -9.762, "qed": 0.337, "trivial": false}, {"smiles": "Nc1ccc(-c2cccc(C(=O)c3cccc(O)c3)c2)cc1O", "be": -9.725, "qed": 0.392, "trivial": false}, {"smiles": "C=C(c1cccc(O)c1)c1cccc(-c2cccc(O)c2)c1", "be": -9.704, "qed": 0.725, "trivial": false}, {"smiles": "O=C(c1cccc(O)c1)c1cccc(-c2cccc(O)c2)c1", "be": -9.537, "qed": 0.717, "trivial": false}, {"smiles": "Nc1ccc(C(=O)c2cccc(O)c2)cc1-c1cccc(O)c1", "be": -9.509, "qed": 0.51, "trivial": false}, {"smiles": "Nc1cnc(-c2cccc(C(=O)c3cccc(O)c3)c2)cc1O", "be": -9.351, "qed": 0.646, "trivial": false}, {"smiles": "NSc1ccc(C(=O)Nc2ccc(-c3ccc(Cl)cn3)cc2)cc1", "be": -9.085, "qed": 0.67, "trivial": false}, {"smiles": "O=C(C1=CC=CS(O)=C1)c1cccc(-c2cccc(O)c2)c1", "be": -9.027, "qed": 0.658, "trivial": false}, {"smiles": "Cc1cc(C(=O)O)c2ocnc2c1-c1ccccc1", "be": -8.354, "qed": 0.759, "trivial": false}]}
+     8	{"timestamp": "2026-05-20T09:56:58.101705+00:00", "run_id": "20260520_173441_e00e69", "molecules": [{"smiles": "Fc1cc2c(cc1-c1ccc3c(c1)CCNC3)CCNC2", "be": -9.767, "qed": 0.84, "trivial": false}, {"smiles": "O=C(Nc1ccccc1-c1ccccc1)c1ccccc1", "be": -9.683, "qed": 0.742, "trivial": false}, {"smiles": "c1cc2c(cc1-c1ccc3c(c1)CCNC3)CCNC2", "be": -9.284, "qed": 0.827, "trivial": false}, {"smiles": "COc1c(NC(=O)c2ccccc2)cccc1-c1cccc(C)c1", "be": -9.206, "qed": 0.741, "trivial": false}, {"smiles": "Nc1cccc(-c2ccc3c(c2)C(F)CNC3)c1", "be": -9.033, "qed": 0.754, "trivial": false}, {"smiles": "Cc1ccc(-c2nccc3ccccc23)cc1", "be": -9.017, "qed": 0.597, "trivial": false}, {"smiles": "Nc1cccc(-c2ccc3c(c2)CCNC3)c1", "be": -8.817, "qed": 0.731, "trivial": false}, {"smiles": "Nc1ccc(-c2ccc3c(c2)CCNC3)c(O)c1", "be": -8.733, "qed": 0.67, "trivial": false}, {"smiles": "NC1NCCc2cc(-c3ccccc3)ccc21", "be": -8.699, "qed": 0.781, "trivial": false}, {"smiles": "Nc1ccc(-c2nccc3ccccc23)cc1", "be": -8.675, "qed": 0.637, "trivial": false}]}
+     9	{"timestamp": "2026-05-20T10:08:56.539842+00:00", "run_id": "20260520_173441_e00e69", "molecules": [{"smiles": "c1ccc(CNc2cccc(-c3ccccc3)c2)cc1", "be": -9.032, "qed": 0.697, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ccccc23)cc1", "be": -9.039, "qed": 0.547, "trivial": false}, {"smiles": "c1ccc(OCc2cccc(-c3ccccc3)c2)cc1", "be": -8.799, "qed": 0.646, "trivial": false}, {"smiles": "O=C(c1ccccc1)c1cccc(-c2ccccc2)c1", "be": -8.745, "qed": 0.628, "trivial": false}, {"smiles": "O=Cc1cc(-c2ccccc2)c2ncccc2c1", "be": -8.584, "qed": 0.631, "trivial": false}, {"smiles": "Oc1ncccc1-c1ccc(OCc2ccccc2)cc1", "be": -8.506, "qed": 0.782, "trivial": false}, {"smiles": "Oc1cccc2c1-c1c(O)cccc1C2", "be": -8.722, "qed": 0.583, "trivial": true}, {"smiles": "c1ccc(OC(c2ccccc2)c2ccccc2)cc1", "be": -8.385, "qed": 0.651, "trivial": false}, {"smiles": "c1ccc(-c2cccc3[nH]ccc23)cc1", "be": -8.289, "qed": 0.604, "trivial": false}, {"smiles": "c1ccc(-c2cccc3c2OCC3)cc1", "be": -8.299, "qed": 0.68, "trivial": false}]}
+    10	{"timestamp": "2026-05-20T14:37:53.562341+00:00", "run_id": "20260520_223035_c47b2e", "molecules": [{"smiles": "Nc1cc(-c2cccc(Cl)c2)ccc1C(=O)c1ccccc1", "be": -9.153, "qed": 0.557, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ccccc23)cc1", "be": -9.039, "qed": 0.547, "trivial": false}, {"smiles": "c1ccc(COc2ccccc2-c2ccccc2)cc1", "be": -8.844, "qed": 0.646, "trivial": false}, {"smiles": "c1ccc(-c2ccnc3ccccc23)cc1", "be": -8.582, "qed": 0.587, "trivial": false}, {"smiles": "ClC1COc2cccc(-c3ccccc3)c21", "be": -8.528, "qed": 0.673, "trivial": false}, {"smiles": "Cc1ccc(-c2ccccc2Cl)cc1", "be": -8.278, "qed": 0.646, "trivial": false}, {"smiles": "Nc1ccc2c(N)nc(-c3ccccn3)nc2c1", "be": -8.126, "qed": 0.63, "trivial": false}, {"smiles": "Fc1ccc(-c2ccc(S)c(Cl)c2F)cc1", "be": -8.054, "qed": 0.71, "trivial": false}, {"smiles": "Oc1ccc(-c2cccc(Cl)c2)c(F)c1", "be": -7.987, "qed": 0.777, "trivial": false}, {"smiles": "Oc1ccc(-c2cccc(Cl)c2)c(F)c1Cl", "be": -7.939, "qed": 0.797, "trivial": false}]}
+    11	{"timestamp": "2026-05-20T15:13:33.221196+00:00", "run_id": "20260520_223035_c47b2e", "molecules": [{"smiles": "c1ccc(-c2ccc(-c3ccccc3)c3[nH]cnc23)cc1", "be": -9.332, "qed": 0.551, "trivial": false}, {"smiles": "Nc1cccc(-c2ccccc2-c2cccc(N)c2)c1", "be": -9.1, "qed": 0.679, "trivial": false}, {"smiles": "CCc1ccc(-c2ccc(CC)c3[nH]c(Cl)nc23)c2[nH]cnc12", "be": -9.092, "qed": 0.564, "trivial": false}, {"smiles": "CCc1ccc(-c2cccc3nc[nH]c23)cc1C(=O)O", "be": -8.896, "qed": 0.762, "trivial": false}, {"smiles": "O=C(c1cccnc1)c1cccc(-c2ccccc2)c1", "be": -8.819, "qed": 0.666, "trivial": false}, {"smiles": "CCc1ccc(-c2ccc(C)c3nc[nH]c23)c2nc[nH]c12", "be": -8.802, "qed": 0.582, "trivial": false}, {"smiles": "CCc1ccc(-c2ccc(CC)c3[nH]cnc23)c2[nH]cnc12", "be": -8.694, "qed": 0.593, "trivial": false}, {"smiles": "Cc1ccc(-c2cccc(N)c2)c2nc[nH]c12", "be": -8.556, "qed": 0.623, "trivial": false}, {"smiles": "CCc1ccc(-c2cccc(N)c2)c2nc[nH]c12", "be": -8.456, "qed": 0.671, "trivial": false}, {"smiles": "CCc1ccc(-c2ccc(CN)c3[nH]cnc23)c2[nH]cnc12", "be": -8.355, "qed": 0.542, "trivial": false}]}
+    12	{"timestamp": "2026-05-20T15:54:15.512163+00:00", "run_id": "20260520_233533_6546db", "molecules": [{"smiles": "Oc1cccc(C2CCC3(CC2)Cc2ccccc2N3)c1", "be": -8.434, "qed": 0.808, "trivial": true}, {"smiles": "Nc1cc(Cl)cc(-c2ccccc2N)c1", "be": -8.153, "qed": 0.723, "trivial": false}, {"smiles": "O=Cc1cc(-c2ccncc2)ccc1C(=O)c1ccccc1", "be": -8.056, "qed": 0.542, "trivial": false}, {"smiles": "Fc1ccccc1-c1ccccc1F", "be": -8.019, "qed": 0.644, "trivial": false}, {"smiles": "Nc1cccc(-c2cc(N)c(N)c(F)c2)c1", "be": -8.013, "qed": 0.641, "trivial": false}, {"smiles": "c1ccc(C2CNC3(CCNCN3)C2)cc1", "be": -7.93, "qed": 0.657, "trivial": false}, {"smiles": "CC1CCCCC1COc1ccc(N)c(N)c1", "be": -7.902, "qed": 0.79, "trivial": false}, {"smiles": "Nc1cccc(-c2ccc(N)c(N)c2)c1", "be": -7.751, "qed": 0.615, "trivial": false}, {"smiles": "Clc1ccc(-c2ccccc2)cc1", "be": -7.735, "qed": 0.635, "trivial": false}, {"smiles": "Nc1cccc(F)c1C1COc2ccccc21", "be": -7.686, "qed": 0.763, "trivial": false}]}
+    13	{"timestamp": "2026-05-20T16:28:34.371735+00:00", "run_id": "20260521_001049_1518a0", "molecules": [{"smiles": "Cc1ccc2[nH]c3ccccc3c2c1", "be": -8.389, "qed": 0.545, "trivial": true}, {"smiles": "Cc1cccc(-c2cc(C)cc(C)c2)c1", "be": -8.171, "qed": 0.638, "trivial": false}, {"smiles": "Cc1ccc2c(c1F)NC1(C2)CC(C)CC(C)C1", "be": -8.082, "qed": 0.721, "trivial": false}, {"smiles": "Cc1cccc(-c2cccc(C)c2)c1", "be": -8.086, "qed": 0.626, "trivial": false}, {"smiles": "Cc1cc(-c2cccc(Cl)c2)cc2c1N2", "be": -8.078, "qed": 0.598, "trivial": false}, {"smiles": "CC1(NS(=O)(=O)c2ccc(Cl)cc2)CCC(O)(Cl)NC1", "be": -8.001, "qed": 0.578, "trivial": false}, {"smiles": "Fc1cccc2c1NC1(CCCCC1Cl)C2", "be": -7.769, "qed": 0.681, "trivial": false}, {"smiles": "Fc1cc(F)c2c(c1)CC1(CCCCC1Cl)N2", "be": -7.768, "qed": 0.696, "trivial": false}, {"smiles": "Cc1cccc(-c2ccccc2)c1", "be": -7.793, "qed": 0.609, "trivial": false}, {"smiles": "c1ccc(-c2ccc3scnc3c2)cc1", "be": -7.757, "qed": 0.593, "trivial": false}]}
+    14	{"timestamp": "2026-05-20T16:47:54.911885+00:00", "run_id": "20260521_001049_1518a0", "molecules": [{"smiles": "O=Cc1cc2cccc(C(=O)O)c2cc1-c1ccccc1", "be": -9.19, "qed": 0.735, "trivial": false}, {"smiles": "Cc1ccc(-c2cncc3ccccc23)cc1", "be": -9.11, "qed": 0.597, "trivial": false}, {"smiles": "FCc1ncc2cccc(-c3ccccc3)c2n1", "be": -8.727, "qed": 0.679, "trivial": false}, {"smiles": "c1ccc(-c2cccc3ncncc23)cc1", "be": -8.413, "qed": 0.61, "trivial": false}, {"smiles": "O=C(O)c1cc(C2CCCCC2)cnc1-c1ccccc1", "be": -8.321, "qed": 0.901, "trivial": false}, {"smiles": "CC1CCC(C=O)(S(=O)(=O)Nc2cccc(C(=O)O)c2)C(c2ccccc2)C1", "be": -8.22, "qed": 0.72, "trivial": false}, {"smiles": "Cc1ccccc1-c1cc(F)c(CC(=O)O)c(C(=O)O)c1", "be": -8.094, "qed": 0.906, "trivial": false}, {"smiles": "CC1C(F)CCC(OCc2cc(Cl)cc(C(=O)O)c2Cl)C1N", "be": -8.146, "qed": 0.869, "trivial": false}, {"smiles": "O=C(O)c1ccc(-c2ccccc2)c2ocnc12", "be": -7.957, "qed": 0.745, "trivial": false}, {"smiles": "Cc1ccc(-c2ccccc2)cc1", "be": -8.012, "qed": 0.609, "trivial": false}]}
+    15	{"timestamp": "2026-05-21T04:01:30.751344+00:00", "run_id": "20260521_114434_b15eea", "molecules": [{"smiles": "Oc1c2cccc(Cl)c2c(Cl)c2c3c(ccc12)C3", "be": -10.099, "qed": 0.452, "trivial": false}, {"smiles": "O=[SH](=O)Nc1cc2c3c(c4ccccc4cc3c1)C=C2", "be": -9.562, "qed": 0.437, "trivial": false}, {"smiles": "Fc1c2cccc(Cl)c2cc2c3c(ccc12)C3", "be": -9.489, "qed": 0.393, "trivial": false}, {"smiles": "Nc1cc(Cl)c2cc3c4c(ccc3cc2c1)C4", "be": -9.38, "qed": 0.362, "trivial": false}, {"smiles": "Oc1cc2cc3cccc(Cl)c3cc2c2c1C2", "be": -9.316, "qed": 0.456, "trivial": false}, {"smiles": "Clc1cccc2cc3ccc4c(c3cc12)C4", "be": -9.249, "qed": 0.385, "trivial": false}, {"smiles": "Cc1cccc2cc3ccc4c(c3cc12)C4F", "be": -9.562, "qed": 0.485, "trivial": true}, {"smiles": "OC1c2cc3ccc4ccccc4c3cc21", "be": -9.089, "qed": 0.559, "trivial": false}, {"smiles": "Clc1ccc2cc3c4c(ccc3cc2c1)C4", "be": -9.031, "qed": 0.385, "trivial": false}, {"smiles": "Cc1ccc(N)c2cc3c(ccc4[nH]oc43)cc12", "be": -9.344, "qed": 0.358, "trivial": true}]}
+    16	{"timestamp": "2026-05-21T07:47:03.559619+00:00", "run_id": "20260521_152846_548980", "molecules": [{"smiles": "Nc1ccccc1-c1cc(C(=O)F)c(NC(=O)c2ccccc2Cl)cc1O", "be": -9.972, "qed": 0.45, "trivial": false}, {"smiles": "O=Cc1nc2nc(-c3ccccc3)ncc2nc1-c1ccccc1", "be": -9.318, "qed": 0.541, "trivial": false}, {"smiles": "Nc1ccccc1-c1ccc(NC(=O)c2ccccc2F)c(C=O)c1", "be": -9.149, "qed": 0.556, "trivial": false}, {"smiles": "Nc1c(-c2nc(-c3ccccc3)ccc2C=O)ccc2c1O2", "be": -9.007, "qed": 0.352, "trivial": false}, {"smiles": "Nc1ccccc1-c1ccc(NC(=O)c2ccccc2)c(C=O)c1", "be": -8.96, "qed": 0.564, "trivial": false}, {"smiles": "O=C1c2ccccc2NNc2cccc(Cl)c21", "be": -8.643, "qed": 0.747, "trivial": false}, {"smiles": "CC1CCC2(CC1)Cc1cccc(Cl)c1C2", "be": -8.542, "qed": 0.614, "trivial": false}, {"smiles": "Cc1c(N)ccc2c1CC1(CCC(F)CC1)N2", "be": -8.065, "qed": 0.676, "trivial": false}, {"smiles": "Nc1ccccc1C1CCC2NCNC2(C=O)C1", "be": -8.128, "qed": 0.537, "trivial": false}, {"smiles": "Fc1cccc2c1NC1(CCC(Cl)CC1)C2", "be": -7.783, "qed": 0.681, "trivial": false}]}
+<system>Command executed successfully.</system><?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/OvNgXIdAKDf7JPVOWzc0zvRUwTk</id>
+  <title>arXiv Query: search_query=all:tyk2 OR all:inhibitor OR all:docking&amp;id_list=&amp;start=0&amp;max_results=3</title>
+  <updated>2026-05-21T07:56:02Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=all:tyk2+OR+(all:inhibitor+OR+all:docking)&amp;start=0&amp;max_results=3&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>3</opensearch:itemsPerPage>
+  <opensearch:totalResults>1595</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2605.21398v1</id>
+    <title>From swept contact to pose: Probe-aware registration via complementary-shape docking</title>
+    <updated>2026-05-20T16:56:39Z</updated>
+    <link href="https://arxiv.org/abs/2605.21398v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.21398v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Accurate registration between a prior model and the real scene is essential for high-precision robotic manipulation, yet optical methods suffer from long calibration chains, line-of-sight constraints, and fabrication errors. We propose a calibration-free alternative that reformulates contact registration as complementary-shape docking between the object and the probe's swept volume, explicitly accounting for probe geometry and leveraging both contact and non-contact evidence. Our solver integrates a global-to-local search via 3D FFT correlation over low-discrepancy SO(3) samples, then followed by continuous SE(3) refinement using Lie-algebra updates and analytic contact sensitivities. This pipeline yields efficient exploration and metric-grade convergence without fragile point correspondences. Simulation across free-form meshes achieved sub-0.04 mm and sub-0.4° accuracy and robustness to pose noise and contact loss. On a tooth-preparation robot, our method attained 0.42 mm and 3.75°, outperforming an optical tracker registration while requiring no external sensors. These results demonstrate a practical and precise registration strategy for surgical and industrial robots.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-20T16:56:39Z</published>
+    <arxiv:comment>8 pages, 9 figures, accepted to ICRA 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Chen Chen</name>
+    </author>
+    <author>
+      <name>Yunwen Li</name>
+    </author>
+    <author>
+      <name>Yifan Xu</name>
+    </author>
+    <author>
+      <name>Xiangjie Yan</name>
+    </author>
+    <author>
+      <name>Chang Shu</name>
+    </author>
+    <author>
+      <name>Jianxia Hou</name>
+    </author>
+    <author>
+      <name>Shiji Song</name>
+    </author>
+    <author>
+      <name>Xiang Li</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.20885v1</id>
+    <title>Training distribution determines the ceiling of drug-blind cancer sensitivity prediction</title>
+    <updated>2026-05-20T08:24:56Z</updated>
+    <link href="https://arxiv.org/abs/2605.20885v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.20885v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Precision oncology requires predicting which drugs will suppress a specific tumor from its molecular profile, but drug-blind sensitivity prediction has plateaued despite increasingly complex drug representations. Here we show that this stagnation reflects a metric artifact rather than a representational bottleneck. The standard benchmark, global Pearson r, is dominated by between-drug potency differences that a trivial drug-mean predictor captures without any cell-specific learning. Per-drug Pearson r, which isolates within-drug cell ranking, reveals that no drug encoding improves over cell-only features across four independent datasets. A controlled experiment channeling mechanism-of-action identity as either a drug feature or a training-distribution constraint identifies the cause. Supplying MoA as a feature yields negligible benefit, whereas using it to stratify training raises per-drug r substantially for targeted kinase inhibitors, because pan-cancer co-training suppresses pathway-specific sensitivity signals. Mechanism-stratified training and response matching from pilot observations provide two deployable strategies that together recover the principal sources of predictive gain in drug-blind sensitivity prediction.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-bio.QM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-20T08:24:56Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Taekyung Heo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.19431v1</id>
+    <title>Self-assembling Modular Aerial Robot for Versatile Aerial Tasks</title>
+    <updated>2026-05-19T06:36:10Z</updated>
+    <link href="https://arxiv.org/abs/2605.19431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.19431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Multirotor aerial robots excel at maneuvering in three-dimensional space, and recent advances enable nimble navigation in cluttered and confined environments, especially for small airframes. By contrast, platforms built for high-altitude work tend to be larger to deliver high thrust for stable physical interaction with the environment. However, these conflicting design requirements create a long-standing trade-off between nimble navigation and robust aerial manipulation. Here, we present LEGION units, which are reconfigurable modular aerial robots capable of in-flight self-assembly for cooperative manipulation, drawing inspiration from the self-organized collectives formed by ants. Each unit retains nimble maneuverability while joint-equipped docking interfaces at both ends enable end-to-end self-assembly into a flying manipulator. We show that multiple units autonomously dock in flight; once latched, they maintain a zero-clearance interlock by controlling the contact force and torque, enabling reliable aggregation and articulated motion even outdoors. We further show that self-reconfigurability enables morphological switching between nimble individual flight and collective articulated manipulation, while realizing core in-flight manipulation primitives including pushing, pulling, rotating, grasping, and carrying. LEGION's self-organization enables aerial robots, especially in swarms, to shift from passive observers to active participants in their environment, broadening the scope of aerial physical interaction.</summary>
+    <category term="cs.RO" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-19T06:36:10Z</published>
+    <arxiv:primary_category term="cs.RO"/>
+    <author>
+      <name>Junichiro Sugihara</name>
+    </author>
+    <author>
+      <name>Masaki Kitagawa</name>
+    </author>
+    <author>
+      <name>Jinjie Li</name>
+    </author>
+    <author>
+      <name>Yunong Li</name>
+    </author>
+    <author>
+      <name>Takuzumi Nishio</name>
+    </author>
+    <author>
+      <name>Kei Okada</name>
+    </author>
+    <author>
+      <name>Moju Zhao</name>
+    </author>
+  </entry>
+</feed>
+
+[2026-05-21T16:09:17.765052] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:09:46.166828] 迭代进度: 0/3 (初始: 22)
+arXiv 通配符查询杂讯较多。让我用更精确的关键词重新搜索，同时检查关键源码。<system>ERROR: Command killed by timeout (30s)</system><system>ERROR: Command killed by timeout (30s)</system>/home/dministrator/Lab/clones/molcraft-agent/src/docking.py:129:def dock_molecule(smiles: str, center=None, size=None, exhaustiveness=None, seed: int = 0,
+/home/dministrator/Lab/clones/molcraft-agent/src/docking.py:246:def dock_molecule_consensus(smiles: str, center=None, size=None, exhaustiveness=None,
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:831:def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:1013:def generate_with_docking_guidance(
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:258:def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict:
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:760:def score_route_quality(route_str: str, smiles: str) -> float:
+
+[2026-05-21T16:10:14.480867] 迭代进度: 0/3 (初始: 22)
+网络搜索超时，我们使用已有数据进行诊断。让我深入检查源码中的关键模块，特别是评分逻辑和 trivial 路线检测。<system>438 lines read from file starting from line 1. End of file reached.</system>     1	"""Scorer core functions: validity, SA normalization, binding normalization."""
+     2	
+     3	import csv
+     4	import json
+     5	from pathlib import Path
+     6	
+     7	from rdkit import Chem
+     8	
+     9	from src.evaluator import estimate_sa_score
+    10	
+    11	
+    12	# Path to calibration file, relative to project root
+    13	CALIBRATION_PATH = Path(__file__).parent.parent / "data" / "calibration.json"
+    14	
+    15	
+    16	# Default calibration values
+    17	DEFAULT_CALIBRATION = {
+    18	    "version": 1,
+    19	    "binding_score": {
+    20	        "function": "clipped_linear",
+    21	        "params": {"threshold": 0.0, "range": 15.0},
+    22	    },
+    23	    "sa_score": {
+    24	        "function": "step",
+    25	        "params": {"cutoff": 4.0, "scale": 4.0},
+    26	    },
+    27	}
+    28	
+    29	
+    30	def load_calibration(path=None) -> dict:
+    31	    """Load calibration from JSON file.
+    32	
+    33	    Args:
+    34	        path: Path to calibration JSON. Defaults to data/calibration.json.
+    35	
+    36	    Returns:
+    37	        Calibration dict with binding_score and sa_score keys.
+    38	    """
+    39	    if path is None:
+    40	        path = CALIBRATION_PATH
+    41	
+    42	    if Path(path).exists():
+    43	        with open(path) as f:
+    44	            cal = json.load(f)
+    45	        # Merge with defaults for any missing keys
+    46	        result = DEFAULT_CALIBRATION.copy()
+    47	        result.update(cal)
+    48	        for key in DEFAULT_CALIBRATION:
+    49	            if key not in cal and isinstance(DEFAULT_CALIBRATION[key], dict):
+    50	                result[key] = DEFAULT_CALIBRATION[key]
+    51	            elif key in cal and isinstance(DEFAULT_CALIBRATION.get(key), dict) and isinstance(cal[key], dict):
+    52	                merged = DEFAULT_CALIBRATION[key].copy()
+    53	                merged.update(cal[key])
+    54	                result[key] = merged
+    55	        return result
+    56	    return DEFAULT_CALIBRATION.copy()
+    57	
+    58	
+    59	def save_calibration(cal: dict, path=None):
+    60	    """Save calibration to JSON file.
+    61	
+    62	    Args:
+    63	        cal: Calibration dict to save.
+    64	        path: Path to write. Defaults to data/calibration.json.
+    65	    """
+    66	    if path is None:
+    67	        path = CALIBRATION_PATH
+    68	
+    69	    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    70	    with open(path, "w") as f:
+    71	        json.dump(cal, f, indent=2)
+    72	
+    73	
+    74	def compute_validity_score(smiles: str) -> float:
+    75	    """Compute validity score for a SMILES string.
+    76	
+    77	    Args:
+    78	        smiles: SMILES string to validate.
+    79	
+    80	    Returns:
+    81	        1.0 if valid SMILES, 0.0 otherwise.
+    82	    """
+    83	    if not smiles:
+    84	        return 0.0
+    85	    mol = Chem.MolFromSmiles(smiles)
+    86	    return 1.0 if mol is not None else 0.0
+    87	
+    88	
+    89	def compute_sa_score_normalized(sa_raw: float, cal: dict = None) -> float:
+    90	    """Normalize SA score to 0-1 (lower SA = higher score).
+    91	
+    92	    Supports:
+    93	    - step: SA >= cutoff → 0, else (cutoff - sa) / scale
+    94	    - inverted: (max_sa - sa) / scale
+    95	    """
+    96	    if cal is None:
+    97	        cal = load_calibration()
+    98	
+    99	    sa_cal = cal.get("sa_score", DEFAULT_CALIBRATION["sa_score"])
+   100	    func = sa_cal.get("function", "step")
+   101	    params = sa_cal.get("params", sa_cal)
+   102	
+   103	    if func == "step":
+   104	        cutoff = params.get("cutoff", 4.0)
+   105	        scale = params.get("scale", 4.0)
+   106	        if sa_raw >= cutoff:
+   107	            return 0.0
+   108	        score = (cutoff - sa_raw) / scale
+   109	    elif func == "inverted":
+   110	        max_sa = params.get("max_sa", 10.0)
+   111	        scale = params.get("scale", 10.0)
+   112	        score = (max_sa - sa_raw) / scale
+   113	    else:
+   114	        raise ValueError(f"Unknown sa_score function: {func}")
+   115	
+   116	    return max(0.0, min(1.0, score))
+   117	
+   118	
+   119	def compute_binding_score(vina_raw: float, cal: dict = None) -> float:
+   120	    """Normalize binding score (Vina) using clipped linear or minmax.
+   121	
+   122	    Args:
+   123	        vina_raw: Raw Vina binding score (typically negative).
+   124	        cal: Optional calibration dict. Defaults to loaded calibration.
+   125	
+   126	    Returns:
+   127	        Normalized score in [0, 1].
+   128	    """
+   129	    if cal is None:
+   130	        cal = load_calibration()
+   131	
+   132	    binding_cal = cal.get("binding_score", DEFAULT_CALIBRATION["binding_score"])
+   133	    func = binding_cal.get("function", binding_cal.get("type", "clipped_linear"))
+   134	    params = binding_cal.get("params", binding_cal)  # support both nested and flat
+   135	
+   136	    if func == "clipped_linear":
+   137	        threshold = params.get("threshold", 0.0)
+   138	        range_ = params.get("range", 15.0)
+   139	        score = (threshold - vina_raw) / range_
+   140	    elif func == "minmax":
+   141	        min_val = params.get("min", -15.0)
+   142	        max_val = params.get("max", 0.0)
+   143	        score = (vina_raw - min_val) / (max_val - min_val)
+   144	    else:
+   145	        raise ValueError(f"Unknown binding normalization function: {func}")
+   146	
+   147	    return max(0.0, min(1.0, score))
+   148	
+   149	
+   150	def compute_route_validity_score(routes_valid: list[bool]) -> float:
+   151	    """Fraction of routes that pass validity checks. Empty list → 0.0."""
+   152	    if not routes_valid:
+   153	        return 0.0
+   154	    return sum(routes_valid) / len(routes_valid)
+   155	
+   156	
+   157	def compute_balance_score(reactant_heavy: int, product_heavy: int) -> float:
+   158	    """0-1 score based on atom balance. Perfect=1.0, >50% imbalance=0.0.
+   159	    ratio = product_heavy / reactant_heavy
+   160	    If ratio < 0.5 or ratio > 1.5 → 0.0
+   161	    Else: max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+   162	    """
+   163	    if reactant_heavy == 0:
+   164	        return 1.0 if product_heavy == 0 else 0.0
+   165	    ratio = product_heavy / reactant_heavy
+   166	    if ratio < 0.5 or ratio > 1.5:
+   167	        return 0.0
+   168	    return max(0.0, 1.0 - 2.0 * abs(1.0 - ratio))
+   169	
+   170	
+   171	def compute_step_penalty_score(n_steps: int) -> float:
+   172	    """1.0 for 1 step, decreasing by 0.15 per extra step. n_steps<=0 → 0.0."""
+   173	    if n_steps <= 0:
+   174	        return 0.0
+   175	    return max(0.0, 1.0 - 0.15 * (n_steps - 1))
+   176	
+   177	
+   178	def compute_starting_material_availability_score(reactant_smiles: list[str]) -> float:
+   179	    """Heuristic: SA < 4 → 1.0, SA 4-6 → 0.5, SA > 6 → 0.0. Average over all reactants.
+   180	    Empty list → 0.0. Uses estimate_sa_score from evaluator.
+   181	    """
+   182	    if not reactant_smiles:
+   183	        return 0.0
+   184	    scores = []
+   185	    for smi in reactant_smiles:
+   186	        mol = Chem.MolFromSmiles(smi)
+   187	        if mol is None:
+   188	            continue
+   189	        sa = estimate_sa_score(mol)
+   190	        if sa < 4:
+   191	            scores.append(1.0)
+   192	        elif sa <= 6:
+   193	            scores.append(0.5)
+   194	        else:
+   195	            scores.append(0.0)
+   196	    if not scores:
+   197	        return 0.0
+   198	    return sum(scores) / len(scores)
+   199	
+   200	
+   201	def compute_mol_score(binding_score: float, validity_score: float, sa_score: float) -> float:
+   202	    """Molecular score = 0.8*binding + 0.1*validity + 0.1*sa."""
+   203	    return 0.8 * binding_score + 0.1 * validity_score + 0.1 * sa_score
+   204	
+   205	
+   206	def compute_route_score(
+   207	    route_validity: float,
+   208	    sm_availability: float,
+   209	    step_penalty: float,
+   210	    convergence: float,
+   211	    balance: float,
+   212	) -> float:
+   213	    """Route score = 0.55*route_validity + 0.30*sm_availability + 0.05*step_penalty + 0.05*convergence + 0.05*balance."""
+   214	    return (
+   215	        0.55 * route_validity
+   216	        + 0.30 * sm_availability
+   217	        + 0.05 * step_penalty
+   218	        + 0.05 * convergence
+   219	        + 0.05 * balance
+   220	    )
+   221	
+   222	
+   223	def compute_total_score(mol_score: float, route_score: float) -> float:
+   224	    """Total = 0.7*mol + 0.3*route."""
+   225	    return 0.7 * mol_score + 0.3 * route_score
+   226	
+   227	
+   228	def _is_trivial_route(route: str, target_smiles: str) -> bool:
+   229	    """Check if route is trivial (A>>A).
+   230	
+   231	    - No >> in route → True
+   232	    - Single reactant identical to product → True
+   233	    - Single reactant identical to first product (before any .) → True
+   234	    - Otherwise → False
+   235	    """
+   236	    if ">>" not in route:
+   237	        return True
+   238	
+   239	    parts = route.split(">>")
+   240	    if len(parts) != 2:
+   241	        return False
+   242	
+   243	    reactants_str, products_str = parts
+   244	
+   245	    # Check single reactant identical to product
+   246	    reactants = [r.strip() for r in reactants_str.split(".")]
+   247	    if len(reactants) == 1:
+   248	        reactant = reactants[0]
+   249	        product = products_str.strip()
+   250	        # Remove any . separated additional products for comparison
+   251	        first_product = product.split(".")[0].strip()
+   252	        if reactant == product or reactant == first_product:
+   253	            return True
+   254	
+   255	    return False
+   256	
+   257	
+   258	def score_csv(csv_path: str, vina_scores: dict = None, cal: dict = None) -> dict:
+   259	    """Score a result.csv file and return full scoring report.
+   260	
+   261	    Args:
+   262	        csv_path: Path to result.csv (columns: mol_smiles,route)
+   263	        vina_scores: Dict mapping SMILES → Vina raw score (kcal/mol, negative)
+   264	        cal: Calibration params (loaded from file if None)
+   265	
+   266	    Returns:
+   267	        Dict with keys: total_score, mol_score, route_score, binding_score,
+   268	        validity_score, sa_score, route_validity_score,
+   269	        starting_material_availability_score, sample_count
+   270	        All float values rounded to 6 decimal places.
+   271	    """
+   272	    import math
+   273	
+   274	    if vina_scores is None:
+   275	        vina_scores = {}
+   276	    if cal is None:
+   277	        cal = load_calibration()
+   278	
+   279	    rows = []
+   280	    with open(csv_path, newline="") as f:
+   281	        reader = csv.DictReader(f)
+   282	        for row in reader:
+   283	            rows.append(row)
+   284	
+   285	    # Validate required columns (H1 fix: fail fast with clear error)
+   286	    if rows:
+   287	        header = set(rows[0].keys())
+   288	        if "mol_smiles" not in header:
+   289	            raise ValueError("CSV is missing required column: 'mol_smiles'")
+   290	        if "route" not in header:
+   291	            raise ValueError("CSV is missing required column: 'route'")
+   292	
+   293	    if not rows:
+   294	        return {
+   295	            "total_score": 0.0,
+   296	            "mol_score": 0.0,
+   297	            "route_score": 0.0,
+   298	            "binding_score": 0.0,
+   299	            "validity_score": 0.0,
+   300	            "sa_score": 0.0,
+   301	            "route_validity_score": 0.0,
+   302	            "starting_material_availability_score": 0.0,
+   303	            "sample_count": 0,
+   304	        }
+   305	
+   306	    validity_scores = []
+   307	    binding_scores = []
+   308	    sa_scores = []
+   309	    route_validity_flags = []
+   310	    sm_availabilities = []
+   311	    step_penalties = []
+   312	
+   313	    for row in rows:
+   314	        mol_smiles = row.get("mol_smiles", "").strip()
+   315	        route = row.get("route", "").strip()
+   316	
+   317	        # Validity
+   318	        val_score = compute_validity_score(mol_smiles)
+   319	        validity_scores.append(val_score)
+   320	
+   321	        # Binding
+   322	        vina_raw = vina_scores.get(mol_smiles, None)
+   323	        if vina_raw is not None:
+   324	            b_score = compute_binding_score(vina_raw, cal)
+   325	        else:
+   326	            b_score = 0.0
+   327	        binding_scores.append(b_score)
+   328	
+   329	        # SA score
+   330	        mol = Chem.MolFromSmiles(mol_smiles) if mol_smiles else None
+   331	        if mol is not None:
+   332	            sa_raw = estimate_sa_score(mol)
+   333	            s_score = compute_sa_score_normalized(sa_raw, cal)
+   334	        else:
+   335	            s_score = 0.0
+   336	        sa_scores.append(s_score)
+   337	
+   338	        # Route validity (trivial check)
+   339	        is_non_trivial = not _is_trivial_route(route, mol_smiles)
+   340	        route_validity_flags.append(is_non_trivial)
+   341	
+   342	        # Extract reactants from LAST step for SM availability
+   343	        # Route format: step1 | step2 | step3  or  reactant1.reactant2>>product
+   344	        # Multi-step: "A>>B | C>>D | D>>E" → last step is "D>>E"
+   345	        # Single step: "A.B>>C"
+   346	        reactants_for_sm = []
+   347	        if ">>" in route:
+   348	            # Split by >> to get the last reaction step
+   349	            steps = route.split("|")
+   350	            last_step = steps[-1].strip()
+   351	            if ">>" in last_step:
+   352	                reactants_side = last_step.split(">>")[0].strip()
+   353	                reactants_for_sm = [r.strip() for r in reactants_side.split(".") if r.strip()]
+   354	
+   355	        sm_avail = compute_starting_material_availability_score(reactants_for_sm)
+   356	        sm_availabilities.append(sm_avail)
+   357	
+   358	        # Step count: number of | separators + 1 (0 for empty routes)
+   359	        n_steps = route.count("|") + 1 if route.strip() else 0
+   360	        step_penalty = compute_step_penalty_score(n_steps)
+   361	        step_penalties.append(step_penalty)
+   362	
+   363	    # Average across molecules
+   364	    n = len(rows)
+   365	    avg_validity = sum(validity_scores) / n if n > 0 else 0.0
+   366	    avg_binding = sum(binding_scores) / n if n > 0 else 0.0
+   367	    avg_sa = sum(sa_scores) / n if n > 0 else 0.0
+   368	    avg_sm_avail = sum(sm_availabilities) / n if n > 0 else 0.0
+   369	    avg_step_penalty = sum(step_penalties) / n if n > 0 else 0.0
+   370	
+   371	    # Route validity: fraction of non-trivial valid routes
+   372	    # Use route_validity_flags directly (True = non-trivial = valid route)
+   373	    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+   374	
+   375	    # Compute balance scores from actual route atom counts
+   376	    balance_scores = []
+   377	    for row in rows:
+   378	        mol_smiles = row.get("mol_smiles", "").strip()
+   379	        route = row.get("route", "").strip()
+   380	        if ">>" not in route or _is_trivial_route(route, mol_smiles):
+   381	            balance_scores.append(0.0)
+   382	            continue
+   383	        step_scores = []
+   384	        for step in route.split("|"):
+   385	            step = step.strip()
+   386	            if ">>" not in step:
+   387	                continue
+   388	            left, right = step.split(">>", 1)
+   389	            reactants = [r.strip() for r in left.split(".") if r.strip()]
+   390	            products = [p.strip() for p in right.split(".") if p.strip()]
+   391	            r_heavy = 0
+   392	            p_heavy = 0
+   393	            for r in reactants:
+   394	                m = Chem.MolFromSmiles(r)
+   395	                if m:
+   396	                    r_heavy += m.GetNumHeavyAtoms()
+   397	            for p in products:
+   398	                m = Chem.MolFromSmiles(p)
+   399	                if m:
+   400	                    p_heavy += m.GetNumHeavyAtoms()
+   401	            step_scores.append(compute_balance_score(r_heavy, p_heavy))
+   402	        if step_scores:
+   403	            balance_scores.append(sum(step_scores) / len(step_scores))
+   404	        else:
+   405	            balance_scores.append(0.0)
+   406	    avg_balance = sum(balance_scores) / len(balance_scores) if balance_scores else 0.0
+   407	
+   408	    # Route validity: non-trivial AND all steps have non-zero balance
+   409	    for i, row in enumerate(rows):
+   410	        if balance_scores[i] == 0.0 and route_validity_flags[i]:
+   411	            route_validity_flags[i] = False
+   412	    route_validity = sum(route_validity_flags) / n if n > 0 else 0.0
+   413	
+   414	    # Use placeholder for convergence (route convergence not easy to compute)
+   415	    convergence = 1.0
+   416	
+   417	    # Compute sub-scores
+   418	    mol_score = compute_mol_score(avg_binding, avg_validity, avg_sa)
+   419	    route_score = compute_route_score(
+   420	        route_validity, avg_sm_avail, avg_step_penalty, convergence, avg_balance
+   421	    )
+   422	    total_score = compute_total_score(mol_score, route_score)
+   423	
+   424	    def r6(x):
+   425	        """Round to 6 decimal places."""
+   426	        return math.floor(x * 1_000_000 + 0.5) / 1_000_000
+   427	
+   428	    return {
+   429	        "total_score": r6(total_score),
+   430	        "mol_score": r6(mol_score),
+   431	        "route_score": r6(route_score),
+   432	        "binding_score": r6(avg_binding),
+   433	        "validity_score": r6(avg_validity),
+   434	        "sa_score": r6(avg_sa),
+   435	        "route_validity_score": r6(route_validity),
+   436	        "starting_material_availability_score": r6(avg_sm_avail),
+   437	        "sample_count": n,
+   438	    }
+9:  显著降低 trivial route 比例。
+296:def _is_simple_molecule(smiles: str) -> bool:
+646:        dict: {"success": bool, "route": str, "steps": int, "trivial": bool}
+653:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+658:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+661:    if _is_simple_molecule(smiles):
+662:        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+675:            all_trivial = True
+680:                    if not sub.get("trivial", False):
+681:                        all_trivial = False
+686:                if not sub.get("trivial", False):
+692:            is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+698:                "trivial": is_trivial,
+718:                    all_trivial = True
+723:                            if not sub.get("trivial", False):
+724:                                all_trivial = False
+727:                        if not sub.get("trivial", False):
+736:                        "trivial": False,
+742:    return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+
+[2026-05-21T16:10:42.909883] 迭代进度: 0/3 (初始: 22)
+让我进一步检查 synthesis_v2.py 中的 trivial 判定逻辑和 _is_simple_molecule 函数。<system>50 lines read from file starting from line 296.</system>   296	def _is_simple_molecule(smiles: str) -> bool:
+   297	    """判断分子是否为足够简单的起始原料，无需继续逆合成。
+   298	    
+   299	    H015 修复: 不再将多环芳烃/联芳基误判为"简单"。
+   300	    含苯环且 ≤15 原子的分子如果是单环则简单，多环则可能需要断键。
+   301	    文献依据: LARC (2025) — 起始原料应为商业可得的单环简单分子。
+   302	    """
+   303	    mol = Chem.MolFromSmiles(smiles)
+   304	    if mol is None:
+   305	        return False
+   306	    # 原子数 <= 10 视为简单
+   307	    if mol.GetNumAtoms() <= 10:
+   308	        return True
+   309	    # 匹配常见简单骨架
+   310	    for s in _SIMPLE_SCAFFOLDS_SMARTS:
+   311	        patt = Chem.MolFromSmarts(s)
+   312	        if patt and mol.HasSubstructMatch(patt):
+   313	            # H015 修复: 只接受单环或几乎无取代的分子（≤12 原子）
+   314	            # 排除多环芳烃（联苯、萘等）被误判为"简单"
+   315	            n_atoms = mol.GetNumAtoms()
+   316	            ring_info = mol.GetRingInfo()
+   317	            n_rings = ring_info.NumRings()
+   318	            # 单环 + ≤15 原子 → 简单
+   319	            if n_rings == 1 and n_atoms <= 15:
+   320	                return True
+   321	            # 多环但很小（如萘本身只有 10 原子）→ 简单
+   322	            if n_rings >= 2 and n_atoms <= 10:
+   323	                return True
+   324	    return False
+   325	
+   326	
+   327	# ======================================================================
+   328	# 逆合成规则库 — 按反应类型分组，共 35+ 条规则
+   329	# 设计原则：
+   330	#   1. 优先匹配更具体的结构（放在前面）
+   331	#   2. 覆盖常见药物化学键连方式
+   332	#   3. 反应物应为商业可得的简单分子
+   333	# ======================================================================
+   334	
+   335	RETRO_RULES = [
+   336	    # ============================== H012 新增规则 ==============================
+   337	    # 文献依据: LARC (Baker et al., 2025) — 规则覆盖率决定逆合成质量;
+   338	    # ChemCrow (Bran et al., 2024) — 工具/库的丰富度直接决定 Agent 能力边界
+   339	    
+   340	    # -- 喹啉/异喹啉合成（先于通用吡啶规则匹配）--
+   341	    # Friedländer 喹啉合成逆反应: 喹啉 → 邻氨基苯甲醛 + 酮
+   342	    ("c1ccc2c(c1)cccn2", "c1ccc2c(c1)cccn2>>Nc1ccccc1C=O.CC=O"),
+   343	    # 异喹啉 → Pictet-Spengler 逆反应
+   344	    ("c1ccc2c(c1)ccnc2", "c1ccc2c(c1)ccnc2>>NCCc1ccccc1.C=O"),
+   345	    
+<system>110 lines read from file starting from line 640.</system>   640	        smiles: 目标分子 SMILES
+   641	        max_depth: 最大递归深度
+   642	        current_depth: 当前递归深度
+   643	        visited: 已访问的 SMILES 集合（防止循环）
+   644	
+   645	    Returns:
+   646	        dict: {"success": bool, "route": str, "steps": int, "trivial": bool}
+   647	    """
+   648	    if visited is None:
+   649	        visited = set()
+   650	
+   651	    # 防止循环
+   652	    if smiles in visited:
+   653	        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+   654	    visited.add(smiles)
+   655	
+   656	    # 基础情况 1: 达到最大深度
+   657	    if current_depth >= max_depth:
+   658	        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+   659	
+   660	    # 基础情况 2: 分子已经足够简单
+   661	    if _is_simple_molecule(smiles):
+   662	        return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+   663	
+   664	    mol = Chem.MolFromSmiles(smiles)
+   665	    if mol is None:
+   666	        return {"success": False, "error": "无效的 SMILES"}
+   667	
+   668	    # 尝试所有逆合成规则
+   669	    for smarts_pattern, retro_smarts in RETRO_RULES:
+   670	        result = _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles)
+   671	        if result:
+   672	            reactants = result.get("reactants", [])
+   673	            # 对每个反应物递归规划
+   674	            sub_routes = []
+   675	            all_trivial = True
+   676	            for r in reactants:
+   677	                sub = plan_synthesis_recursive(r, max_depth, current_depth + 1, visited.copy())
+   678	                if sub.get("success"):
+   679	                    sub_routes.append(sub)
+   680	                    if not sub.get("trivial", False):
+   681	                        all_trivial = False
+   682	
+   683	            # 构建完整路线：先放子路线（非平凡的），再放当前步
+   684	            full_parts = []
+   685	            for sub in sub_routes:
+   686	                if not sub.get("trivial", False):
+   687	                    full_parts.append(sub["route"])
+   688	            full_parts.append(result["route"])
+   689	            full_route = " | ".join(full_parts)
+   690	
+   691	            total_steps = result["steps"] + sum(s.get("steps", 0) for s in sub_routes)
+   692	            is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+   693	
+   694	            return {
+   695	                "success": True,
+   696	                "route": full_route,
+   697	                "steps": total_steps,
+   698	                "trivial": is_trivial,
+   699	            }
+   700	
+   701	    # 回退: 用 BRICS 碎片化尝试找断键
+   702	    try:
+   703	        frags = BRICS.BreakMol(mol)
+   704	        if frags and len(frags) >= 2:
+   705	            frag_smiles = []
+   706	            for f in frags:
+   707	                if f is None:
+   708	                    continue
+   709	                s = Chem.MolToSmiles(f)
+   710	                if _validate_smiles(s):
+   711	                    frag_smiles.append(s)
+   712	            if len(frag_smiles) >= 2:
+   713	                reactants = ".".join(sorted(frag_smiles)[:2])
+   714	                route = _try_route(smiles, reactants)
+   715	                if route:
+   716	                    # 对 BRICS 碎片也尝试递归
+   717	                    sub_routes = []
+   718	                    all_trivial = True
+   719	                    for r in frag_smiles[:2]:
+   720	                        sub = plan_synthesis_recursive(r, max_depth, current_depth + 1, visited.copy())
+   721	                        if sub.get("success"):
+   722	                            sub_routes.append(sub)
+   723	                            if not sub.get("trivial", False):
+   724	                                all_trivial = False
+   725	                    full_parts = []
+   726	                    for sub in sub_routes:
+   727	                        if not sub.get("trivial", False):
+   728	                            full_parts.append(sub["route"])
+   729	                    full_parts.append(route)
+   730	                    full_route = " | ".join(full_parts)
+   731	                    total_steps = 1 + sum(s.get("steps", 0) for s in sub_routes)
+   732	                    return {
+   733	                        "success": True,
+   734	                        "route": full_route,
+   735	                        "steps": total_steps,
+   736	                        "trivial": False,
+   737	                    }
+   738	    except Exception:
+   739	        pass
+   740	
+   741	    # 最终回退: 平凡路线
+   742	    return {"success": True, "route": f"{smiles}>>{smiles}", "steps": 0, "trivial": True}
+   743	
+   744	
+   745	def plan_synthesis_v2(smiles: str):
+   746	    """使用 SMARTS 断键规则规划合成路线。
+   747	
+   748	    改进点（H003）：
+   749	    - 引入递归多步逆合成规划（plan_synthesis_recursive）
+<system>60 lines read from file starting from line 760.</system>   760	def score_route_quality(route_str: str, smiles: str) -> float:
+   761	    """评估逆合成路线的化学合理性（H012）。
+   762	
+   763	    文献依据:
+   764	    - LARC (Baker et al., 2025): Agent-as-a-Judge 逆合成框架，
+   765	      路线质量评审是确保合成可行性的关键环节
+   766	    - ChemCrow (Bran et al., 2024): 工具输出质量评估决定下游决策可靠性
+   767	
+   768	    评分维度:
+   769	    1. 多步路线 vs 单步（多步更真实，+0.2）
+   770	    2. 反应物数量（多组分反应更合理，+0.1-0.2）
+   771	    3. 复杂度比（产物/反应物原子比 > 3 为可疑，-0.3）
+   772	    4. 单反应物路线（除非是简单的氧化/还原/水解，-0.2）
+   773	
+   774	    Returns:
+   775	        float: 0.0（不可行）到 1.0（非常可行）
+   776	    """
+   777	    if not route_str or route_str == f"{smiles}>>{smiles}":
+   778	        return 0.0  # 平凡路线 = 最低质量
+   779	
+   780	    steps = route_str.split(" | ")
+   781	    step_scores = []
+   782	
+   783	    for step in steps:
+   784	        if " >> " not in step and ">>" not in step:
+   785	            continue
+   786	
+   787	        # 解析反应物和产物
+   788	        sep = " >> " if " >> " in step else ">>"
+   789	        parts = step.split(sep, 1)
+   790	        if len(parts) != 2:
+   791	            continue
+   792	        reactants_str, product_str = parts
+   793	        reactants = [r.strip() for r in reactants_str.split(".") if r.strip()]
+   794	
+   795	        score = 0.5  # 默认中等
+   796	
+   797	        # 1. 多反应物路线更真实（大多数合成反应涉及2+组分）
+   798	        if len(reactants) >= 2:
+   799	            score += 0.2
+   800	        elif len(reactants) == 1:
+   801	            # 单反应物路线须谨慎 — 检查是否为简单官能团转化
+   802	            r_mol = Chem.MolFromSmiles(reactants[0])
+   803	            p_mol = Chem.MolFromSmiles(product_str)
+   804	            if r_mol and p_mol:
+   805	                r_atoms = r_mol.GetNumAtoms()
+   806	                p_atoms = p_mol.GetNumAtoms()
+   807	                if p_atoms > r_atoms + 5:
+   808	                    # 单反应物生成更大产物 — 极不可能
+   809	                    score -= 0.3
+   810	                elif p_atoms <= r_atoms:
+   811	                    # 单反应物生成等大或更小产物 — 可能是脱保护/还原/氧化
+   812	                    score += 0.1
+   813	
+   814	        # 2. 反应物复杂度检查
+   815	        r_total_atoms = 0
+   816	        for r in reactants:
+   817	            r_mol = Chem.MolFromSmiles(r)
+   818	            if r_mol:
+   819	                r_total_atoms += r_mol.GetNumAtoms()
+
+[2026-05-21T16:11:11.439066] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:11:39.914023] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:12:08.383014] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:12:38.384417] 迭代进度: 0/3 (初始: 22)
+好的，我已经完成对知识库和源码的诊断分析。现在让我检查复合评分的执行逻辑，理解为何 trivial 分子进入了 top 10。<system>No matches found.</system>/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:228:def _is_trivial_route(route: str, target_smiles: str) -> bool:
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:339:        is_non_trivial = not _is_trivial_route(route, mol_smiles)
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:340:        route_validity_flags.append(is_non_trivial)
+/home/dministrator/Lab/clones/molcraft-agent/src/scorer.py:380:        if ">>" not in route or _is_trivial_route(route, mol_smiles):
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:675:            all_trivial = True
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:681:                        all_trivial = False
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:692:            is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:698:                "trivial": is_trivial,
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:718:                    all_trivial = True
+/home/dministrator/Lab/clones/molcraft-agent/src/synthesis_v2.py:724:                                all_trivial = False
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:88:    non_trivial_count: int
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:96:        if self.trivial_count + self.non_trivial_count != self.molecule_count:
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:98:                f"trivial_count ({self.trivial_count}) + non_trivial_count "
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:99:                f"({self.non_trivial_count}) != molecule_count ({self.molecule_count})"
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:369:            sorted_frags = sorted(frag_mols.items(), key=lambda x: x[1], reverse=True)
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:923:    result.sort(key=lambda x: x["qed"], reverse=True)
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:1009:    selected.sort(key=lambda x: x.get("binding_energy", 999))
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:1142:        docked_batch.sort(key=lambda x: x.get("binding_energy", 999))
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:1207:    unique.sort(key=lambda x: x.get("binding_energy", 999))
+/home/dministrator/Lab/clones/molcraft-agent/src/generator.py:1239:        result.sort(key=lambda x: x.get("binding_energy", 999))
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:60:    composite_score: float
+/home/dministrator/Lab/clones/molcraft-agent/src/event_schema.py:72:        _check_required(self.composite_score, "composite_score")
+<system>Found 1 matches for pattern `tools/pipeline*.py`.</system>tools/pipeline.py46:def compute_logp_score(logp: float) -> float:
+47:    """Compute LogP reasonableness score (H030).
+49:    Vina scoring over-rewards hydrophobic (high LogP) molecules due to
+51:    penalty factor: 1.0 for drug-like LogP (<=2), linear decay to 0.0 for
+56:    - Lipinski Rule of 5: LogP > 5 alerts for poor absorption
+62:    if logp <= 2.0:
+64:    if logp >= 5.0:
+66:    # Linear decay: score = 1.0 - (logp - 2.0) / 3.0
+67:    return max(0.0, 1.0 - (logp - 2.0) / 3.0)
+226:    from synthesis_v2 import score_route_quality
+242:        route = syn.get("route", f"{smiles}>>{smiles}") if syn.get("success") else f"{smiles}>>{smiles}"
+243:        is_trivial = syn.get("trivial", False) or route == f"{smiles}>>{smiles}"
+244:        quality = score_route_quality(route, smiles)
+247:            "route": route,
+250:            "logp": mol.get("logp", 0.0),
+251:            "trivial": is_trivial,
+252:            "route_quality": quality,
+257:            composite = 0.0  # will be recalculated in H012 scoring below
+261:                composite_score=composite,
+266:                trivial=is_trivial,
+267:                route_quality=quality,
+271:    # H012+H030 复合评分: 0.75×BE_norm + 0.15×route_quality + 0.10×logp_score
+272:    # H030: LogP penalty counters Vina hydrophobic bias that over-rewards
+273:    # large polycyclic aromatics (LogP>4) which retrosynthesis rules cannot handle.
+283:                # H030: LogP score penalizes excessively lipophilic molecules
+284:                logp_score = compute_logp_score(c.get("logp", 0.0))
+285:                c["composite_score"] = 0.75 * be_norm + 0.15 * c["route_quality"] + 0.10 * logp_score
+288:                logp_score = compute_logp_score(c.get("logp", 0.0))
+289:                c["composite_score"] = c["route_quality"] * 0.75 + logp_score * 0.25
+292:        scored_candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
+293:        log(f"复合评分排序完成 (0.75×BE + 0.15×路线质量 + 0.10×LogP)", log_lines)
+298:    trivial_count = 0
+300:        if c["trivial"]:
+301:            trivial_count += 1
+304:            "route": c["route"],
+307:            "trivial": c["trivial"],
+310:            f"logP={c.get('logp', 'N/A')} steps={c['syn_steps']} quality={c['route_quality']:.2f} "
+311:            f"composite={c['composite_score']:.3f}"
+312:            f"{' [TRIVIAL]' if c['trivial'] else ''}", log_lines)
+320:        log(f"Trivial route 比例: {trivial_count}/{len(results)} ({trivial_count/len(results)*100:.1f}%)", log_lines)
+330:            writer = csv.DictWriter(f, fieldnames=["mol_smiles", "route"])
+333:                writer.writerow({"mol_smiles": row["mol_smiles"], "route": row["route"]})
+350:            non_trivial_count=len(results) - trivial_count,
+351:            trivial_count=trivial_count,
+462:            "logp": m.get("logp"),
+
+[2026-05-21T16:13:06.871277] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:13:34.634904] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:14:03.216896] 迭代进度: 0/3 (初始: 22)
+让我验证当前 result.csv 中 trivial 路线的精确数量，然后完成诊断分析。<system>Command executed successfully.</system>[16:14:31] DEPRECATION WARNING: please use MorganGenerator
+[16:14:31] DEPRECATION WARNING: please use MorganGenerator
+[16:14:31] DEPRECATION WARNING: please use MorganGenerator
+[16:14:31] DEPRECATION WARNING: please use MorganGenerator
+Row 1: steps=2 trivial_old=False tanimoto=None h_diff=13 SMILES=Nc1ccccc1-c1cc(C(=O)F)c(NC(=O)c2ccccc2Cl)cc1O...
+Row 2: steps=3 trivial_old=False tanimoto=None h_diff=0 SMILES=O=Cc1nc2nc(-c3ccccc3)ncc2nc1-c1ccccc1...
+Row 3: steps=2 trivial_old=False tanimoto=None h_diff=11 SMILES=Nc1ccccc1-c1ccc(NC(=O)c2ccccc2F)c(C=O)c1...
+Row 4: steps=2 trivial_old=False tanimoto=None h_diff=5 SMILES=Nc1c(-c2nc(-c3ccccc3)ccc2C=O)ccc2c1O2...
+Row 5: steps=2 trivial_old=False tanimoto=None h_diff=11 SMILES=Nc1ccccc1-c1ccc(NC(=O)c2ccccc2)c(C=O)c1...
+Row 6: steps=1 trivial_old=False tanimoto=0.6363636363636364 h_diff=0 SMILES=O=C1c2ccccc2NNc2cccc(Cl)c21...
+Row 7: steps=1 trivial_old=False tanimoto=0.6756756756756757 h_diff=0 SMILES=CC1CCC2(CC1)Cc1cccc(Cl)c1C2...
+Row 8: steps=2 trivial_old=False tanimoto=None h_diff=0 SMILES=Cc1c(N)ccc2c1CC1(CCC(F)CC1)N2...
+Row 9: steps=2 trivial_old=False tanimoto=None h_diff=0 SMILES=Nc1ccccc1C1CCC2NCNC2(C=O)C1...
+Row 10: steps=2 trivial_old=False tanimoto=None h_diff=0 SMILES=Fc1cccc2c1NC1(CCC(Cl)CC1)C2...
+
+[2026-05-21T16:14:31.651837] 迭代进度: 0/3 (初始: 22)
+有意思，Morgan 指纹相似度不足以捕捉官能团替换。让我查找 synthesis_v2.py 中产生 OH→Cl 类型路线的规则。355-    # -- 肼/联氨类 --
+356-    # 肼 → 重氮盐还原
+357:    ("[NH2][NH2]", "[NH2:1][NH2:2]>>[NH2:1]Cl.[NH2:2]"),
+358-    
+359-    # ============================== 原有规则 ==============================
+--
+365-    
+366-    # ------------------- 磺酰胺类 -------------------
+367:    ("[S](=[O])(=[O])[N;!H0]", "[c:1][S](=[O])(=[O])[N:2]>>[c:1][S](=[O])(=[O])Cl.[N:2]"),
+368:    ("[S](=[O])(=[O])[N;H0]", "[c:1][S](=[O])(=[O])[N:2]>>[c:1][S](=[O])(=[O])Cl.[N:2]"),
+369-    
+370-    # ------------------- 酰胺类 -------------------
+--
+379-    
+380-    # ------------------- 芳基醚 / 烷基醚 -------------------
+381:    ("[c]O[#6;!c]", "[c:1]O[#6;!c:2]>>[c:1]O.[C:2]Cl"),
+382:    ("[#6;!c]O[#6;!c]", "[#6;!c:1]O[#6;!c:2]>>[#6;!c:1]O.[#6;!c:2]Cl"),
+383-    
+384-    # ------------------- 胺类 -------------------
+--
+386-    ("[NX3;H1;!$(NC=O);!$(NS(=O)=O)]", "[C:1][N;H1:2][C:3]>>[C:1][N;H2:2].[C:3]=O"),
+387-    # 叔胺 — 烷基化逆反应
+388:    ("[NX3;H0;!$(NC=O);!$(NS(=O)=O)]", "[C:1][N:2][C:3]>>[C:1][N:2].[C:3]Cl"),
+389-    # 芳基仲胺 — Buchwald-Hartwig 简化
+390-    ("[c][NX3;H1]", "[c:1][N:2]>>[c:1]Br.[N:2]"),
+--
+401-    ("[N+](=O)[O-]", "[N+](=O)[O-]>>N"),
+402-    
+403:    # ------------------- 卤代芳烃 -------------------
+404-    # 芳基氟 — 亲核芳香取代逆反应
+405:    ("[c]F", "[c:1]F>>[c:1]Cl.F"),
+406-    # 芳基氯
+407:    ("[c]Cl", "[c:1]Cl>>[c:1]O.Cl"),
+408-    # 芳基溴
+409-    ("[c]Br", "[c:1]Br>>[c:1]O.Br"),
+--
+413-    # ------------------- 酮 / 醛 -------------------
+414-    # 芳基酮 — Friedel-Crafts 酰化逆反应
+415:    ("[c]C(=O)[C;!c]", "[c:1]C(=O)[C:2]>>[c:1].[C:2]C(=O)Cl"),
+416-    # 二芳基酮
+417:    ("[c]C(=O)[c]", "[c:1]C(=O)[c:2]>>[c:1].[c:2]C(=O)Cl"),
+418-    # 醛
+419-    ("[CX3H1](=O)", "[C:1](=O)>>[C:1]O"),
+--
+423-    ("[c]C[OH]", "[c:1]C[OH]>>[c:1]C(=O)O"),
+424-    # 普通醇 — 水解逆反应（酯/环氧）
+425:    ("[C;!c][OH]", "[C:1][OH]>>[C:1]Cl.O"),
+426-    
+427-    # ------------------- 腈类 -------------------
+--
+481-    # ------------------- 硫醚 / 硫醇 -------------------
+482-    ("[c]S[!H0]", "[c:1][S:2]>>[c:1]Br.[S:2]"),
+483:    ("[C;!c]S[C;!c]", "[C:1][S:2]>>[C:1]Cl.[S:2]"),
+484-    
+485-    # ------------------- 重氮 / 叠氮 -------------------
+--
+565-    # H017-fix: MgBr → Cl（Grignard 试剂不可表示为有效 SMILES）
+566-    ("[C;!R;!$(C=*);!$(C#*)][C;!R;!$(C=*);!$(C#*)]",
+567:     "[C:1][C:2]>>[C:1]Br.[C:2]Cl"),
+568-
+569-    # -- 环醚开环（THF/THP 逆 Williamson 醚合成）--
+570-    # 匹配: 四氢呋喃/四氢吡喃/氧杂环丁烷/二氧戊环等饱和环醚中的 C-O-C
+571:    # 逆反应: 环醚开环 → 卤代醇
+572-    # 适用于: THF、THP、1,4-二氧六环、氧杂环丁烷等
+573-    ("[C;R;!a][O;R;!a]",
+--
+602-    # -- 苯并呋喃 (Rap-Stoermer 逆反应) --
+603-    # 匹配: 苯并呋喃核心骨架（苯并呋喃）
+604:    # 逆反应: 苯并呋喃 → 苯酚 + α-卤代羰基
+605-    # 苯并呋喃是天然产物和药物中的常见氧杂环（如胺碘酮）
+606-    ("c1ccc2occc2c1",
+--
+609-    # -- 苯并噻吩 (亲电环化逆反应) --
+610-    # 匹配: 苯并噻吩核心骨架（硫代苯并呋喃）
+611:    # 逆反应: 苯并噻吩 → 硫酚 + α-卤代羰基
+612-    # 苯并噻吩在药物化学中作为苯并呋喃的硫等排体出现（如雷洛昔芬类似物）
+613-    ("c1ccc2sccc2c1",
+
+[2026-05-21T16:15:00.150450] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:15:30.152918] 迭代进度: 0/3 (初始: 22)
+找到了！第 407-409 行的卤代芳烃规则 `[c:1]Cl>>[c:1]O.Cl` 是罪魁祸首——它们只是简单的 OH↔Cl 原子替换，并非真正的化学反应。让我检查 `_run_retro_rule` 并完成诊断。189:def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
+<system>100 lines read from file starting from line 189.</system>   189	def _run_retro_rule(mol, smarts_pattern, retro_smarts, smiles):
+   190	    """通用逆合成规则执行函数。
+   191	
+   192	    H014 改进: 增加化学计量守恒验证（mass balance check）。
+   193	    文献依据: LARC (Baker et al., 2025) — Agent-as-a-Judge 框架强调
+   194	    逆合成路线必须满足化学计量守恒，原料原子数应与产物匹配。
+   195	
+   196	    Args:
+   197	        mol: 目标分子 RDKit Mol 对象
+   198	        smarts_pattern: 匹配目标分子的 SMARTS
+   199	        retro_smarts: 逆合成反应的 SMARTS
+   200	        smiles: 目标分子的 SMILES（用于构建路线）
+   201	
+   202	    Returns:
+   203	        dict 或 None: 成功时返回 {"route": ..., "reactants": [...], "steps": 1}
+   204	    """
+   205	    patt = Chem.MolFromSmarts(smarts_pattern)
+   206	    if patt is None or not mol.HasSubstructMatch(patt):
+   207	        return None
+   208	    rxn = AllChem.ReactionFromSmarts(retro_smarts)
+   209	    if rxn is None:
+   210	        return None
+   211	    ps = rxn.RunReactants((mol,))
+   212	    if not ps:
+   213	        return None
+   214	
+   215	    # 目标分子的非氢原子数（用于化学计量验证）
+   216	    target_n_atoms = mol.GetNumAtoms(onlyExplicit=False)
+   217	    # RDKit 的 GetNumAtoms 默认不包含 H — 我们只需要重原子数
+   218	    target_heavy = mol.GetNumHeavyAtoms()
+   219	
+   220	    # 遍历所有可能的产物集，找到第一个产生有效SMILES的
+   221	    for product_set in ps:
+   222	        if not product_set:
+   223	            continue
+   224	        if len(product_set) >= 2:
+   225	            r1 = Chem.MolToSmiles(product_set[0])
+   226	            r2 = Chem.MolToSmiles(product_set[1])
+   227	            route = _try_route(smiles, r1, r2)
+   228	            reactants = [r1, r2]
+   229	        else:
+   230	            r1 = Chem.MolToSmiles(product_set[0])
+   231	            route = _try_route(smiles, r1)
+   232	            reactants = [r1]
+   233	
+   234	        if route:
+   235	            # H014: 化学计量守恒检查
+   236	            # 验证反应物重原子数总和与目标分子是否在合理范围内
+   237	            # 若规则只匹配部分分子（如仅匹配核心骨架而丢失取代基），
+   238	            # 产物重原子数/原料重原子数会显著偏离 1.0
+   239	            try:
+   240	                reactant_heavy = 0
+   241	                for r_smi in reactants:
+   242	                    r_mol = Chem.MolFromSmiles(r_smi)
+   243	                    if r_mol:
+   244	                        reactant_heavy += r_mol.GetNumHeavyAtoms()
+   245	                if reactant_heavy > 0:
+   246	                    ratio = target_heavy / reactant_heavy
+   247	                    # 允许 ±25% 容差（考虑脱保护基、缩合失水等）
+   248	                    # H014 调优: 0.7-1.3 — 验证显示 0.5-1.5 过宽
+   249	                    #   例: 取代喹啉(17atoms) / 无取代原料(12atoms) = 1.42 > 1.3 ✓ 拒绝
+   250	                    # H021 调优: 0.75-1.25 — 进一步收紧，防止误匹配
+   251	                    if ratio < 0.75 or ratio > 1.25:
+   252	                        # 原子不守恒 — 拒绝此条规则，尝试下一条
+   253	                        continue
+   254	            except Exception:
+   255	                # 解析失败时不拒绝，保留原有行为
+   256	                pass
+   257	
+   258	            # H021: 元素守恒检查
+   259	            # 验证目标分子中的所有元素（除 C, H, O, N 外）在反应物中都存在
+   260	            # 防止因 SMARTS 只匹配核心骨架而丢失取代基导致的误匹配
+   261	            # 例如: 含 B(OH)2 的异喹啉在 Pictet-Spengler 逆反应中会丢失 B
+   262	            # 因为 SMARTS 只匹配异喹啉核心，B(OH)2 取代基在反应中被丢弃
+   263	            try:
+   264	                target_elements = {a.GetSymbol() for a in mol.GetAtoms()}
+   265	                reactant_elements = set()
+   266	                for r_smi in reactants:
+   267	                    r_mol = Chem.MolFromSmiles(r_smi)
+   268	                    if r_mol:
+   269	                        reactant_elements |= {a.GetSymbol() for a in r_mol.GetAtoms()}
+   270	                # C, H, O, N 在缩合反应中可能丢失/获得，不视为异常
+   271	                suspicious_elements = target_elements - reactant_elements - {'C', 'H', 'O', 'N'}
+   272	                if suspicious_elements:
+   273	                    # 反应物中缺少目标分子含有的元素（如 B, F, Cl, Br, I, S, P 等）
+   274	                    # 这些元素不可能在逆合成中凭空出现
+   275	                    continue
+   276	            except Exception:
+   277	                # 解析失败时不拒绝，保留原有行为
+   278	                pass
+   279	
+   280	            return {"success": True, "route": route, "reactants": reactants, "steps": 1}
+   281	
+   282	    return None
+   283	
+   284	
+   285	# 简单分子阈值：原子数 <= 10 或属于常见起始原料，停止递归
+   286	_SIMPLE_SCAFFOLDS_SMARTS = [
+   287	    "c1ccccc1",      # 苯
+   288	    "c1ccncc1",      # 吡啶
+
+[2026-05-21T16:15:58.659835] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:16:27.210926] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:16:55.556767] 迭代进度: 0/3 (初始: 22)
+诊断清晰了。让我完成诊断文档、提出假设，然后进入代码演进阶段。
+
+**核心发现：** `synthesis_v2.py` 第 407-409 行的卤素交换规则 `[c:1]Cl>>[c:1]O.Cl` 产生了化学上无效的单原子替换路线（OH↔Cl），这些路线通过了 trivial 检测（因为 reactant SMILES ≠ product SMILES），在复合评分中获得 ~0.7 的路线质量分。<system>File successfully overwritten. Current size: 3782 bytes.</system>
+[2026-05-21T16:17:23.892492] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:17:52.414473] 迭代进度: 0/3 (初始: 22)
+
+[2026-05-21T16:18:20.842061] 迭代进度: 0/3 (初始: 22)
+在进入代码演进前，让我精确追踪 `plan_synthesis_recursive` 对有问题分子的行为。<system>Command executed successfully.</system>Is OH version simple? False
+Is Cl version simple? False
+Result: success=True trivial=False steps=1
+Route: O=C1c2ccccc2NNc2cccc(O)c21.Cl>>O=C1c2ccccc2NNc2cccc(Cl)c21.O
+
+[2026-05-21T16:18:49.247781] 迭代进度: 0/3 (初始: 22)
+好的，确认了。OH 版本分子的子路线是 trivial 的（无有效 RETRO_RULES 匹配，BRICS 回退），但因为 `len(reactants)==2`，整体没被标记为 trivial。现在进入阶段三：代码演进。<system>ERROR: 阶段「诊断」尚未结束，不能开始新阶段</system>{"stage": "诊断", "duration_seconds": 628.6, "message": "阶段「诊断」完成，耗时 628.6s"}{"stage": "代码演进", "message": "阶段「代码演进」开始"}

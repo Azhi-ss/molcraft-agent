@@ -43,6 +43,30 @@ def count_rings(smiles: str) -> int:
     return Chem.rdMolDescriptors.CalcNumRings(mol)
 
 
+def compute_logp_score(logp: float) -> float:
+    """Compute LogP reasonableness score (H030).
+
+    Vina scoring over-rewards hydrophobic (high LogP) molecules due to
+    overestimated burial of nonpolar surface area. This function returns a
+    penalty factor: 1.0 for drug-like LogP (<=2), linear decay to 0.0 for
+    excessively lipophilic molecules (>=5).
+
+    Literature:
+    - Vina Scoring Known Biases: "Hydrophobic overestimation"
+    - Lipinski Rule of 5: LogP > 5 alerts for poor absorption
+    - Multi-parameter optimization (Kabiri, 2025)
+
+    Returns:
+        float: 0.0 (worst) to 1.0 (best)
+    """
+    if logp <= 2.0:
+        return 1.0
+    if logp >= 5.0:
+        return 0.0
+    # Linear decay: score = 1.0 - (logp - 2.0) / 3.0
+    return max(0.0, 1.0 - (logp - 2.0) / 3.0)
+
+
 
 def run_evolutionary_pipeline(
     n_generate=50,
@@ -96,21 +120,15 @@ def run_evolutionary_pipeline(
             # 初始代
             if generator in ("diffusion", "hybrid"):
                 diffusion_mols = _generate_diffusion(n_generate, log_lines)
-                if diffusion_mols:
-                    log(f"扩散模型生成了 {len(diffusion_mols)} 个分子", log_lines)
-                else:
-                    log("扩散模型生成失败或不可用", log_lines)
+                log(f"扩散模型生成了 {len(diffusion_mols)} 个分子", log_lines)
 
                 if generator == "diffusion":
-                    mols = diffusion_mols if diffusion_mols else generate_molecules(
-                        strategy=strategy, n_molecules=n_generate,
-                    )
+                    mols = diffusion_mols
                 else:  # hybrid
-                    n_diffusion = len(diffusion_mols) if diffusion_mols else 0
-                    n_rdkit = max(n_generate - n_diffusion, n_generate // 2)
+                    n_rdkit = max(n_generate - len(diffusion_mols), n_generate // 2)
                     rdkit_mols = generate_molecules(strategy=strategy, n_molecules=n_rdkit)
-                    mols = (diffusion_mols or []) + rdkit_mols
-                    log(f"混合模式: 扩散 {n_diffusion} + RDKit {len(rdkit_mols)}", log_lines)
+                    mols = diffusion_mols + rdkit_mols
+                    log(f"混合模式: 扩散 {len(diffusion_mols)} + RDKit {len(rdkit_mols)}", log_lines)
             elif use_docking_guidance:
                 # H002: 使用对接引导生成
                 log(f"初始代: 使用对接引导生成 (batch_size=10, n_generations=3)", log_lines)
@@ -229,6 +247,7 @@ def run_evolutionary_pipeline(
             "route": route,
             "binding_energy": mol.get("binding_energy"),
             "qed": mol.get("qed"),
+            "logp": mol.get("logp", 0.0),
             "trivial": is_trivial,
             "route_quality": quality,
             "syn_steps": syn.get("steps", 0),
@@ -249,7 +268,9 @@ def run_evolutionary_pipeline(
                 docking_std=mol.get("consensus_std"),
             ))
 
-    # H012 复合评分: 0.8×BE_norm + 0.2×route_quality
+    # H012+H030 复合评分: 0.75×BE_norm + 0.15×route_quality + 0.10×logp_score
+    # H030: LogP penalty counters Vina hydrophobic bias that over-rewards
+    # large polycyclic aromatics (LogP>4) which retrosynthesis rules cannot handle.
     energies_all = [c["binding_energy"] for c in scored_candidates if c["binding_energy"] is not None]
     if energies_all:
         e_min, e_max = min(energies_all), max(energies_all)
@@ -259,14 +280,17 @@ def run_evolutionary_pipeline(
                     be_norm = (e_max - c["binding_energy"]) / (e_max - e_min)
                 else:
                     be_norm = 0.0
-                c["composite_score"] = 0.8 * be_norm + 0.2 * c["route_quality"]
+                # H030: LogP score penalizes excessively lipophilic molecules
+                logp_score = compute_logp_score(c.get("logp", 0.0))
+                c["composite_score"] = 0.75 * be_norm + 0.15 * c["route_quality"] + 0.10 * logp_score
         else:
             for c in scored_candidates:
-                c["composite_score"] = c["route_quality"]
+                logp_score = compute_logp_score(c.get("logp", 0.0))
+                c["composite_score"] = c["route_quality"] * 0.75 + logp_score * 0.25
 
         # 按复合评分排序（越高越好）
         scored_candidates.sort(key=lambda x: x.get("composite_score", 0), reverse=True)
-        log(f"复合评分排序完成 (0.8×BE + 0.2×路线质量)", log_lines)
+        log(f"复合评分排序完成 (0.75×BE + 0.15×路线质量 + 0.10×LogP)", log_lines)
 
     # 选择 top N
     final_top = scored_candidates[:n_top]
@@ -283,7 +307,7 @@ def run_evolutionary_pipeline(
             "trivial": c["trivial"],
         })
         log(f"  {c['mol_smiles'][:50]}... BE={c['binding_energy']} "
-            f"steps={c['syn_steps']} quality={c['route_quality']:.2f} "
+            f"logP={c.get('logp', 'N/A')} steps={c['syn_steps']} quality={c['route_quality']:.2f} "
             f"composite={c['composite_score']:.3f}"
             f"{' [TRIVIAL]' if c['trivial'] else ''}", log_lines)
 
@@ -342,10 +366,12 @@ def run_evolutionary_pipeline(
 
 
 def _generate_diffusion(n_molecules, log_lines):
-    """调用 PocketXMol 扩散模型 HTTP API 生成口袋感知分子。
+    """调用 PocketXMol 扩散模型 HTTP API 生成口袋感知分子（异步轮询模式）。
 
     Returns:
-        list[dict] | None: 生成的分子列表（格式与 generate_molecules 兼容），失败返回 None
+        list[dict]: 生成的分子列表（格式与 generate_molecules 兼容）
+    Raises:
+        RuntimeError: 扩散模型不可用或推理失败（pipeline 应中止，不降级）
     """
     import urllib.request
     import urllib.error
@@ -353,63 +379,94 @@ def _generate_diffusion(n_molecules, log_lines):
 
     api_url = _config.DIFFUSION_API_URL
     if not api_url:
-        log("DIFFUSION_API_URL 未配置，跳过扩散模型生成", log_lines)
-        return None
+        raise RuntimeError("DIFFUSION_API_URL 未配置，无法使用扩散模型生成器")
 
-    try:
-        pdb_path = _config.TARGET_PDB
-        if not os.path.exists(pdb_path):
-            log(f"PDB 文件不存在: {pdb_path}", log_lines)
-            return None
-        pdb_content = open(pdb_path).read()
+    pdb_path = _config.TARGET_PDB
+    if not os.path.exists(pdb_path):
+        raise RuntimeError(f"PDB 文件不存在: {pdb_path}")
 
-        request_body = json.dumps({
-            "pdb_content": pdb_content,
-            "n_molecules": n_molecules,
-            "pocket_center": _config.DOCKING_CENTER,
-            "pocket_radius": max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0,
-        }, ensure_ascii=False).encode("utf-8")
+    pdb_content = open(pdb_path).read()
+    pocket_radius = max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0
 
-        url = f"{api_url.rstrip('/')}/generate"
-        req = urllib.request.Request(
-            url, data=request_body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
+    request_body = json.dumps({
+        "pdb_content": pdb_content,
+        "n_molecules": n_molecules,
+        "pocket_center": _config.DOCKING_CENTER,
+        "pocket_radius": pocket_radius,
+    }, ensure_ascii=False).encode("utf-8")
 
-        log(f"调用扩散模型 API: {url} (n={n_molecules})", log_lines)
-        with urllib.request.urlopen(req, timeout=_config.DIFFUSION_TIMEOUT) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
+    base_url = api_url.rstrip("/")
 
-        molecules = result.get("molecules", [])
-        gen_time = result.get("generation_time_seconds", 0)
-        log(f"扩散模型返回 {len(molecules)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
+    # Phase 1: Submit job
+    submit_url = f"{base_url}/generate"
+    submit_req = urllib.request.Request(
+        submit_url, data=request_body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    log(f"扩散模型: 提交任务 {base_url} (n={n_molecules})", log_lines)
+    accept = json.loads(urllib.request.urlopen(submit_req, timeout=60).read().decode("utf-8"))
+    job_id = accept["job_id"]
+    log(f"扩散模型: 任务 {job_id} 已接受，开始轮询...", log_lines)
 
-        # 转换为与 generate_molecules 兼容的格式
-        converted = []
-        for m in molecules:
-            smiles = m.get("smiles", "")
-            if not smiles:
-                continue
-            mol = Chem.MolFromSmiles(smiles)
-            if mol is None or len(Chem.GetMolFrags(mol)) > 1:
-                continue
-            converted.append({
-                "smiles": smiles,
-                "qed": m.get("qed"),
-                "mw": m.get("mw"),
-                "logp": m.get("logp"),
-                "sa_score": m.get("sa_score"),
-            })
+    # Phase 2: Poll for completion
+    poll_interval = 30
+    timeout = _config.DIFFUSION_TIMEOUT
+    elapsed = 0
+    while elapsed < timeout:
+        time.sleep(poll_interval)
+        elapsed += poll_interval
 
-        return converted if converted else None
+        status_req = urllib.request.Request(f"{base_url}/job/{job_id}")
+        try:
+            status = json.loads(urllib.request.urlopen(status_req, timeout=15).read().decode("utf-8"))
+        except urllib.error.URLError:
+            continue
 
-    except urllib.error.URLError as e:
-        log(f"扩散模型 API 连接失败: {e}", log_lines)
-        return None
-    except Exception as e:
-        log(f"扩散模型生成异常: {e}", log_lines)
-        return None
+        job_status = status["status"]
+        job_elapsed = status.get("elapsed_seconds", 0)
+        mol_count = status.get("molecule_count", 0)
+
+        log(f"扩散模型: [{job_status}] {job_elapsed:.0f}s elapsed, {mol_count} mols so far", log_lines)
+
+        if job_status == "completed":
+            break
+        elif job_status == "failed":
+            raise RuntimeError(f"扩散模型推理失败: {status.get('message', 'Unknown')}")
+
+    if elapsed >= timeout:
+        raise RuntimeError(f"扩散模型推理超时 ({timeout}s)")
+
+    # Phase 3: Fetch result
+    result_url = f"{base_url}/job/{job_id}/result"
+    result_req = urllib.request.Request(result_url)
+    result = json.loads(urllib.request.urlopen(result_req, timeout=30).read().decode("utf-8"))
+
+    molecules = result.get("molecules", [])
+    gen_time = result.get("generation_time_seconds", 0)
+    log(f"扩散模型: 完成 — {len(molecules)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
+
+    # Convert to generate_molecules-compatible format
+    converted = []
+    for m in molecules:
+        smiles = m.get("smiles", "")
+        if not smiles:
+            continue
+        mol = Chem.MolFromSmiles(smiles)
+        if mol is None or len(Chem.GetMolFrags(mol)) > 1:
+            continue
+        converted.append({
+            "smiles": smiles,
+            "qed": m.get("qed"),
+            "mw": m.get("mw"),
+            "logp": m.get("logp"),
+            "sa_score": m.get("sa_score"),
+        })
+
+    if not converted:
+        raise RuntimeError("扩散模型生成结果为空")
+
+    return converted
 
 
 def _generate_offspring(seeds, n_offspring_per_seed):

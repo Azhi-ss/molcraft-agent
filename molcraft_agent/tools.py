@@ -975,17 +975,73 @@ class DiffusionGenerate(CallableTool2):
                 "pocket_radius": max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0,
             }, ensure_ascii=False).encode("utf-8")
 
-            url = f"{api_url.rstrip('/')}/generate"
-            req = urllib.request.Request(
-                url,
+            base_url = api_url.rstrip("/")
+
+            # Phase 1: Submit job
+            submit_url = f"{base_url}/generate"
+            submit_req = urllib.request.Request(
+                submit_url,
                 data=request_body,
                 headers={"Content-Type": "application/json"},
                 method="POST",
             )
+            accept_data = await asyncio.to_thread(
+                _http_request_json, submit_req, timeout=60
+            )
+            job_id = accept_data["job_id"]
 
+            # Phase 2: Poll for completion
+            poll_interval = 30  # seconds
             timeout = _config.DIFFUSION_TIMEOUT
+            elapsed = 0
+            while elapsed < timeout:
+                await asyncio.sleep(poll_interval)
+                elapsed += poll_interval
+
+                status_url = f"{base_url}/job/{job_id}"
+                status_req = urllib.request.Request(status_url)
+                try:
+                    status_data = await asyncio.to_thread(
+                        _http_request_json, status_req, timeout=15
+                    )
+                except urllib.error.URLError:
+                    continue  # Transient network issue, keep polling
+
+                job_status = status_data["status"]
+                job_elapsed = status_data.get("elapsed_seconds", 0)
+                mol_count = status_data.get("molecule_count", 0)
+
+                if job_status == "completed":
+                    break
+                elif job_status == "failed":
+                    return ToolError(
+                        output=json.dumps({
+                            "status": "error",
+                            "error": status_data.get("message", "Unknown"),
+                            "hint": f"扩散模型推理失败 (耗时 {job_elapsed:.0f}s)",
+                            "fallback": "改用 generate_molecules 生成分子",
+                        }),
+                        message=status_data.get("message", "Inference failed"),
+                        brief="扩散模型推理失败",
+                    )
+
+            if elapsed >= timeout:
+                return ToolError(
+                    output=json.dumps({
+                        "status": "error",
+                        "error": f"扩散模型推理超时 ({timeout}s)",
+                        "hint": "GPU 服务器推理时间超过限制，可能是 PDB 太大或 GPU 过载",
+                        "fallback": "改用 generate_molecules 生成分子",
+                    }),
+                    message=f"Diffusion generation timed out after {timeout}s",
+                    brief="扩散模型超时",
+                )
+
+            # Phase 3: Fetch result
+            result_url = f"{base_url}/job/{job_id}/result"
+            result_req = urllib.request.Request(result_url)
             result_data = await asyncio.to_thread(
-                _http_request_with_retry, req, timeout, max_retries=2
+                _http_request_json, result_req, timeout=30
             )
 
             molecules = result_data.get("molecules", [])
@@ -1043,17 +1099,9 @@ class DiffusionGenerate(CallableTool2):
             )
 
 
-def _http_request_with_retry(
-    req: urllib.request.Request, timeout: int, max_retries: int = 2
+def _http_request_json(
+    req: urllib.request.Request, timeout: int
 ) -> dict:
-    """Send HTTP request with retry. Raises on final failure."""
-    last_exc = None
-    for attempt in range(max_retries + 1):
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except Exception as exc:
-            last_exc = exc
-            if attempt < max_retries:
-                time.sleep(5 * (attempt + 1))
-    raise last_exc
+    """Send HTTP request and parse JSON response. Raises on failure."""
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
