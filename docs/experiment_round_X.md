@@ -1,57 +1,45 @@
-# 实验验证报告 — Round X (2026-05-21)
+# 实验验证 — Round X (新会话 H031)
 
-## 假设ID: H029 — 多构象对接增强
+## 日期: 2026-05-21
 
-### 实验配置
+---
 
-| 参数 | 值 |
-|------|-----|
-| n_generate | 50 |
-| n_top | 10 |
-| strategy | mutate |
-| n_generations | 2 |
-| docking_guidance | True |
-| 共识对接 | 3 seeds × 3 conformers (H009 + H029) |
-| 进化阶段对接 | n_conformers=1 (保持速度) |
+## 假设: H031 — 单原子替换 Trivial 路线检测
 
-### 实验结果
+### 实验设置
+- Pipeline: `run_pipeline(n_generate=50, n_top=10, strategy=mutate, n_generations=2, docking_guidance=True)`
+- 对照组: H030 基线 (Best BE=-9.972, Avg=-8.757, trivial claimed 0/10 actual 2/10)
+- 实验组: H031 修复后
 
-| 指标 | 修改前（基线） | 修改后 | 变化 |
-|------|--------------|--------|------|
-| Best BE | -9.19 | **-10.099** | **+9.9%** ✅ |
-| Avg BE | -8.42 | **-9.412** | **+11.8%** ✅ |
-| Trivial ratio | 0/10 | 2/10 | ❌ 退化 |
-| QED 均值 | 未记录 | ~0.45 | — |
-| 主导化学型 | Suzuki 联芳基 | 多环芳烃/稠环 | 变化 |
+### 结果
 
-### Top 3 分子
+| 指标 | H030 基线 | H031 实验 | 变化 |
+|------|----------|----------|------|
+| Best BE | -9.972 | -9.902 | -0.070 (-0.7%) |
+| Avg BE | -8.757 | -8.642 | -0.115 (-1.3%) |
+| Trivial 总数 | 2/10 (OH→Cl型) | 2/10 (smiles>>smiles型) | 不变 |
+| Route quality 惩罚 | Trivial 分子未受惩罚 | Trivial 分子受惩罚 | ✅ 改善 |
 
-| # | SMILES | BE | Route |
-|---|--------|----|-------|
-| 1 | Oc1c2cccc(Cl)c2c(Cl)c2c3c(ccc12)C3 | -10.099 | 2-step |
-| 2 | O=[SH](=O)Nc1cc2c3c(c4ccccc4cc3c1)C=C2 | -9.562 | 2-step |
-| 3 | Fc1c2cccc(Cl)c2cc2c3c(ccc12)C3 | -9.489 | 4-step |
+### Trivial 路线详细分析
 
-### 对比分析
+**修改前 (H030)**: 
+- 2个 OH→Cl 单原子替换 trivial 路线
+- `route_quality` ~0.7（未被识别为 trivial）
+- 复合评分中 `0.15 * 0.7 = 0.105` 得分优势
+- 挤占真正有价值分子的 top-10 位置
 
-**成功方面：**
-- Best BE 突破 -10 kcal/mol 大关（史上第二次）
-- Avg BE -9.412 为历史最高平均值
-- 多构象共识对接（3 seeds × 3 conformers = 9 dockings/molecule）提供了更可靠的排名
-
-**退化方面：**
-- Trivial ratio 0/10 → 2/10：选中分子偏向多环芳烃（芘类、菲类衍生物）
-- 根因：Vina 疏水偏向 + 多环芳烃在口袋中良好的形状互补
-- 这不是 H029 本身的问题，而是下游选择机制需要对疏水性进行惩罚
+**修改后 (H031)**:
+- 0个 OH→Cl 类型 ✅ 完全消除
+- 2个 smiles>>smiles 类型（四环骨架无匹配规则）
+- `route_quality` = 0.0（正确惩罚）
+- 复合评分中无 route 得分优势
 
 ### 结论
 
-**H029 VERIFIED ✅**
+**H031: ✅ VERIFIED**
 
-多构象对接增强在统计上显著提升了结合能（Best +9.9%, Avg +11.8%）。
-Trivial route 回归是 Vina 评分偏向的已知副作用，需要独立解决（见下一轮 H030）。
-
-### 后续行动
-
-1. 保留 H029 代码改动
-2. 下一轮（H030）：在复合评分中加入 LogP 惩罚项，抑制过度疏水分子
+1. `_is_single_atom_swap()` 函数正确检测 OH↔Cl/Br 单原子替换
+2. 化学上无效的 trivial 路线被正确标记
+3. BE 变化在实验噪声范围内（-0.7%）
+4. 剩余的 2 个 trivial 路线是不同根因：四环骨架缺少逆合成规则
+5. 建议下一轮假设 H032: 扩充四环/多环骨架的逆合成规则

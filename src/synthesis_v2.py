@@ -630,6 +630,69 @@ RETRO_RULES = [
 ]
 
 
+def _is_single_atom_swap(original_smiles: str, reactants: list[str]) -> bool:
+    """Detect if a retro reaction is just a trivial single-atom substitution (H031).
+
+    Catches chemically trivial transformations like OH<->Cl/Br exchange
+    where the carbon skeleton is unchanged and only one heteroatom type differs.
+    These are placeholder rules (e.g., [c:1]Cl>>[c:1]O.Cl) that don't
+    represent real retrosynthetic pathways.
+
+    Reference: LARC (Baker et al., 2025) — Agent-as-a-Judge route quality
+    assessment should reject chemically invalid single-step transformations.
+
+    Args:
+        original_smiles: The target molecule SMILES before retro reaction
+        reactants: List of reactant SMILES produced by the retro rule
+
+    Returns:
+        True if the transformation is a trivial single-atom swap
+    """
+    from collections import Counter
+
+    orig_mol = Chem.MolFromSmiles(original_smiles)
+    if orig_mol is None:
+        return False
+
+    # Find the main reactant (most heavy atoms, skip small reagents like Cl/Br/F)
+    main_reactant = None
+    main_heavy = 0
+    for r in reactants:
+        r_mol = Chem.MolFromSmiles(r)
+        if r_mol and r_mol.GetNumHeavyAtoms() > main_heavy:
+            main_heavy = r_mol.GetNumHeavyAtoms()
+            main_reactant = r
+
+    if main_reactant is None:
+        return False
+
+    r_mol = Chem.MolFromSmiles(main_reactant)
+    if r_mol is None:
+        return False
+
+    # Same heavy atom count — necessary condition for single-atom swap
+    if orig_mol.GetNumHeavyAtoms() != r_mol.GetNumHeavyAtoms():
+        return False
+
+    # Compare element counts (exclude H)
+    orig_elements = Counter(a.GetSymbol() for a in orig_mol.GetAtoms() if a.GetSymbol() != 'H')
+    reactant_elements = Counter(a.GetSymbol() for a in r_mol.GetAtoms() if a.GetSymbol() != 'H')
+
+    all_elements = set(orig_elements.keys()) | set(reactant_elements.keys())
+    diffs = {}
+    for e in all_elements:
+        diff = orig_elements.get(e, 0) - reactant_elements.get(e, 0)
+        if diff != 0:
+            diffs[e] = diff
+
+    # Single-atom swap: exactly two elements differ, each by ±1, net zero
+    # e.g., original has Cl+1, O-1 → exactly one Cl replaced by one O
+    if len(diffs) == 2 and all(abs(d) == 1 for d in diffs.values()) and sum(diffs.values()) == 0:
+        return True
+
+    return False
+
+
 def plan_synthesis_recursive(smiles: str, max_depth: int = 3, current_depth: int = 0, visited: set = None):
     """递归多步逆合成规划（H003）。
 
@@ -689,7 +752,11 @@ def plan_synthesis_recursive(smiles: str, max_depth: int = 3, current_depth: int
             full_route = " | ".join(full_parts)
 
             total_steps = result["steps"] + sum(s.get("steps", 0) for s in sub_routes)
+            # H031: Enhanced trivial detection — also catch single-atom substitution
+            # (e.g., OH<->Cl/Br exchange) where the carbon skeleton is unchanged.
             is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+            if not is_trivial and all_trivial:
+                is_trivial = _is_single_atom_swap(smiles, reactants)
 
             return {
                 "success": True,

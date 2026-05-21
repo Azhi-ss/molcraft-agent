@@ -1,53 +1,72 @@
-# 代码演进报告 — Round X (H030)
+# 代码演进 — Round X (新会话 H031)
 
-## 假设
-**H030**: LogP-Penalized Composite Scoring for Trivial Route Reduction
+## 日期: 2026-05-21
 
-## 改动文件
+---
 
-### `tools/pipeline.py`
+## 改动概述
 
-#### 改动1：新增 `compute_logp_score()` 函数（第46-67行）
+**假设ID**: H031 — 单原子替换 Trivial 路线检测
+
+**改动文件**: `src/synthesis_v2.py`
+
+---
+
+## 具体修改
+
+### 1. 新增 `_is_single_atom_swap()` 函数 (第 633-695 行)
+
+检测逆合成反应是否仅为化学上 trivial 的单原子替换（如 OH↔Cl/Br 交换）。
+
+**算法**:
+- 从反应物列表中找出重原子数最多的「主反应物」（排除 Cl、Br、F 等小试剂）
+- 比较原始分子与主反应物的重原子数（必须相同）
+- 统计元素组成差异（排除 H）
+- 若恰好两种元素各相差 ±1 且净差为 0 → 单原子替换
+
+**示例**:
+- `ClC6H4-C(=O)-...` → 主反应物 `HOC6H4-C(=O)-...` + `Cl` → 检测为 swap (Cl↔O)
+- `c1ccccc1-c2ccccc2` → `c1ccccc1Br` + `B(OH)O-c2ccccc2` → 非 swap（碳原子数不同）
+
+### 2. 修改 `plan_synthesis_recursive` trivial 判定 (第 757-759 行)
+
+**修改前**:
 ```python
-def compute_logp_score(logp: float) -> float:
-    """Compute LogP reasonableness score (H030)."""
-    if logp <= 2.0:
-        return 1.0
-    if logp >= 5.0:
-        return 0.0
-    return max(0.0, 1.0 - (logp - 2.0) / 3.0)
+is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
 ```
 
-**设计理由**: LogP≤2 为理想药物样分子（满分1.0），LogP≥5 为 Lipinski 违规（0分），中间线性衰减。这样 LogP=3.5 的多环芳烃得分 0.5，LogP=2.5 的铰链结合分子得分 0.83。
-
-#### 改动2：候选分子记录新增 `logp` 字段（第256行）
+**修改后**:
 ```python
-"logp": mol.get("logp", 0.0),
+is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
+if not is_trivial and all_trivial:
+    is_trivial = _is_single_atom_swap(smiles, reactants)
 ```
 
-#### 改动3：H012 复合评分公式修改（第277-296行）
-```
-旧: 0.80×BE_norm + 0.20×route_quality
-新: 0.75×BE_norm + 0.15×route_quality + 0.10×logp_score
-```
+**逻辑解释**:
+- 保留原有 exact-match trivial 检测
+- 新增: 当所有子路线都是 trivial（all_trivial=True）且检测到单原子替换 → 整体标记为 trivial
+- 不影响正常多步路线的检测
 
-**权重设计**: BE 从 80% 降至 75%，路线质量从 20% 降至 15%，新增 LogP 10%。预期的净效应：
-- LogP=2.0 分子：logp_score=1.0 → +0.10 加成
-- LogP=3.5 分子：logp_score=0.5 → +0.05 加成
-- LogP=5.0 分子：logp_score=0.0 → +0.00 加成
+---
 
-对高 BE 但高 LogP（trivial 倾向）的分子，logp_score 低将抵消其 BE 优势。
+## 文献支撑
 
-#### 改动4：日志输出显示 logP（第305-308行）
+- LARC (Baker et al., 2025): Agent-as-a-Judge 路线质量评审
+- 标准药物化学实践: 单官能团转化（OH→Cl）不是有效逆合成路线
 
-## 兼容性
-- 保留所有现有接口不变
-- `compute_logp_score` 是 pipeline.py 内部函数
-- 不修改 `src/scorer.py`（`compute_total_score` 仍用于事后评估）
-- 不修改进化过程（`generate_with_docking_guidance` 中排序保持纯 BE）
+---
 
 ## 编译验证
+
+```bash
+$ python3 -m py_compile src/synthesis_v2.py
+# 通过，无语法错误
 ```
-$ python3 -m py_compile tools/pipeline.py
-OK ✅
-```
+
+## 功能验证
+
+| 测试用例 | 修改前 | 修改后 | 期望 |
+|---------|--------|--------|------|
+| `O=C1c2ccccc2NNc2cccc(Cl)c21` | trivial=False | trivial=True ✅ | True |
+| `CC1CCC2(CC1)Cc1cccc(Cl)c1C2` | trivial=False | trivial=True ✅ | True |
+| `Nc1ccccc1-c1cc...cc1O` (Suzuki) | trivial=False | trivial=False ✅ | False |
