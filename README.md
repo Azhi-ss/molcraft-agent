@@ -234,8 +234,6 @@ LLM_API_KEY=sk-your-real-api-key
 LLM_MODEL=deepseek-v4-pro
 ```
 
-### 【可选但推荐】
-
 ### 【可选但推荐】扩散模型（GPU 服务器）
 
 用于 PocketXMol 口袋感知分子生成，需在 GPU 服务器（如 4090）上单独部署服务。部署方式见 `docs/diffusion_server.md`。
