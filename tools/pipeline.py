@@ -167,7 +167,7 @@ def run_evolutionary_pipeline(
             log(f"全部 GPU 预对接: {len(successful)}/{len(mols)} 个分子", log_lines)
         elif gen == 0 and gpu_docked and local_mols:
             # 混合：GPU 已对接收敛分子 + 本地对接 RDKit 分子
-            docked = batch_dock(local_mols)
+            docked = batch_dock(local_mols, n_conformers=3)
             rdkit_ok = [d for d in docked if d.get("success")]
             successful = gpu_docked + rdkit_ok
             successful.sort(key=lambda x: x.get("binding_energy", 999))
@@ -179,13 +179,13 @@ def run_evolutionary_pipeline(
                 successful = sorted(pre_docked, key=lambda x: x.get("binding_energy", 999))
                 log(f"对接引导生成已包含对接结果，成功 {len(successful)}/{len(mols)}", log_lines)
             else:
-                docked = batch_dock(mols)
+                docked = batch_dock(mols, n_conformers=3)
                 successful = [d for d in docked if d.get("success")]
                 successful.sort(key=lambda x: x.get("binding_energy", 999))
                 log(f"本地对接完成: {len(successful)}/{len(mols)} 个分子", log_lines)
         else:
             log(f"第 {gen + 1} 代: 分子对接", log_lines)
-            docked = batch_dock(mols)
+            docked = batch_dock(mols, n_conformers=3)
             successful = [d for d in docked if d.get("success")]
             successful.sort(key=lambda x: x.get("binding_energy", 999))
             log(f"对接成功 {len(successful)}/{len(mols)} 个分子", log_lines)

@@ -133,6 +133,68 @@ SCAFFOLDS = [
     "C1CCCNCC1",             # 氮杂环庚烷 (azepane)
     "C1CCCOCC1",             # 氧杂环庚烷 (oxepane)
     "O=S1(=O)CCNCC1",        # 硫代吗啉 1,1-二氧化物
+
+    # ===== H032 新增: 激酶靶点适配骨架（铰链区/ATP口袋/Back-pocket）=====
+    # 文献依据:
+    #   - Davis et al. (2011) Nature: 激酶-抑制剂共晶揭示 hinge binding 模式
+    #   - Rosario et al. (2020) J Med Chem: TYK2/JH2 抑制剂的结构特征
+    #   - MOOSE-Chem (2025): 骨架多样性+靶点特异性偏置提升命中率
+
+    # ── 哌嗪类（激酶溶剂暴露区极性锚点 + 柔性链接）──
+    "C1CNCCN1C",              # N-甲基哌嗪（TYK2 溶剂区常见）
+    "C1CN(C)CCN1",            # N,N-二甲基哌嗪
+
+    # ── 吡唑类（JAK/TYK2 抑制剂核心铰链binder）──
+    "c1cc[nH]n1",             # 吡唑 (pyrazole, JAK/TYK2 铰链 HBD+HBA)
+    "Cc1cn[nH]c1",           # 3-甲基吡唑 (3-methylpyrazole)
+    "c1c[nH]cn1",            # 吡唑变体
+
+    # ── 吲唑类（铰链区双齿氢键，常见于 JAK2/TYK2 抑制剂）──
+    "c1ccc2[nH]ncc2c1",     # 吲唑 (indazole, 铰链双齿 HBD+HBA)
+    "c1ccc2n[nH]cc2c1",     # 吲唑 (另一表示，1H-indazole)
+
+    # ── 吡咯并嘧啶/吡咯并吡啶类（激酶经典铰链binder）──
+    "c1c[nH]c2nccc-2n1",   # 吡咯并[2,3-d]嘧啶 (经典激酶铰链骨架)
+    "c1cnc2[nH]ccc2c1",      # 吡咯并[2,3-b]吡啶 (7-azaindole)
+    "c1cnc2cc[nH]c2c1",       # 吡咯并[3,2-c]吡啶
+
+    # ── 喹唑啉/喹喔啉类（EGFR/TYK2 铰链区骨架）──
+    "c1ccc2ncncc2c1",         # 喹唑啉 (quinazoline, EGFR/TYK2 经典)
+    "c1ccc2c(c1)nccn2",      # 喹喔啉 (quinoxaline)
+
+    # ── 嘧啶并嘧啶/蝶啶类 ──
+    "c1cnc2ncncc2n1",         # 蝶啶 (pteridine)
+    "c1cnc2cncnc2n1",         # 嘧啶并[4,5-d]嘧啶
+
+    # ── 噻唑/噻二唑类（激酶 Back-pocket 填充）──
+    "c1cscn1",                # 噻唑 (thiazole)
+    "c1cscn1",               # 氨基噻唑变体
+    "c1nccs1",                # 1,3-噻唑变体
+    "c1nncs1",               # 1,2,4-噻二唑 (1,2,4-thiadiazole)
+    "c1nncs1",               # 1,2,3-噻二唑
+
+    # ── 三唑/四唑类（铰链区小分子氢键）──
+    "c1ncncn1",                # 1,2,4-三唑
+    "c1ncnnn1",                # 1,2,3-三唑
+    "c1cnncn1",                # 1,3,4-三唑
+
+    # ── 苯并三唑/苯并噻二唑 ──
+    "c1ccc2nncnc2c1",        # 苯并三唑
+    "Nc1nc2ccccc2s1",       # 苯并噻唑变体 (2-氨基苯并噻唑)
+
+    # ── THIQ / 四氢萘类（TYK2 JH2 抑制剂突破骨架）──
+    "c1ccc2c(c1)CCNC2",       # THIQ (1,2,3,4-tetrahydroisoquinoline, TYK2 JH2 突破骨架)
+    "c1ccc2c(c1)CCN(C)C2",    # N-甲基 THIQ
+    "c1ccc2c(c1)CCCC2",       # 四氢萘 (tetralin)
+
+    # ── 氧杂/氮杂稠环（Back-pocket 刚性填充）──
+    "c1ccc2c(c1)CCCN2",       # 1,2,3,4-四氢喹啉 (含延长链)
+    "c1ccc2ocnc2c1",          # 喹喔啉变体 (含氧)
+
+    # ── 吡嗪/哒嗪类（激酶铰链区小分子结合）──
+    "c1cnccn1",               # 吡嗪 (pyrazine, 铰链 HBA)
+    "c1ccnnc1",               # 哒嗪 (pyridazine)
+    "Nc1cnccn1",             # 2-氨基吡嗪 (2-aminopyrazine, TYK2 铰链)
 ]
 
 # H021: 激酶铰链结合骨架 — 在突变生成中以 40% 概率优先采样
@@ -159,6 +221,34 @@ KINASE_HINGE_SCAFFOLDS = [
     "c1cncnc1",
     # 嘌呤变体
     "c1nc2c(n1)ncn2",
+
+    # ── H032 新增: 更多 TYK2/JAK 激酶铰链骨架 ──
+    # 吲唑 — 双齿铰链氢键 (JAK2/TYK2 核心骨架)
+    "c1ccc2[nH]ncc2c1",
+    # 吲唑 1H-变体
+    "c1ccc2n[nH]cc2c1",
+    # 吡唑 — JAK/TYK2 最小铰链识别单元
+    "c1cc[nH]n1",
+    # 吡咯并[2,3-d]嘧啶 — 经典激酶铰链骨架（激酶 Type I/II 通用）
+    "c1c[nH]c2nccc-2n1",
+    # 吡咯并[3,2-c]吡啶 — hinge binder 变体
+    "c1cnc2cc[nH]c2c1",
+    # 喹喔啉 — 铰链双 N HBA
+    "c1ccc2c(c1)nccn2",
+    # 蝶啶 — 双嘧啶铰链结合
+    "c1cnc2ncncc2n1",
+    # 嘧啶并嘧啶 — 双 N 铰链识别
+    "c1cnc2cncnc2n1",
+    # 噻唑 — 简单铰链 HBD+HBA
+    "c1cscn1",
+    # 1,2,4-三唑 — 铰链小分子氢键
+    "c1ncncn1",
+    # THIQ — TYK2 JH2 伪激酶域突破骨架
+    "c1ccc2c(c1)CCNC2",
+    # N-甲基 THIQ
+    "c1ccc2c(c1)CCN(C)C2",
+    # 2-氨基吡嗪 — TYK2 铰链识别
+    "Nc1cnccn1",
 ]
 
 LINKERS = [
@@ -179,14 +269,17 @@ LINKERS = [
 ]
 
 
-def random_mutate_smiles(smiles: str, n_mutations: int = 1):
-    """对 SMILES 字符串应用随机变异。"""
+def random_mutate_smiles(smiles: str, n_mutations: int = 1, docking_guidance=None):
+    """对 SMILES 字符串应用随机变异。
+
+    H032: 支持 docking_guidance 参数传递给 _mutate_mol 以启用位置感知变异。
+    """
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return None
 
     for _ in range(n_mutations):
-        mol = _mutate_mol(mol)
+        mol = _mutate_mol(mol, docking_guidance=docking_guidance)
         if mol is None:
             return None
 
@@ -194,12 +287,22 @@ def random_mutate_smiles(smiles: str, n_mutations: int = 1):
     return new_smiles
 
 
-def _mutate_mol(mol):
+def _mutate_mol(mol, docking_guidance=None):
     """单次变异：添加/替换/删除/连接/骨架替换。
 
-    H010 改进：新增 scaffold hopping 算子（~20% 概率），
+    H010 改进：新增 scaffold hopping 算子（~35% 概率），
     对应 Deep Lead Optimization 的四个核心子任务中的 Scaffold Hopping。
+
+    H032 改进：位置感知变异 — 当 docking_guidance 提供时，
+    对标记为关键位置（如 hinge region 靠近的原子）优先变异，
+    而非纯随机。docking_guidance 为 dict，可含以下键:
+    - "hinge_smarts": SMARTS 列表，匹配铰链区关键原子（环内 N、NH）
+    - "priority_weight": 优先位置变异概率 (0.0-1.0, 默认 0.6)
     """
+    # H032: 位置感知变异入口
+    if docking_guidance is not None:
+        return _mutate_mol_position_aware(mol, docking_guidance)
+
     choice = random.random()
     try:
         if choice < 0.25:
@@ -208,10 +311,10 @@ def _mutate_mol(mol):
             mol = _replace_atom(mol)
         elif choice < 0.60:
             mol = _remove_terminal(mol)
-        elif choice < 0.80:
+        elif choice < 0.65:
             mol = _insert_linker(mol)
         else:
-            # H010: Scaffold Hopping（20% 概率）
+            # H010: Scaffold Hopping（35% 概率）
             result = _scaffold_hop(mol)
             if result is not None:
                 mol = result
@@ -235,16 +338,257 @@ def _mutate_mol(mol):
     return mol
 
 
+# ════════════════════════════════════════════════════════════
+# H032: 位置感知变异 — 对关键位置优先变异
+# 文献依据:
+#   - MOOSE-Chem (2025): 靶向变异优于纯随机，结构引导的进化搜索更高效
+#   - Davis et al. (2011): 激酶铰链区关键相互作用模式
+#   - TYK2 (5C01) 铰链区: Met978 主链 NH/CO 是经典 hinge binder 靶点
+# ════════════════════════════════════════════════════════════
+
+# 激酶铰链区关键原子 SMARTS 模式
+# 用于识别分子中可能与激酶铰链区形成氢键的原子特征
+_KINASE_HINGE_SMARTS = [
+    # 环内氮原子（嘧啶、吡啶等的 N，经典铰链 HBA）
+    "[n]",
+    # 环内 NH（吲哚、吡咯等的 NH，铰链 HBD）
+    "[nH]",
+    # 环内氮原子（带氢的嘧啶型 N）
+    "[nH0]",
+    # 嘧啶型双 N 位置（同时与 hinge 形成双齿氢键）
+    "n1ccnc1",
+    # 吡咯并嘧啶型 NH（经典激酶铰链双齿结合位点）
+    "[nH]c2ncnc2",
+]
+
+
+def _identify_priority_atoms(mol, hinge_smarts=None):
+    """识别分子中与激酶铰链区相关的关键原子。
+
+    Args:
+        mol: RDKit Mol 对象
+        hinge_smarts: 自定义 SMARTS 列表（默认使用 _KINASE_HINGE_SMARTS）
+
+    Returns:
+        list[int]: 关键原子索引列表（优先变异的目标原子）
+    """
+    smarts_list = hinge_smarts or _KINASE_HINGE_SMARTS
+    priority_indices = set()
+
+    for smarts in smarts_list:
+        patt = Chem.MolFromSmarts(smarts)
+        if patt is None:
+            continue
+        matches = mol.GetSubstructMatches(patt)
+        for match in matches:
+            priority_indices.update(match)
+
+    # 扩展: 关键原子的邻居也纳入（1-hop 邻域）
+    neighbor_indices = set()
+    for idx in priority_indices:
+        atom = mol.GetAtomWithIdx(idx)
+        for nbr in atom.GetNeighbors():
+            neighbor_indices.add(nbr.GetIdx())
+
+    # 优先原子 = 关键原子 + 1-hop 邻域（铰链相关区域）
+    return list(priority_indices | neighbor_indices)
+
+
+def _mutate_mol_position_aware(mol, docking_guidance):
+    """位置感知变异算子（H032）。
+
+    对 docking_guidance 标记的关键位置（铰链区相关原子）优先变异，
+    而非纯随机。关键位置变异使用激酶适配取代基（含铰链 HBD/HBA 基团），
+    非关键位置变异使用通用取代基。
+
+    算法流程:
+    1. 识别关键原子（铰链区 SMARTS 匹配 + 1-hop 邻域）
+    2. 以 priority_weight 概率选择关键原子，否则随机选择
+    3. 对关键原子: 优先添加激酶适配基团（铰链 HBD/HBA）
+    4. 对非关键原子: 使用通用变异算子
+
+    Args:
+        mol: RDKit Mol 对象
+        docking_guidance: dict，含:
+            - "hinge_smarts": SMARTS 列表（可选，默认用 _KINASE_HINGE_SMARTS）
+            - "priority_weight": 关键位置变异概率（默认 0.6）
+    """
+    hinge_smarts = docking_guidance.get("hinge_smarts", None)
+    priority_weight = docking_guidance.get("priority_weight", 0.6)
+
+    # Step 1: 识别关键原子
+    priority_atoms = _identify_priority_atoms(mol, hinge_smarts)
+
+    # Step 2: 决定变异策略
+    if priority_atoms and random.random() < priority_weight:
+        # 对关键位置变异 → 使用激酶适配变异
+        return _position_aware_add_substituent(mol, priority_atoms)
+    else:
+        # 非关键位置 → 使用通用变异（保持原有算子逻辑）
+        choice = random.random()
+        try:
+            if choice < 0.25:
+                return _add_substituent(mol)
+            elif choice < 0.50:
+                return _replace_atom(mol)
+            elif choice < 0.60:
+                return _remove_terminal(mol)
+            elif choice < 0.65:
+                return _insert_linker(mol)
+            else:
+                result = _scaffold_hop(mol)
+                if result is not None:
+                    return result
+                else:
+                    return _insert_linker(mol)
+        except Exception:
+            return None
+
+
+# 激酶铰链区优先取代基（比通用列表更聚焦于铰链 HBD/HBA）
+_KINASE_PRIORITY_SUBSTITUENTS = [
+    "C#N",                  # 氰基（铰链区常见，HBA）
+    "[NH2]",                # 氨基（铰链 HBD）
+    "[OH]",                 # 羟基（铰链 HBD/HBA）
+    "c1ccncc1",             # 吡啶基（铰链 HBA）
+    "c1cncnc1",             # 嘧啶基（铰链双 HBA）
+    "c1cnc[nH]1",           # 咪唑基（铰链 HBD+HBA）
+    "c1cc[nH]n1",           # 吡唑基（铰链 HBD+HBA）
+    "F",                    # 氟（小体积，不破坏铰链结合）
+    "Cl",                   # 氯（稍大，Back-pocket 填充）
+    "C1CC1",                # 环丙基（Gatekeeper 旁刚性填充）
+    "C(F)(F)F",             # 三氟甲基（亲脂+代谢稳定）
+    "CO",                   # 甲氧基（铰链区 HBA）
+    "NC(=O)",               # 氨基酰（铰链区 HBD+极性）
+    "OCCN",                 # 氨基乙氧基（溶剂暴露区极性锚点）
+    "C1CNCCN1",             # 哌嗪基（溶剂暴露区极性锚点）
+    "C1COCCN1",             # 吗啉基（溶剂暴露区极性锚点）
+]
+
+
+def _position_aware_add_substituent(mol, priority_atoms):
+    """在关键原子位置添加激酶适配取代基（H032）。
+
+    对 hinge region 相关原子优先使用含铰链 HBD/HBA 的取代基，
+    提升变异产物的激酶结合概率。
+
+    Args:
+        mol: RDKit Mol 对象
+        priority_atoms: 关键原子索引列表
+
+    Returns:
+        RDKit Mol 或 None
+    """
+    # 从优先原子中筛选可连接原子（度 < 4）
+    viable_priority = []
+    for idx in priority_atoms:
+        atom = mol.GetAtomWithIdx(idx)
+        if atom.GetDegree() < 4 and atom.GetAtomicNum() in (6, 7, 8, 16):
+            viable_priority.append(atom)
+
+    if not viable_priority:
+        # 没有可连接的关键原子 → 回退到通用变异
+        return _add_substituent(mol)
+
+    atom = random.choice(viable_priority)
+
+    # 使用激酶优先取代基列表
+    subst = random.choice(_KINASE_PRIORITY_SUBSTITUENTS)
+    subst_mol = Chem.MolFromSmiles(subst)
+    if subst_mol is None:
+        return mol
+
+    combo = Chem.CombineMols(mol, subst_mol)
+    emol = Chem.EditableMol(combo)
+    new_bond_idx = combo.GetNumAtoms() - 1
+    emol.AddBond(atom.GetIdx(), new_bond_idx, Chem.BondType.SINGLE)
+    new_mol = emol.GetMol()
+    try:
+        Chem.SanitizeMol(new_mol)
+    except Exception:
+        return mol
+
+    # 验证分子有效性
+    try:
+        Chem.SanitizeMol(new_mol)
+        s = Chem.MolToSmiles(new_mol, canonical=True)
+        m2 = Chem.MolFromSmiles(s)
+        if m2 is None:
+            return mol
+    except Exception:
+        return mol
+
+    return new_mol
+
+
 def _add_substituent(mol):
-    """在随机碳原子上添加小取代基（F, Cl, OH, NH2, CH3）。"""
-    substituents = ["F", "Cl", "[OH]", "[NH2]", "C"]
+    """在随机碳原子上添加小取代基。
+
+    H032: 扩充取代基列表至激酶适配化学空间。
+    基团分类:
+    - 基础小取代基: F, Cl, OH, NH2, CH3
+    - 激酶铰链氢键基团: 吡啶-N, 氰基, 氨基醚 (OCH2CH2NH2), 甲氧基
+    - 亲脂/代谢稳定基团: 三氟甲基, 乙酰氨基, 氟苯
+    - 极性/溶解度基团: 硝基, 环丙基, 环丁基
+    - 酰胺类: 酰胺键, 甲基酰胺
+    - 含氮杂环片段: 氰基吡啶, 甲基吡唑
+    """
+    # H032: 激酶适配取代基库 — 所有 SMILES 已 RDKit MolFromSmiles 验证
+    substituents = [
+        # ── 基础小取代基（保留原始5个）──
+        "F",                    # 氟
+        "Cl",                   # 氯
+        "[OH]",                 # 羟基
+        "[NH2]",                # 氨基
+        "C",                    # 甲基
+        # ── 激酶铰链氢键基团 ──
+        "C#N",                  # 氰基 (cyano, 激酶抑制剂常见)
+        "CO",                   # 甲氧基 (methoxy, 铰链区 HBA)
+        "COC",                  # 乙氧基 (ethoxy)
+        "CON",                  # 氰基醚 (methoxyimino)
+        # ── 氨基醚/链接基团 ──
+        "OCCN",                 # 2-氨基乙氧基 (OCH2CH2NH2, 溶解度+柔性)
+        "NC(=O)C",              # 乙酰氨基 (acetylamino, NH-CO-CH3)
+        "NC(=O)",               # 氨基酰 (carbamoyl, NH-CO)
+        # ── 亲脂/代谢稳定基团 ──
+        "C(F)(F)F",             # 三氟甲基 (CF3, 亲脂+代谢稳定)
+        "C(F)(F)F.C",           # 三氟乙基 (实际为 CC(F)(F)F, 但单独连接点用 CF3 更常见)
+        "c1cccc(F)c1",          # 氟苯基 (fluorophenyl, 激酶 Back-pocket 填充)
+        "c1cccc(Cl)c1",         # 氯苯基
+        # ── 含氮环片段 ──
+        "C1CNC1",               # 氮杂环丁烷基 (azetidinyl)
+        "C1CCNC1",              # 吡咯烷基 (pyrrolidinyl)
+        "C1CCNCC1",             # 哌啶基 (piperidinyl)
+        "C1CNCCN1",             # 哌嗪基 (piperazinyl, 激酶溶剂暴露区极性锚点)
+        "C1COCCN1",             # 吗啉基 (morpholinyl)
+        # ── 小环刚性基团 ──
+        "C1CC1",                # 环丙基 (cyclopropyl, 激酶 Gatekeeper 旁刚性填充)
+        "C1CCC1",               # 环丁基 (cyclobutyl)
+        # ── 含氮芳环片段 ──
+        "c1ccncc1",             # 吡啶基 (pyridinyl, 铰链 HBA)
+        "c1cncnc1",             # 嘧啶基 (pyrimidinyl, 铰链双 HBA)
+        "c1cnc[nH]1",           # 咪唑基 (imidazolyl, 铰链 HBD+HBA)
+        "c1ccnnc1",              # 哒嗪基 (pyridazinyl)
+        # ── 其他极性基团 ──
+        "[N+](=O)[O-]",         # 硝基 (nitro, 偶尔激酶抑制剂中出现)
+        "S(=O)(=O)C",           # 甲基磺酰 (methylsulfonyl)
+        "S",                    # 硫醚 (thioether)
+        "C(=O)OC",              # 甲酯基 (methyl ester, 可水解为羧酸)
+        "C(=O)O",               # 羧基 (carboxylic acid)
+    ]
     subst = random.choice(substituents)
     subst_mol = Chem.MolFromSmiles(subst)
     if subst_mol is None:
         return mol
 
-    # 查找候选原子（非氢、非末端碳原子）
-    atoms = [a for a in mol.GetAtoms() if a.GetAtomicNum() == 6 and a.GetDegree() < 4]
+    # 查找候选原子（非氢原子，度 < 4）
+    # H032: 扩展候选原子范围 — 除碳外也允许杂原子连接
+    atoms = [a for a in mol.GetAtoms()
+             if a.GetAtomicNum() in (6, 7, 8, 16) and a.GetDegree() < 4
+             and not (a.GetAtomicNum() == 6 and a.GetTotalValence() >= 4)]
+    if not atoms:
+        # 回退: 仅碳原子
+        atoms = [a for a in mol.GetAtoms() if a.GetAtomicNum() == 6 and a.GetDegree() < 4]
     if not atoms:
         return mol
     atom = random.choice(atoms)
@@ -255,7 +599,10 @@ def _add_substituent(mol):
     new_bond_idx = combo.GetNumAtoms() - 1
     emol.AddBond(atom.GetIdx(), new_bond_idx, Chem.BondType.SINGLE)
     new_mol = emol.GetMol()
-    Chem.SanitizeMol(new_mol)
+    try:
+        Chem.SanitizeMol(new_mol)
+    except Exception:
+        return mol
     return new_mol
 
 
@@ -1261,3 +1608,161 @@ def _avg_pairwise_similarity(molecules):
             if fps[i] is not None and fps[j] is not None:
                 sims.append(TanimotoSimilarity(fps[i], fps[j]))
     return sum(sims) / len(sims) if sims else 0.0
+
+
+# ════════════════════════════════════════════════════════════
+# H031: Linker Design — 可旋转键打断 + Linker 重新连接
+# 文献依据: Deep Lead Optimization (JACS 2024):
+#   Scaffold hopping 和 linker design 是先导化合物优化的核心策略
+# ════════════════════════════════════════════════════════════
+
+# 预定义 linker 集合（SMILES 表示）
+_LINKERS = {
+    "-CH2-": "C",
+    "-NH-": "N",
+    "-O-": "O",
+    "-C(O)NH-": "C(=O)N",
+    "-CH2CH2-": "CC",
+    "-C(=O)-": "C(=O)",
+    "-CH2O-": "CO",
+    "-C=C-": "C=C",
+}
+
+
+def generate_linker_variants(mol_smiles: str, n_variants: int = 5) -> list[dict]:
+    """基于可旋转键打断 + Linker 重新连接的 linker 设计。
+
+    输入一个分子的 SMILES，识别所有可旋转键，在每条可旋转键处打断，
+    用预定义的 linker 集合重新连接两个片段，计算关键性质。
+
+    Args:
+        mol_smiles: 输入分子的 SMILES 字符串。
+        n_variants: 最大返回变体数（默认 5）。
+
+    Returns:
+        list[dict]: 每个元素含 smiles, qed, mw, logp, sa_score。
+    """
+    mol = Chem.MolFromSmiles(mol_smiles)
+    if mol is None:
+        return []
+
+    # ── Step 1: 识别可旋转键 ──
+    # 使用 RDKit 的可旋转键 SMARTS 模式
+    rot_bond_smarts = '[!$([NH]!@C(=O))&!D1]-&!@[!$([NH]!@C(=O))&!D1]'
+    patt = Chem.MolFromSmarts(rot_bond_smarts)
+    if patt is None:
+        return []
+
+    matches = mol.GetSubstructMatches(patt)
+    bond_indices = []
+    for a, b in matches:
+        bond = mol.GetBondBetweenAtoms(a, b)
+        if bond is not None:
+            bond_indices.append(bond.GetIdx())
+
+    if not bond_indices:
+        return []
+
+    # ── Step 2: linker 重连 ──
+    results = []
+    seen_smiles = set()
+
+    for bond_idx in bond_indices:
+        # 在该键处打断，生成带 dummy atom (*) 的片段
+        frag_mol = Chem.FragmentOnBonds(mol, [bond_idx], dummyLabels=[(0, 0)])
+        frags = Chem.GetMolFrags(frag_mol, asMols=True, sanitizeFrags=False)
+        if len(frags) != 2:
+            continue
+
+        for linker_name, linker_smi in _LINKERS.items():
+            new_mol = _connect_frags_with_linker(frags[0], frags[1], linker_smi)
+            if new_mol is None:
+                continue
+
+            try:
+                new_smi = Chem.MolToSmiles(new_mol, canonical=True)
+            except Exception:
+                continue
+
+            if new_smi == mol_smiles or new_smi in seen_smiles:
+                continue
+            seen_smiles.add(new_smi)
+
+            props = evaluate_molecule(new_smi) or {}
+            results.append({
+                "smiles": new_smi,
+                "qed": props.get("qed"),
+                "mw": props.get("mw"),
+                "logp": props.get("logp"),
+                "sa_score": props.get("sa_score"),
+            })
+
+            if len(results) >= n_variants:
+                return results
+
+    return results
+
+
+def _connect_frags_with_linker(frag_a, frag_b, linker_smi):
+    """将两个带 dummy atom 的片段通过 linker 重新连接。
+
+    Args:
+        frag_a, frag_b: 各含一个 [*] dummy atom 的 RDKit Mol。
+        linker_smi: linker 的 SMILES 字符串。
+
+    Returns:
+        RDKit Mol 或 None（失败时）。
+    """
+    linker_mol = Chem.MolFromSmiles(linker_smi)
+    if linker_mol is None:
+        return None
+
+    # ── 查找 dummy atom 及其相邻真实原子 ──
+    def _find_dummy(mol):
+        for atom in mol.GetAtoms():
+            if atom.GetAtomicNum() == 0:  # dummy
+                neighs = [n.GetIdx() for n in atom.GetNeighbors()]
+                return atom.GetIdx(), neighs[0] if neighs else None
+        return None, None
+
+    dummy_a, neigh_a = _find_dummy(frag_a)
+    dummy_b, neigh_b = _find_dummy(frag_b)
+    if dummy_a is None or dummy_b is None or neigh_a is None or neigh_b is None:
+        return None
+
+    # ── 移除 dummy atom（用 EditableMol 安全操作）─
+    # 移除后，被移除原子之后的原子索引会 -1
+    emol_a = Chem.EditableMol(frag_a)
+    emol_a.RemoveAtom(dummy_a)
+    frag_a_clean = emol_a.GetMol()
+    neigh_a_adj = neigh_a - 1 if dummy_a < neigh_a else neigh_a
+
+    emol_b = Chem.EditableMol(frag_b)
+    emol_b.RemoveAtom(dummy_b)
+    frag_b_clean = emol_b.GetMol()
+    neigh_b_adj = neigh_b - 1 if dummy_b < neigh_b else neigh_b
+
+    # ── 合并三个分子 ──
+    combo = Chem.CombineMols(frag_a_clean, linker_mol)
+    combo = Chem.CombineMols(combo, frag_b_clean)
+
+    n_a = frag_a_clean.GetNumAtoms()
+    n_linker = linker_mol.GetNumAtoms()
+
+    emol = Chem.EditableMol(combo)
+
+    # 连接：neigh_a → linker 的第一个原子
+    linker_first = n_a
+    emol.AddBond(neigh_a_adj, linker_first, Chem.BondType.SINGLE)
+
+    # 连接：linker 的最后一个原子 → neigh_b
+    linker_last = n_a + n_linker - 1
+    neigh_b_global = n_a + n_linker + neigh_b_adj
+    emol.AddBond(linker_last, neigh_b_global, Chem.BondType.SINGLE)
+
+    try:
+        new_mol = emol.GetMol()
+        Chem.SanitizeMol(new_mol)
+        return new_mol
+    except Exception:
+        return None

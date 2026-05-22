@@ -111,11 +111,11 @@
 4. 然后才允许重读 papers/ 相关章节或换方向
 
 ### 扩散模型（PocketXMol）
-当纯 RDKit 变异连续无进展时启用扩散模型。先读 `.kimi/skills/molcraft-env-testing/SKILL.md` 确认 GPU 环境可用。
+当 RDKit 变异连续无进展时启用扩散模型。先读 `.kimi/skills/molcraft-env-testing/SKILL.md` 确认 GPU 环境可用。
 
-- **阶段 1 扩散基线**：`run_pipeline --generator diffusion --n-generate 20`，对照组 `--generator mutate`
-- **阶段 2 种子进化**：取扩散 top-5 分子（QED≥0.3, SA≤6.0 过滤）作种子，`run_pipeline --generator mutate`
-- **模式**：新靶点第一轮用 `hybrid` 建基线；结合能瓶颈用 `hybrid`；多样性瓶颈用 `hybrid`；定向优化用 `mutate + scaffold=...`
+- **默认 RDKit 变异**：`run_pipeline --generator mutate`，已验证 BE 最低 -10.359
+- **hybrid 模式**：`run_pipeline --generator hybrid`，扩散产骨架 + RDKit 做局部变异，新靶点首轮或多样性瓶颈时启用
+- **种子进化**：取扩散 top-5 分子（QED≥0.3, SA≤6.0 过滤）作种子，`run_pipeline --generator mutate`
 - **注意**：Vina 偏向疏水，扩散生成的极性分子 BE 偏低但路线更好——综合评判。GPU 不可用标记 INFRA_BLOCKED 不视为假设失败。
 
 ---

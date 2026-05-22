@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "too
 from pydantic import BaseModel, Field
 from kimi_agent_sdk import CallableTool2, ToolError, ToolOk, ToolReturnValue
 
-from generator import generate_molecules
+from generator import generate_molecules, generate_linker_variants
 from docking import batch_dock
 from synthesis_v2 import plan_synthesis_v2
 from evaluator import evaluate_molecule
@@ -387,7 +387,7 @@ class RunPipelineParams(BaseModel):
     )
     use_docking_guidance: bool = Field(
         default=True,
-        description="⚡ 铁律：必须保持 True。H002 已验证将结合能从 -7.7~-8.1 提升至 -8.56~-8.80 kcal/mol。关闭它来做'对照实验'是错误的——关闭后基线自然退化 0.5 kcal/mol，无法判断新改动的净效应。正确的 A/B 测试：始终开 docking guidance，在其他变量上做对照。",
+        description="⚡ 铁律：必须保持 True。H002 已验证提升结合能 0.4~0.8 kcal/mol（H002已验证）。关闭它来做'对照实验'是错误的——关闭后基线自然退化 0.5 kcal/mol，无法判断新改动的净效应。正确的 A/B 测试：始终开 docking guidance，在其他变量上做对照。",
     )
     generator: str = Field(
         default="mutate",
@@ -444,7 +444,7 @@ class RunPipeline(CallableTool2):
                 ],
                 "next_actions": [
                     "1. 调用 report_iteration 记录本轮实验（round/hypothesis_id/success/summary）",
-                    "2. 将本轮指标与基线 -8.56 kcal/mol 对比",
+                    "2. 将本轮指标与知识库最新基线对比（当前 best BE ~-10.1 kcal/mol）",
                     "3. 如果结合能提升：判定 ACCEPTED，记录改动；如果下降：判定 REJECTED，回退代码",
                     "4. 检查 trivial 比例是否 > 30%，如果是，下一轮考虑扩充逆合成规则库",
                 ],
@@ -1385,3 +1385,61 @@ class SearchLKM(CallableTool2):
             headers=headers,
             body=body,
         )
+
+
+class LinkerDesignParams(BaseModel):
+    smiles: str = Field(description="要设计 linker 变体的分子 SMILES")
+    n_variants: int = Field(
+        default=5,
+        description="最大返回的 linker 变体数量（默认 5）",
+    )
+
+
+class LinkerDesign(CallableTool2):
+    name: str = "design_linker"
+    description: str = (
+        "基于可旋转键打断 + Linker 重新连接的 linker 设计工具。"
+        "输入一个分子 SMILES，在每条可旋转键处打断，"
+        "用预定义的 linker 集合（-CH2-, -NH-, -O-, -C(O)NH-, -CH2CH2-, -C(=O)-, -CH2O-, -C=C-）"
+        "重新连接片段，返回 linker 变体及其关键性质（QED、MW、LogP、SA score）。"
+        "文献依据: Deep Lead Optimization (JACS 2024): "
+        "scaffold hopping 和 linker design 是先导化合物优化的核心策略。"
+    )
+    params: type[BaseModel] = LinkerDesignParams
+
+    async def __call__(self, params: LinkerDesignParams) -> ToolReturnValue:
+        try:
+            variants = await asyncio.to_thread(
+                generate_linker_variants,
+                params.smiles,
+                params.n_variants,
+            )
+            output = {
+                "status": "success",
+                "summary": f"为 {params.smiles} 设计了 {len(variants)} 个 linker 变体",
+                "input_smiles": params.smiles,
+                "count": len(variants),
+                "variants": variants,
+                "next_actions": [
+                    "下一步: 调用 dock_molecules 对这批分子进行对接评估",
+                    "或: 调用 evaluate_molecule 评估单个分子的详细性质",
+                ],
+            }
+            append_experiment(
+                tool="design_linker",
+                round_num=get_latest_round() + 1,
+                params={"smiles": params.smiles, "n_variants": params.n_variants},
+                result={"output_count": len(variants)},
+            )
+            return ToolOk(output=json.dumps(output, ensure_ascii=False))
+        except Exception as exc:
+            return ToolError(
+                output=json.dumps({
+                    "status": "error",
+                    "error": str(exc),
+                    "hint": "RDKit 错误通常意味着无效 SMILES——检查输入分子是否合法",
+                    "retry": "用有效的分子 SMILES 重试",
+                }),
+                message=str(exc),
+                brief="Linker 设计失败",
+            )
