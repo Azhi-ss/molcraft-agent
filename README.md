@@ -239,12 +239,34 @@ LLM_MODEL=deepseek-v4-pro
 
 PocketXMol 是原子级口袋感知分子生成模型，通过去噪过程在蛋白口袋内直接生成 3D 分子，天然适配结合位点。需 GPU 服务器（RTX 4090 即可）部署服务。
 
-#### GPU 服务器检查
+#### 部署 GPU 推理服务（在 GPU 服务器上执行）
 
 ```bash
-# 检查服务是否在线
+# 1. 将 server/ 目录拷贝到 GPU 服务器
+scp -r server/ user@gpu-server:/root/pocketxmol-server/
+scp -r data/target.pdb user@gpu-server:/root/pocketxmol-server/
+
+# 2. 在 GPU 服务器上安装依赖
+ssh user@gpu-server
+cd /root/pocketxmol-server
+pip install -r server/requirements.txt
+
+# 3. 启动推理服务（默认端口 8000）
+python server/main.py --pxm-dir /root/PocketXMol --port 8000
+
+# 后台运行：
+nohup python server/main.py --pxm-dir /root/PocketXMol --port 8000 > server.log 2>&1 &
+```
+
+#### 建立 SSH 隧道（在本地开发机上执行）
+
+```bash
+# 将本地 8001 端口转发到 GPU 服务器的 8000 端口
+ssh -N -L 8001:localhost:8000 user@gpu-server &
+
+# 验证隧道和 GPU 服务是否正常
 curl -s http://localhost:8001/health
-# 正常响应：{"status":"ok", "model_loaded":true, "gpu_available":true, "active_jobs":0}
+# 正常响应：{"status":"ok","model_loaded":true,"gpu_available":true,"active_jobs":0}
 ```
 
 #### 三种生成模式
