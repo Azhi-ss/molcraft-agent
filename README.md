@@ -175,10 +175,11 @@ molcraft-agent/
 ```
 
 ### 分子生成
-- 基于 27 种药物样骨架的随机变异（添加取代基、替换原子、插入连接子）
+- 基于 50+ 药物样骨架的随机变异（添加取代基、替换原子、插入连接子）
+- 支持 PocketXMol 扩散模型：口袋感知 3D 分子生成（需 GPU，见下方环境变量）
 - 支持进化迭代：从对接成功的种子分子变异产生后代
 - 支持对接引导生成：利用实时对接反馈指导生成方向
-- QED、Lipinski 五规则、分子量（150–500）、LogP（−0.5–5）、SA score 多维度过滤
+- QED、Lipinski 五规则、分子量（150–550）、LogP（−0.5–5）、SA score 多维度过滤
 
 ### 分子对接
 - 受体：Meeko 准备 PDBQT
@@ -234,9 +235,64 @@ LLM_API_KEY=sk-your-real-api-key
 LLM_MODEL=deepseek-v4-pro
 ```
 
-### 【可选但推荐】扩散模型（GPU 服务器）
+### 【可选但推荐】扩散模型（PocketXMol + GPU）
 
-用于 PocketXMol 口袋感知分子生成，需在 GPU 服务器（如 4090）上单独部署服务。部署方式见 `docs/diffusion_server.md`。
+PocketXMol 是原子级口袋感知分子生成模型，通过去噪过程在蛋白口袋内直接生成 3D 分子，天然适配结合位点。需 GPU 服务器（RTX 4090 即可）部署服务。
+
+#### GPU 服务器检查
+
+```bash
+# 检查服务是否在线
+curl -s http://localhost:8001/health
+# 正常响应：{"status":"ok", "model_loaded":true, "gpu_available":true, "active_jobs":0}
+```
+
+#### 三种生成模式
+
+| 模式 | 命令 | 说明 |
+|------|------|------|
+| `mutate` | `run_pipeline --generator mutate` | 纯 RDKit 变异（默认，不依赖 GPU） |
+| `diffusion` | `run_pipeline --generator diffusion` | 纯 PocketXMol 生成（全部 GPU 口袋感知） |
+| `hybrid` ⭐ | `run_pipeline --generator hybrid` | **推荐**：扩散种子 + RDKit 多样性补充 |
+
+#### Hybrid 模式工作流
+
+```
+扩散模型生成 N 个口袋感知分子（gpU）
+        +
+RDKit 变异生成 M 个多样性分子（CPU）
+        ↓
+合并候选池 → 对接筛选 → 进化迭代 → 逆合成 → Top N
+```
+
+扩散提供"高起点"（口袋适配），RDKit 提供"广度"（化学空间覆盖）。
+
+#### TYK2 实测特性
+
+| 特性 | 数值/描述 |
+|------|----------|
+| 推理速度 | ~25-30 秒/批 |
+| QED 范围 | 0.15-0.55（含磷酸基团偏低是正常的） |
+| 生成倾向 | 嘌呤/嘧啶核苷酸类似物（激酶 ATP 口袋天然偏好） |
+| CFD 置信度 | 1.0-1.5（越高越好） |
+
+#### 推荐使用时机
+
+- 新靶点首轮探索 → `hybrid`
+- 结合能卡住无提升 → `hybrid`
+- 需要激酶铰链结合分子 → `diffusion`
+- 验证口袋坐标是否正确 → `diffusion`（小批量）
+
+#### 常见问题
+
+| 症状 | 原因 | 处理 |
+|------|------|------|
+| 生成分子 QED < 0.2 | 含磷酸基团 QED 天然低 | 不要仅凭 QED 过滤，这些分子对接可能很好 |
+| 全是核苷酸类似物 | TYK2 ATP 口袋正常行为 | 用 `hybrid` 补充 RDKit 多样性 |
+| 对接步骤崩溃 | 扩散分子 3D 构象生成失败 | 确保 meeko ≥ 0.5.0，RDKit ≥ 2024.03 |
+| GPU 服务不可达 | SSH 隧道断开 | `curl localhost:8001/health` 检查 |
+
+#### 环境变量
 
 ```
 DIFFUSION_API_URL=http://your-gpu-server:8001
