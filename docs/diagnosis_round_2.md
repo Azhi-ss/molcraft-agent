@@ -1,57 +1,54 @@
-# 瓶颈诊断报告 — Round 2
+# 诊断报告 — Round 2 (H035)
 
-## H012 后状态
-- ✅ 路线质量: 不现实吡啶路线 3个→0个
-- ✅ 路线评分复合选择正常工作
-- ⚠️ BE: -9.335 (基线 -9.941, -6.1%)
-- ⚠️ 仅 5 种变异算子，缺少双亲重组(crossover)
+## 1. 禁重检查
 
-## 新瓶颈: 分子探索空间受限
+REJECTED: H019, H025, H026 → 均已排除。H035 方向不与任何 REJECTED 重叠。
 
-**现象**: 当前所有变异算子为单亲操作（add/replace/remove/insert/scaffold_hop），
-无法组合两个高分分子的有益片段。这是进化算法的已知限制。
+## 2. 外部知识搜索
 
-**根因**: 缺少 crossover（交叉重组）算子，限制了化学空间的有效探索。
+本轮聚焦代码审查，未进行额外外部搜索（Round 1 已搜索 LKM + arXiv）。
 
-**文献**: MOOSE-Chem (Yang 2025) — "crossover between parent molecules" 是核心变异算子；
-MolLEO (Wang 2024b) — LLM 驱动的重组操作能显著提升分子多样性。
+## 3. 源码审查 — 关键发现
 
-## 假设 H013: 分子 Crossover 重组算子
+### 多构象对接 (H029) 已实现但未启用
 
-```
-假设ID: H013
-瓶颈: generator.py 只有单亲变异，缺少双亲交叉重组
-文献支撑:
-  - MOOSE-Chem (Yang et al., 2025): "Evolutionary operators include crossover
-    between parent molecules, fragment swapping, and scaffold hopping"
-  - MolLEO (Wang et al., 2024b): LLM 驱动的重组操作提升化学空间探索效率
-  - Deep Lead Optimization (JACS 2024): Fragment replacement 是先导优化核心子任务
+`src/docking.py`:
+- `smiles_to_pdbqt_multi_conformer()` (line 70): 支持生成 n 个 ETKDGv3 构象 ✅
+- `dock_molecule(n_conformers=1)` (line 140): 默认 n_conformers=1 ❌
+- `batch_dock(n_conformers=1)` (line 310): 默认 n_conformers=1 ❌
 
-───────────────── 推理链 ─────────────────
-步骤 | 内容                                    | 置信度 | 推理方式 | 依据来源
-S1   | Crossover 引入新化学空间区域            | 高     | 文献     | MOOSE-Chem
-S2   | 新空间区域可能含更高 BE 分子             | 中     | 演绎     | 进化算法理论
-S3   | 双亲重组不会破坏现有优秀分子             | 高     | 演绎     | 仅影响新生成分子
+`tools/pipeline.py`:
+- 三处 `batch_dock()` 调用均未传 `n_conformers` → 使用默认 1
 
-综合置信度: 中
+### GNINA 基准文献结论
 
-───────────────── 验证标准 ─────────────────
-Q1: 核心指标提升 < 5%，是否仍保留？
-答: 否
-理由: H013 目标是 BE 提升。若 BE 无明显改善，crossover 算子价值有限
+构象采样质量直接影响对接精度（Molecules, 2025）:
+- 单构象对接可能错过最佳结合模式
+- 多构象系综对接（3-5 构象）中位数提升约 0.3-0.6 kcal/mol
+- 成本: 线性增加（n×对接时间）
 
-Q2: 指标下降最可能原因？
-答: Crossover 产生无效分子过多，浪费对接资源
-理由: 随机交换片段可能产生化学上不合理的结构
+## 4. 瓶颈诊断
 
-Q3: 最低可接受结果？
-答: 最佳 BE ≥ -9.5 或平均 BE 提升 ≥ 0.2 kcal/mol，trivial 不增加
+**瓶颈**: 当前每次对接仅使用单一 3D 构象（ETKDGv3 单次嵌入），可能漏掉更优的结合构象。这解释了为什么 BE 长期稳定在 -9.6~-9.9 区间无法突破——对接算法已找到当前构象的局部最优，但更优的全局构象未被采样。
 
-───────────────── 改进方案 ─────────────────
-改动文件: src/generator.py
-改动内容:
-  1. 新增 _crossover_mol(mol1, mol2) 函数
-  2. 在 _mutate_mol 中增加 ~15% 概率调用 crossover
-  3. Crossover 算法: BRICS 分解两分子 → 交换片段 → 重组验证
-验证指标: BE + 多样性(avg_pairwise_sim) + trivial 比例
-```
+## 5. 假设提出
+
+### H035: Enable Multi-Conformer Docking (n_conformers=3)
+
+**来源**: GNINA Benchmarking (Molecules, 2025) + 已实现的 H029 多构象对接基础设施
+
+**方案**:
+1. 修改 `dock_molecule()` 默认 `n_conformers=1→3`
+2. 修改 `batch_dock()` 默认 `n_conformers=1→3`  
+3. 运行 pipeline 验证 BE 改善
+
+**预期效果**: 
+- Best BE 改善 0.3-0.6 kcal/mol（文献基准）
+- Avg BE 相应改善
+- 对接时间增至 3×（约 15-30 min → 45-90 min）
+
+**验证标准**:
+- Best BE 低于 -9.9 kcal/mol
+- Avg BE 不低于 -8.5 kcal/mol
+- Trivial 保持 0/10
+- 对接成功率不下降
