@@ -1,28 +1,39 @@
-# 代码演进日志 — Round 2 (H013)
+# 代码演进报告 — Round 2 (H035)
 
-## 假设 H013: 分子 Crossover 重组算子
+## 修改文件
 
-### 修改文件
+### `src/docking.py` — 多构象对接默认值更新
 
-#### `src/generator.py`
+**修改内容**: 将三个关键函数的 `n_conformers` 默认值从 1 改为 3。
 
-**新增函数 `_crossover_mol(mol1, mol2)`**：
-- Murcko 骨架交换算法：取 parent2 骨架 + parent1 侧链 → 新分子
-- 连接点自动检测：在核心上找可用碳原子，侧链上找未饱和原子
-- 最多连接 3 个侧链片段，避免过度复杂
-- 验证：SanitizeMol + SMILES 往返 + 与父代不同
-- 成功率 ~30%（进化算法中可接受）
+| 函数 | 旧默认值 | 新默认值 | 行号 |
+|------|---------|---------|------|
+| `dock_molecule()` | n_conformers=1 | **n_conformers=3** | 140 |
+| `dock_molecule_consensus()` | n_conformers=1 | **n_conformers=3** | 257 |
+| `batch_dock()` | n_conformers=1 | **n_conformers=3** | 310 |
 
-**修改 `generate_with_docking_guidance`**：
-- 后续代（gen > 0）中，15% 概率执行 crossover
-- 从种子池随机选 2 个不同分子作为双亲
-- 85% 概率执行原有单亲变异
+**影响范围**:
+- `dock_molecule()`: 所有单体对接（包括对接引导内循环）→ 每分子生成 3 个构象独立对接，取最优
+- `dock_molecule_consensus()`: 共识对接 → 3 构象 × 3 种子 = 9 次独立对接，取中位数
+- `batch_dock()`: 管线批量对接 → 所有分子使用多构象
 
-### 文献依据
-- MOOSE-Chem (Yang et al., 2025): "Evolutionary operators include crossover between parent molecules, fragment swapping, and scaffold hopping"
-- MolLEO (Wang et al., 2024b): LLM 驱动的重组操作提升化学空间探索效率
-- Deep Lead Optimization (JACS 2024): Side-chain decoration + Scaffold Hopping 可组合产生新化学型
+**成本估算**:
+- 每分子对接时间: 5-15s → 15-45s (3×)
+- Pipeline 总耗时: ~10-20 min → ~30-60 min
+- 内存/磁盘: 临时 PDBQT 文件增加 3×，自动清理不累积
 
-### 编译验证
-- `src/generator.py`: ✅ 编译通过
-- `_crossover_mol` 测试: ✅ 3/10 成功率，产生合理分子
+**文献依据**:
+- GNINA Benchmarking (Molecules, 2025): 构象采样质量直接影响对接精度
+- Coscientist (Boiko et al., 2023): 重复实验消除随机偏差（多构象 = 构象空间的重复实验）
+- H029 已实现基础设施，本修改只是启用
+
+## 编译检查
+
+✅ `python3 -m py_compile src/docking.py` 通过
+
+## 风险评估
+
+- **向后兼容**: 仅修改默认值，所有显式传参不受影响
+- **性能**: 3× 对接时间，可接受（pipeline 原 12 min → 预计 36 min）
+- **行为变化**: 对接结果可能因更优构象而改善，不会退化（取最优构象能量）
+- **并发**: 不影响并发逻辑，仅增加每分子计算量
