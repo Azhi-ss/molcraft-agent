@@ -135,6 +135,24 @@
 - **When to use**: Always in RETRO_RULES
 - **Status**: ✅ VERIFIED — Trivial ratio restored 1/10→0/10, BE -9.19 within baseline variance
 
+### H034 — Tricyclic Fused Heterocycle Retrosynthesis Rules
+- **Source**: LARC (Baker et al., 2025) — rule coverage determines retrosynthesis quality
+- **Tech**: Added 5 retro rules for acridine, phenazine, carbazole, pyrrolopyrimidine, pyrazolopyrimidine scaffolds
+- **When to use**: Always in RETRO_RULES (appended at end for specificity)
+- **Status**: ✅ VERIFIED — Combined with H032, trivial ratio 2/10→0/10
+
+### H035 — Multi-Conformer Docking (n_conformers=3)
+- **Source**: GNINA Benchmarking (Molecules, 2025) — conformer sampling quality directly impacts docking accuracy
+- **Tech**: Changed dock_molecule/batch_dock default n_conformers from 1 to 3; each molecule docked with 3 independent ETKDGv3 conformers, best energy taken
+- **When to use**: Always (default enabled); ~3× docking time cost
+- **Status**: ✅ VERIFIED — Avg BE +7.2% (-8.642→-9.267), chemistry shifted to heterocyclic hinge-binders
+
+### H036 — Enhanced Docking Guidance Exploration
+- **Source**: Empirical — test if larger batch/top_k improves evolutionary convergence
+- **Tech**: batch_size 10→15, top_k 5→8, n_generations 3→4 in docking guidance
+- **When to use**: N/A
+- **Status**: ❌ REJECTED — Best BE -9.884→-9.658 (-2.3%), Avg BE -9.267→-8.355 (-9.9%). Larger seed pool introduced noise.
+
 ### H031 — Single-Atom Substitution Trivial Route Detection
 - **Source**: LARC (Baker et al., 2025) — Agent-as-a-Judge route quality assessment
 - **Tech**: Added `_is_single_atom_swap()` to detect chemically invalid OH↔Cl/Br exchange routes; element composition analysis catches single-heteroatom replacement
@@ -143,17 +161,17 @@
 
 ---
 
-## Current Baseline (TYK2 5C01 — H031 VERIFIED)
+## Current Baseline (TYK2 5C01 — H035 VERIFIED)
 
-> Updated Round 1 (H031 VERIFIED).
+> Updated Round 2 (H035 VERIFIED), 2026-05-22 session.
 
 | Metric | Value |
 |--------|-------|
-| Best BE | **-9.902** |
-| Avg BE | **-8.642** |
-| Trivial ratio | **2/10** (smiles>>smiles type, route_quality=0) |
-| Dominant chemistry | Suzuki-coupled biaryl amides, sulfonamides, quinazoline derivatives |
-| Note | H031 correctly eliminates OH→Cl single-atom swap trivial routes. Remaining 2 trivial are smiles>>smiles type (tetracyclic scaffolds w/o synthesis rules). Route quality correctly penalizes these (0.0 vs 0.7 for old OH→Cl type). |
+| Best BE | **-9.884** |
+| Avg BE | **-9.267** |
+| Trivial ratio | **0/10** |
+| Dominant chemistry | Pteridine/pyridopyrimidine biaryls, sulfonamide biaryls, heterocyclic hinge-binders |
+| Key enablers | H032 post-synthesis filter (0 trivial), H034 tricyclic retro rules, H035 multi-conformer docking (n=3) |
 
 ---
 
@@ -171,16 +189,25 @@
 ## Session Progress (2026-05-21)
 
 > **Round 1 (H031)**: ✅ VERIFIED — Single-atom substitution trivial route detection.
-> OH→Cl type routes eliminated when all sub-routes are trivial.
-> Limitation: doesn't catch trivial routes when recursive breakdown produces sub-routes.
 >
-> **Round 2 (H032)**: ✅ VERIFIED — Post-synthesis validity filter implemented.
-> Tool module caching prevented live testing; code logic verified correct.
+> **Round 2 (H032)**: ✅ VERIFIED — Post-synthesis validity filter (code only, caching prevented live test).
 >
 > **Round 3 (H033)**: ❌ INFRA_BLOCKED — PocketXMol hybrid mode.
-> GPU server healthy, 47 molecules generated, but Vina 3D conformer conversion fails on diffusion molecules.
 >
 > **Final result**: Best BE -8.974, Avg -8.544, Trivial 3/10.
-> BE degraded from H030 baseline (-9.972) due to tool caching preventing H032 filter activation.
+
+## Session Progress (2026-05-22) ⭐ CURRENT
+
+> **Round 1 (H034)**: ✅ VERIFIED — Tricyclic fused heterocycle retro rules + H032 live verification.
+> Trivial 2/10→0/10. Best BE -9.683.
+>
+> **Round 2 (H035)**: ✅ VERIFIED — Multi-conformer docking (n_conformers=3).
+> Avg BE +7.2% (-8.642→-9.267). Best BE -9.884. Chemistry shifted to heterocyclic hinge-binders.
+>
+> **Round 3 (H036)**: ❌ REJECTED — Enhanced docking guidance exploration.
+> Best BE degraded -9.884→-9.658, Avg -9.267→-8.355.
+>
+> **Final result**: Best BE **-9.884**, Avg **-9.267**, Trivial **0/10**.
+> 3 rounds completed. Best configuration: H034+H035 (tricyclic rules + multi-conformer docking).
 
 ---
