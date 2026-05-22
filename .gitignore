@@ -16,30 +16,65 @@ env/
 # 环境变量（包含密钥）
 .env
 
-# 输出结果
-output/*.csv
-output/*.log
-output/*.zip
+# 输出结果 — 运行时生成，不纳入版本控制
+output/**
+!output/.gitkeep
 
-# 实验记录（运行时生成，不纳入版本控制）
+# 实验记录 — 运行时生成
 experiments.jsonl
 agent_run.log
 
-# IDE
+# IDE / 编辑器
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # 系统文件
 .DS_Store
 Thumbs.db
+
+# Agent 运行时生成
 result.zip
 AGENTS.md
 
-# Graphviz 源文件（只保留生成的 PNG）
+# Graphviz 源文件
 *.dot
 
-# Agent 运行时生成的文件（不应提交）
+# 数据文件 — 运行时生成
 data/receptor.pdbqt
-tutorial/images/运行结果截图.png
+data/receptor_meeko.pdbqt
+
+# 临时测试脚本（根目录散落的 test_*.py）
+/test_*.py
+/validate_generator.py
+/sbdd_models_survey.md
+
+# nohup 输出日志
+nohup*.out
+
+# uv lock 文件（太大 680KB）
+uv.lock
+
+# Skills lock
+skills-lock.json
+
+# 第三方 CLI 工具（volc 152MB）
+volc-1.2.54/
+
+# 不相关的 skills / 工具配置
+.gemini/
+.omx/
+.codegraph/
+.claude/
+.pytest_cache/
+
+# 临时目录
+temp/
+
+# Hermes 运行时
+.hermes/
+
+# Kimi skills（保留 .kimi/ 中与 molcraft 相关的技能）
+# .kimi/ 整体保留 — 竞赛 agent 依赖这些 skills

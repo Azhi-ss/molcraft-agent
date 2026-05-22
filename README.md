@@ -205,52 +205,114 @@ Agent 通过以下工具与化学计算引擎交互：
 
 Agent 还拥有 13+ 个内置工具（文件读写、代码修改、Shell 执行、Web 搜索、任务管理等），支持自主科研全流程。
 
-## 模型配置
+## 环境变量配置
 
-### Agent 模式（推荐）
+项目通过 `.env` 文件加载所有 API 密钥和服务地址。复制模板文件并填入真实值：
 
-Agent 模式使用 **kimi-agent-sdk** 驱动 Kimi K2.6。支持三种认证方式：
-
-**方式 1：Kimi CLI OAuth（零配置，推荐）**
-```bash
-kimi login
-# 自动读取 ~/.kimi/credentials/kimi-code.json
-```
-
-**方式 2：环境变量**
-```bash
-export LLM_API_KEY="sk-your-key"
-export LLM_BASE_URL="https://api.moonshot.cn/v1"
-```
-
-**方式 3：.env 文件**
 ```bash
 cp .env.example .env
 # 编辑 .env 填入密钥
 ```
 
-支持：Kimi、OpenAI、DeepSeek、GLM、Stepfun、Ollama 等任何兼容 `/v1/chat/completions` 的模型。详见 `.env.example`。
+### 【必填】大语言模型（Agent 的大脑）
 
-## 配置参数
+任意选择一个兼容 `/v1/chat/completions` 的 LLM 服务，取消 `.env` 中对应方案的注释：
 
-主要配置位于 `src/config.py`：
+| 方案 | Base URL | Key 获取 | 推荐模型 | 费用参考 |
+|------|----------|---------|---------|---------|
+| **DeepSeek** ✅推荐 | `https://api.deepseek.com/v1` | [platform.deepseek.com](https://platform.deepseek.com) → API Keys | `deepseek-v4-pro` | ¥30 可跑完整一轮 |
+| Kimi | `https://api.moonshot.cn/v1` | [platform.moonshot.cn](https://platform.moonshot.cn) → API Keys | `kimi-k2.6` | 新用户有免费额度 |
+| OpenAI | `https://api.openai.com/v1` | [platform.openai.com](https://platform.openai.com) → API Keys | `gpt-4o` | 需绑信用卡 |
+| 阶跃星辰 | `https://api.stepfun.com/v1` | [platform.stepfun.com](https://platform.stepfun.com) → API Keys | `step-2-16k` | 免费额度 |
+| 智谱 GLM | `https://api.z.ai/api/paas/v4` | [open.bigmodel.cn](https://open.bigmodel.cn) → API Keys | `glm-4.6` | 免费额度 |
+| 本地模型 | `http://localhost:11434/v1` | 无需 key（填 `ollama`） | `qwen2.5:14b` | 免费 |
 
-### 分子对接
-```python
-DOCKING_CENTER = [18.28, 2.31, 21.44]   # 搜索盒子中心（蛋白质质心）
-DOCKING_SIZE = [30.0, 30.0, 30.0]        # 搜索盒子大小（Å）
-DOCKING_EXHAUSTIVENESS = 8               # 搜索强度
+对应的环境变量（三行一组）：
 ```
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_API_KEY=sk-your-real-api-key
+LLM_MODEL=deepseek-v4-pro
+```
+
+### 【可选但推荐】
+
+### 【可选但推荐】扩散模型（GPU 服务器）
+
+用于 PocketXMol 口袋感知分子生成，需在 GPU 服务器（如 4090）上单独部署服务。部署方式见 `docs/diffusion_server.md`。
+
+```
+DIFFUSION_API_URL=http://your-gpu-server:8001
+```
+
+### 【可选】Bohrium LKM 科学知识图谱
+
+Agent 通过 `SearchLKM` 工具检索科学文献和 claims。获取 key：
+
+1. 访问 [bohrium.dp.tech](https://bohrium.dp.tech) → 注册/登录
+2. 工作台 → 个人设置 → API 令牌 → 创建
+3. 复制 access key 填入 `.env`
+
+```
+LKM_ACCESS_KEY=your-lkm-access-key
+```
+
+不配置时 SearchLKM 工具会返回错误提示，不影响核心功能（分子生成、对接、逆合成）。
+
+### 【可选】逆合成 API（IBM RXN）
+
+```
+RXN_API_KEY=your-rxn-api-key
+```
+
+获取地址：[rxn.res.ibm.com](https://rxn.res.ibm.com)。不配置时使用内置 SMARTS 模板，效果足够竞赛提交。
+
+### 完整 .env 示例
+
+```bash
+# === 必填 ===
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_API_KEY=sk-your-real-api-key
+LLM_MODEL=deepseek-v4-pro
+
+# === 可选 ===
+DIFFUSION_API_URL=http://10.0.0.1:8001    # GPU 服务器
+LKM_ACCESS_KEY=your-lkm-access-key         # Bohrium 知识图谱
+RXN_API_KEY=                               # IBM RXN（不用可以不填）
+```
+
+## 核心运行参数
+
+以下参数位于 `src/config.py`，按比赛规格（TYK2 / PDB 5C01）调优：
+
+### 分子对接（TYK2 靶点）
+| 参数 | 当前值 | 说明 |
+|------|--------|------|
+| `DOCKING_CENTER` | `[21.86, -0.41, 29.93]` | 对接盒子中心（几何口袋检测活性位点） |
+| `DOCKING_SIZE` | `[28.0, 28.0, 28.0]` | 盒子大小（Å³=21952，低于 Vina 推荐上限 27000） |
+| `DOCKING_EXHAUSTIVENESS` | `32` | 搜索强度，越高越可能发现深结合模式 |
 
 ### 类药性质过滤
-```python
-MAX_MW = 500
-MIN_MW = 150
-MAX_LOGP = 5.0
-MIN_LOGP = -0.5
-MAX_TPSA = 140
-MIN_QED = 0.3
-```
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| `MAX_MW` | 550 | 最大分子量 |
+| `MIN_MW` | 150 | 最小分子量 |
+| `MAX_LOGP` | 5.0 | 最大脂溶性 |
+| `MIN_LOGP` | -0.5 | 最小脂溶性 |
+| `MAX_TPSA` | 140 | 最大极性表面积 |
+| `MIN_QED` | 0.3 | 最低类药性 |
+
+### 分子生成
+| 参数 | 值 | 说明 |
+|------|-----|------|
+| `N_GENERATED_MOLECULES` | 50 | 每次生成数量 |
+| `N_TOP_MOLECULES` | 10 | 保留最优数量 |
+
+### 迭代控制
+| CLI 参数 | 默认值 | 说明 |
+|----------|--------|------|
+| `--iterations` | 1 | 循环迭代次数 |
+| `--max-minutes` | 90 | 单次最长运行时间 |
+| `--max-steps` | 1000 | 每轮最大决策步数 |
 
 ## 依赖列表
 

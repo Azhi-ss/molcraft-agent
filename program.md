@@ -39,7 +39,7 @@
 6. **创建新的 knowledge_base.md**，包含：
    - 靶点指纹（`Target PDB Fingerprint` 字段）
    - 靶点名称（来自 UniProt 结果）
-   - 初始 pipeline 结果作为 Current Baseline
+   - 初始 pipeline 结果同时写入 `Current Baseline` 和 `All-Time Best BE`（两者初始值相同，后续 All-Time Best 只增不减）
    - 通用已验证策略（H001-H017 等靶点无关的策略，不复制 TYK2 baseline）
 7. 初始化完成，进入阶段一/二
 
@@ -79,7 +79,7 @@
 > 标记: `begin_stage(name="代码演进")` — 完成后 `end_stage()`
 
 1. 选择优先级最高的假设（影响大+修改小）
-2. `git add . && git commit -m "backup before HXXX"`
+2. `Shell: git add -A && git commit -m "backup before HXXX"` — 改代码前先存快照（必须用 Shell 工具执行，不是手动）
 3. 实施精确修改。原则：保留现有接口、添加注释说明目的和文献来源
 4. `python3 -m py_compile src/xxx.py` 自检
 5. 新工具封装为独立模块（如 `tools/fpocket_helper.py`），通过 `conda run` 调用
@@ -93,10 +93,15 @@
 
 1. 运行 `run_pipeline` 或 `python3 tools/pipeline.py --n-generate 50 --n-top 10 --strategy mutate --docking-guidance`
 2. 收集指标：最佳/平均结合能、QED/SA/Lipinski、trivial 比例、路线步数
-3. **强制对照**：实验组 vs 对照组（未修改版本或已知基线）。优于对照组且无副作用才保留
-4. 无效时回退：`git checkout HEAD~1 -- <改动的文件>`（用 git 精确还原，禁止手动 StrReplace 回退）
-5. 有效时保留：`python3 tools/git_advance.py --round X --best-be Y.ZZ --status keep`
-6. 记录 `docs/experiment_round_X.md`，调用 `report_iteration()`，更新 `experiments.jsonl`
+3. **裁决与 git 操作（必须执行）**：
+   - **有效（BE ≤ All-Time Best 或在 3% 阈值内）**：
+     - `Shell: python3 tools/git_advance.py --round X --best-be Y.ZZ --status keep`
+     - 更新 knowledge_base.md：`Current Baseline` 写本轮 BE，`All-Time Best BE` 取 `min(历史All-Time Best, 本轮BE)` — **All-Time Best 只能降低不能升高**
+   - **无效（BE 退化超 3% 且无其他维度补偿）**：
+     - `Shell: python3 tools/git_advance.py --round X --best-be Y.ZZ --status discard`
+     - 禁止用 StrReplaceFile 回退代码 — 只用 git 机制还原
+4. **提交前校验**：检查 `output/result.csv` 和 `output/result.log` 数据一致性（行数匹配、SMILES 对齐）
+5. 记录 `docs/experiment_round_X.md`，调用 `report_iteration()`，更新 `experiments.jsonl`
 
 ---
 

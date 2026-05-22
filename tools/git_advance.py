@@ -34,6 +34,12 @@ def main():
         required=True,
         help="keep=保留 commit, discard=回退到上一轮, crash=回退并记录失败",
     )
+    parser.add_argument(
+        "--files",
+        nargs="*",
+        default=None,
+        help="discard 时精确还原的文件列表（可选，不指定则还原全部）",
+    )
     args = parser.parse_args()
 
     # 检查是否在 git 仓库中
@@ -52,13 +58,25 @@ def main():
         print(f"   commit: {run(['git', 'rev-parse', '--short', 'HEAD'])}")
 
     elif args.status in ("discard", "crash"):
-        # 回退到上一轮
-        # 先 stash 未跟踪的文件（如 experiments.jsonl）
-        run(["git", "stash", "push", "-u", "-m", f"round-{args.round}-discard"])
-        # soft reset 到上一次 commit
-        run(["git", "reset", "--soft", "HEAD~1"])
-        status = "丢弃" if args.status == "discard" else "崩溃回退"
-        print(f"🔄 已{status} round-{args.round} 的更改，回到上一轮状态")
+        # 回退本轮代码改动
+        if args.files:
+            # 精确还原指定文件（从 backup commit 恢复）
+            for f in args.files:
+                try:
+                    run(["git", "checkout", "HEAD~1", "--", f])
+                    print(f"   已还原: {f}")
+                except SystemExit:
+                    print(f"   ⚠️ 还原失败: {f}（文件可能在 HEAD~1 不存在）")
+            # 还原后提交
+            run(["git", "add", "-A"])
+            run(["git", "commit", "-m", f"round-{args.round}: discarded (reverted {len(args.files)} files)"])
+            print(f"🔄 已精确还原 round-{args.round} 的 {len(args.files)} 个文件")
+        else:
+            # 全量回退：stash + soft reset
+            run(["git", "stash", "push", "-u", "-m", f"round-{args.round}-discard"])
+            run(["git", "reset", "--soft", "HEAD~1"])
+            status = "丢弃" if args.status == "discard" else "崩溃回退"
+            print(f"🔄 已{status} round-{args.round} 的全部更改，回到上一轮状态")
 
 
 if __name__ == "__main__":

@@ -444,8 +444,8 @@ class RunPipeline(CallableTool2):
                 ],
                 "next_actions": [
                     "1. 调用 report_iteration 记录本轮实验（round/hypothesis_id/success/summary）",
-                    "2. 将本轮指标与知识库最新基线对比（当前 best BE ~-10.1 kcal/mol）",
-                    "3. 如果结合能提升：判定 ACCEPTED，记录改动；如果下降：判定 REJECTED，回退代码",
+                    "2. 将本轮 best BE 与 knowledge_base.md 的 All-Time Best BE 对比（不是 Current Baseline）",
+                    "3. 裁决：BE ≤ All-Time Best 或在 3% 阈值内 → git_advance keep + 更新 knowledge_base（All-Time Best = min(历史, 本轮)）；否则 → git_advance discard",
                     "4. 检查 trivial 比例是否 > 30%，如果是，下一轮考虑扩充逆合成规则库",
                 ],
             }

@@ -170,9 +170,9 @@
 | Best BE | **-10.139** |
 | Avg BE | **-9.021** |
 | Trivial ratio | **2/10** |
-| Dominant chemistry | Sulfonamide biaryls, heterocyclic hinge-binders, Suzuki-coupled scaffolds |
-| Key enablers | exh=32, box=28³ (21952 Å³), n_conf=2 (evolution), n_conf=3 (consensus) |
-| Docking config | `DOCKING_EXHAUSTIVENESS=32`, `DOCKING_SIZE=[28,28,28]` |
+| **All-Time Best BE** | **-10.359** (H022) — 不可覆写，只取 min(历史, 本轮) |
+
+> ⚠️ All-Time Best BE 是历史最低结合能，只增不减。当前 Baseline 可随每轮 VERIFIED 更新，但 All-Time Best 永远保留最优值。裁决假设有效性时以 All-Time Best 为对照基准。
 
 **H037 details**: exh 8→32 broke -10 barrier (first time). Box 35³→28³ (reduce search volume 59%). n_conf=1 during evolution degraded avg BE (-9.021 vs H035 -9.267). n_conf=2 being tested.
 
