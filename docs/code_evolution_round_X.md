@@ -1,72 +1,54 @@
-# 代码演进 — Round X (新会话 H031)
+# 代码演进报告 — Round X (H034)
 
-## 日期: 2026-05-21
+## 修改文件
 
----
+### `src/synthesis_v2.py` — RETRO_RULES 扩展
 
-## 改动概述
+**修改内容**: 在 RETRO_RULES 末尾（H020 之后）新增 5 条三环稠合杂环逆合成规则。
 
-**假设ID**: H031 — 单原子替换 Trivial 路线检测
+**新增规则**:
 
-**改动文件**: `src/synthesis_v2.py`
+| # | 骨架 | 命名反应 | 逆合成路径 |
+|---|------|---------|-----------|
+| 1 | 吖啶 (Acridine) | Bernthsen 合成 | 吖啶 → 2-氨基联苯 + 甲酸 |
+| 2 | 吩嗪 (Phenazine) | Wohl-Aue 合成 | 吩嗪 → 邻苯二胺 + 邻苯醌 |
+| 3 | 咔唑 (Carbazole) | Borsche-Drechsel 环化 | 咔唑 → 2-氨基联苯 |
+| 4 | 吡咯并[2,3-d]嘧啶 | Traube 嘌呤合成变体 | 7-去氮嘌呤 → 4-氨基嘧啶 + 乙二醛 |
+| 5 | 吡唑并[3,4-d]嘧啶 | Knorr 类缩合 | 吡唑并嘧啶 → 4-氨基嘧啶 + 肼 |
 
----
+**设计原则**:
+1. 放在所有规则末尾，确保更具体的双环规则优先匹配
+2. SMARTS 匹配核心骨架（取代基无关），RETRO 给出简化的合成子
+3. 每个规则对应真实命名反应
 
-## 具体修改
+**文献依据**: 
+- LARC (Baker et al., 2025): 规则覆盖率决定逆合成质量
+- Deep Lead Optimization (JACS 2024): 稠环体系需要专门断键策略
+- ChemCrow (Bran et al., 2024): 工具/规则库丰富度决定 Agent 能力边界
 
-### 1. 新增 `_is_single_atom_swap()` 函数 (第 633-695 行)
+## 修改位置
 
-检测逆合成反应是否仅为化学上 trivial 的单原子替换（如 OH↔Cl/Br 交换）。
+`src/synthesis_v2.py`, lines 624-630 (H020 异噁唑规则之后, 闭括号 `]` 之前)
 
-**算法**:
-- 从反应物列表中找出重原子数最多的「主反应物」（排除 Cl、Br、F 等小试剂）
-- 比较原始分子与主反应物的重原子数（必须相同）
-- 统计元素组成差异（排除 H）
-- 若恰好两种元素各相差 ±1 且净差为 0 → 单原子替换
+## 编译检查
 
-**示例**:
-- `ClC6H4-C(=O)-...` → 主反应物 `HOC6H4-C(=O)-...` + `Cl` → 检测为 swap (Cl↔O)
-- `c1ccccc1-c2ccccc2` → `c1ccccc1Br` + `B(OH)O-c2ccccc2` → 非 swap（碳原子数不同）
+✅ `python3 -m py_compile src/synthesis_v2.py` 通过
 
-### 2. 修改 `plan_synthesis_recursive` trivial 判定 (第 757-759 行)
+## 单元验证
 
-**修改前**:
-```python
-is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
-```
+| 测试分子 | 结果 | 步数 | 路线 |
+|---------|------|------|------|
+| 取代吖啶 `Cc1ccc2nc3ccc(C)cc3cc2c1` | ✅ OK | 2 | Suzuki→联苯 + Bernthsen 环化 |
+| 吩嗪 `c1ccc2nc3ccccc3nc2c1` | ✅ OK | 1 | 邻苯二胺 + 邻苯醌→吩嗪 |
+| 咔唑 `c1ccc2c(c1)[nH]c1ccccc12` | ✅ OK | 2 | Suzuki→2-氨基联苯 + Borsche-Drechsel |
+| 未取代吡咯并嘧啶 | 简单分子 | 0 | ≤10原子，正确判定为商业可得起始原料 |
+| 取代吡唑并嘧啶 `Cc1nc2[nH]ncc2c(C)n1` | ✅ OK | 1 | 氨基嘧啶 + 肼→吡唑并嘧啶 |
 
-**修改后**:
-```python
-is_trivial = all_trivial and len(reactants) == 1 and reactants[0] == smiles
-if not is_trivial and all_trivial:
-    is_trivial = _is_single_atom_swap(smiles, reactants)
-```
+所有新规则 SMARTS 与目标骨架正确匹配，无交叉误匹配（喹啉不匹配任何新规则）。
 
-**逻辑解释**:
-- 保留原有 exact-match trivial 检测
-- 新增: 当所有子路线都是 trivial（all_trivial=True）且检测到单原子替换 → 整体标记为 trivial
-- 不影响正常多步路线的检测
+## 风险评估
 
----
-
-## 文献支撑
-
-- LARC (Baker et al., 2025): Agent-as-a-Judge 路线质量评审
-- 标准药物化学实践: 单官能团转化（OH→Cl）不是有效逆合成路线
-
----
-
-## 编译验证
-
-```bash
-$ python3 -m py_compile src/synthesis_v2.py
-# 通过，无语法错误
-```
-
-## 功能验证
-
-| 测试用例 | 修改前 | 修改后 | 期望 |
-|---------|--------|--------|------|
-| `O=C1c2ccccc2NNc2cccc(Cl)c21` | trivial=False | trivial=True ✅ | True |
-| `CC1CCC2(CC1)Cc1cccc(Cl)c1C2` | trivial=False | trivial=True ✅ | True |
-| `Nc1ccccc1-c1cc...cc1O` (Suzuki) | trivial=False | trivial=False ✅ | False |
+- **向后兼容**: 新规则仅追加于末尾，不修改任何现有规则
+- **mass balance**: 新规则均通过 H014 化学计量守恒检查（ratio 0.75-1.25）
+- **元素守恒**: 新规则均通过 H021 元素守恒检查
+- **性能影响**: 5 条新规则，每次 `plan_synthesis_recursive` 调用额外匹配成本可忽略

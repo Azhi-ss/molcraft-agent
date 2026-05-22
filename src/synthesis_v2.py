@@ -627,6 +627,58 @@ RETRO_RULES = [
     # 异噁唑在激酶抑制剂中作为氢键受体/供体出现，也是重要的五元杂环
     ("c1cnoc1",
      "c1cnoc1>>O=CC=O.NO"),
+
+    # ============================== H034 新增规则 ==============================
+    # 文献依据:
+    #   - LARC (Baker et al., 2025): 规则覆盖率决定逆合成质量;
+    #     三环稠合杂环是当前逆合成路线的主要缺口
+    #   - Deep Lead Optimization (JACS 2024): 稠环体系需要专门的断键策略,
+    #     三环体系不应被当作无法合成的终端
+    #   - ChemCrow (Bran et al., 2024): 工具/规则库丰富度决定 Agent 能力边界
+    # 设计原则:
+    #   - 覆盖激酶抑制剂中高频出现的三环稠合杂环骨架
+    #   - 每个规则对应真实的命名反应或仿生合成路径
+    #   - SMARTS 匹配核心骨架（取代基无关），RETRO 给出简化的合成子
+    #   - 放在所有规则末尾，确保更具体的双环规则优先匹配
+
+    # -- 吖啶 (Acridine, 二苯并[b,e]吡啶) 逆 Bernthsen 合成 --
+    # 匹配: 三环氮杂芳环（两个苯环夹一个吡啶环）
+    # 逆反应: 吖啶 → 2-氨基联苯 + 甲酸（Bernthsen 合成逆反应）
+    # 吖啶骨架（如 Quinacrine, Tacrine）在抗疟、AD 治疗出现;
+    # 其平面三环结构也适配 TYK2 疏水口袋
+    ("c1ccc2nc3ccccc3cc2c1",
+     "c1ccc2nc3ccccc3cc2c1>>Nc1ccccc1-c1ccccc1.C=O"),
+
+    # -- 吩嗪 (Phenazine, 二苯并[b,e]吡嗪) 逆 Wohl-Aue 合成 --
+    # 匹配: 三环双氮芳环（两个苯环夹一个吡嗪环）
+    # 逆反应: 吩嗪 → 邻苯二胺 + 邻苯醌（Wohl-Aue 反应逆）
+    # 吩嗪类（如 Clofazimine）具有抗菌/抗炎活性,
+    # 双氮氢键受体也适合激酶 hinge 区域
+    ("c1ccc2nc3ccccc3nc2c1",
+     "c1ccc2nc3ccccc3nc2c1>>Nc1ccccc1N.O=C1C=CC=CC1=O"),
+
+    # -- 咔唑 (Carbazole, 二苯并[b,f]吡咯) 逆 Borsche-Drechsel 环化 --
+    # 匹配: 三环含 NH 芳环（两个苯环夹一个吡咯环）
+    # 逆反应: 咔唑 → 2-氨基联苯（Borsche-Drechsel 氧化环化逆反应）
+    # 咔唑广泛存在于天然产物和药物中（如 Carvedilol, Carprofen）
+    ("c1ccc2c(c1)[nH]c1ccccc12",
+     "c1ccc2c(c1)[nH]c1ccccc12>>Nc1ccccc1-c1ccccc1"),
+
+    # -- 吡咯并[2,3-d]嘧啶 (Pyrrolo[2,3-d]pyrimidine, 7-去氮嘌呤) 逆缩合 --
+    # 匹配: 五元吡咯 + 六元嘧啶 稠合（嘌呤类似物, N7→C）
+    # 逆反应: 7-去氮嘌呤 → 4-氨基嘧啶 + 乙二醛（逆 Traube 嘌呤合成变体）
+    # 7-去氮嘌呤骨架是 TYK2/JAK 激酶抑制剂 common core（如 Tofacitinib 类似物）;
+    # 吡咯 NH 供体 + 嘧啶 N 受体 = ideal hinge-binding motif
+    ("c1nc2[nH]ccc2cn1",
+     "c1nc2[nH]ccc2cn1>>Nc1ncncc1.O=CC=O"),
+
+    # -- 吡唑并[3,4-d]嘧啶 (Pyrazolo[3,4-d]pyrimidine) 逆缩合 --
+    # 匹配: 五元吡唑 + 六元嘧啶 稠合（嘌呤生物电子等排体）
+    # 逆反应: 吡唑并嘧啶 → 4-氨基嘧啶 + 肼（逆 Knorr 类缩合）
+    # 吡唑并嘧啶是激酶抑制剂的 privilege scaffold（如 Dinaciclib, Ruxolitinib 类似物）;
+    # 双杂环体系提供多方向氢键, 对 TYK2 ATP 口袋有天然亲和力
+    ("c1nc2[nH]ncc2cn1",
+     "c1nc2[nH]ncc2cn1>>Nc1ncncc1.NN"),
 ]
 
 
