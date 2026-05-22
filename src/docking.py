@@ -318,8 +318,21 @@ def batch_dock(molecules, center=None, size=None, n_conformers: int = 1):
     success_count = 0
     for i, mol_info in enumerate(molecules):
         smiles = mol_info["smiles"]
+        # Skip multi-fragment molecules (meeko can't handle them)
+        mol_check = Chem.MolFromSmiles(smiles)
+        if mol_check is None or len(Chem.GetMolFrags(mol_check)) > 1:
+            print(f"[对接] {i+1}/{total_count}: {smiles[:40]}... SKIP (multi-fragment)")
+            result = {"smiles": smiles, "success": False, "error": "multi-fragment"}
+            result.update(mol_info)
+            results.append(result)
+            completed_count += 1
+            continue
         print(f"[对接] {i+1}/{total_count}: {smiles[:40]}...")
-        result = dock_molecule(smiles, center, size, n_conformers=n_conformers)
+        try:
+            result = dock_molecule(smiles, center, size, n_conformers=n_conformers)
+        except Exception as e:
+            print(f"  对接失败: {e}")
+            result = {"smiles": smiles, "success": False, "error": str(e)}
         result["smiles"] = smiles
         result.update(mol_info)
         results.append(result)

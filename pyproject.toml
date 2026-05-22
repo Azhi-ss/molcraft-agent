@@ -22,3 +22,8 @@ dependencies = [
 
 [project.scripts]
 molcraft = "run:main"
+
+[tool.uv.workspace]
+members = [
+    "test-lkm-gaia",
+]

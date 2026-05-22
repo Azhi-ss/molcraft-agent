@@ -1,0 +1,21 @@
+[2026-05-21T16:55:05.264986] ============================================================
+[2026-05-21T16:55:05.265168] MolCraft Agent 进化迭代版开始执行
+[2026-05-21T16:55:05.265217] 配置: n_generate=50, n_generations=2, n_offspring=3, strategy=mutate, docking_guidance=True, generator=hybrid
+[2026-05-21T16:55:05.265232] ============================================================
+[2026-05-21T16:55:05.265236] 步骤 1: 准备受体
+[2026-05-21T16:55:05.265255] 受体准备完成
+[2026-05-21T16:55:05.265260] ------------------------------------------------------------
+[2026-05-21T16:55:05.265266] 进化第 1/2 代
+[2026-05-21T16:55:05.265269] ------------------------------------------------------------
+[Receptor] 使用已存在的受体文件 /home/dministrator/Lab/clones/molcraft-agent/data/receptor.pdbqt
+Traceback (most recent call last):
+  File "/home/dministrator/Lab/clones/molcraft-agent/tools/pipeline.py", line 551, in <module>
+    main()
+  File "/home/dministrator/Lab/clones/molcraft-agent/tools/pipeline.py", line 538, in main
+    run_evolutionary_pipeline(
+  File "/home/dministrator/Lab/clones/molcraft-agent/tools/pipeline.py", line 123, in run_evolutionary_pipeline
+    diffusion_mols = _generate_diffusion(n_generate, log_lines)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/dministrator/Lab/clones/molcraft-agent/tools/pipeline.py", line 393, in _generate_diffusion
+    from src import config as _config
+ModuleNotFoundError: No module named 'src'

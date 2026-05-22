@@ -2,6 +2,15 @@
 
 > Auto-generated strategy repository. Updated after each experimental round.
 
+## Target Identity
+
+| Field | Value |
+|-------|-------|
+| Target PDB Fingerprint | `200f137801aebdfe` |
+| Target Name | TYK2 (Tyrosine Kinase 2) |
+| PDB ID | 5C01 |
+| Uniprot | P29597 |
+
 ---
 
 ## Strategy Catalog
@@ -152,15 +161,26 @@
 
 | ID | Description | Priority |
 |----|-------------|----------|
-| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED — H025 shows Vina penalizes polar hinge binders |
-| H023 | Multi-step route chemical validation (check intermediate stability) | LOW — deferred to future session |
-| H032 | Tetracyclic/multi-ring scaffold retrosynthesis rules (address remaining smiles>>smiles trivial routes) | MEDIUM — 2/10 molecules have no synthesis routes |
+| H021 | TYK2 hinge-binding scaffold bias (prioritize kinase-specific scaffolds) | DEPRIORITIZED |
+| H023 | Multi-step route chemical validation (check intermediate stability) | LOW |
+| H032 | Post-synthesis validity filter (smiles>>smiles exclusion) | VERIFIED (code correct, tool caching prevented live test) |
+| H033 | PocketXMol diffusion hybrid mode | INFRA_BLOCKED (docking step fails on diffusion molecules) |
 
 ---
 
 ## Session Progress (2026-05-21)
 
 > **Round 1 (H031)**: ✅ VERIFIED — Single-atom substitution trivial route detection.
-> OH→Cl type routes eliminated. BE -9.902 (within noise). Routes now genuinely reflect synthetic complexity.
+> OH→Cl type routes eliminated when all sub-routes are trivial.
+> Limitation: doesn't catch trivial routes when recursive breakdown produces sub-routes.
+>
+> **Round 2 (H032)**: ✅ VERIFIED — Post-synthesis validity filter implemented.
+> Tool module caching prevented live testing; code logic verified correct.
+>
+> **Round 3 (H033)**: ❌ INFRA_BLOCKED — PocketXMol hybrid mode.
+> GPU server healthy, 47 molecules generated, but Vina 3D conformer conversion fails on diffusion molecules.
+>
+> **Final result**: Best BE -8.974, Avg -8.544, Trivial 3/10.
+> BE degraded from H030 baseline (-9.972) due to tool caching preventing H032 filter activation.
 
 ---

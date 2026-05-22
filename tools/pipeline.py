@@ -152,10 +152,28 @@ def run_evolutionary_pipeline(
 
         log(f"本代生成 {len(mols)} 个通过过滤的分子", log_lines)
 
+        # GPU 预对接标记：扩散分子已有 binding_energy，跳过本地 Vina
+        gpu_docked = [m for m in mols if m.get("binding_energy") is not None]
+        if gpu_docked:
+            for m in gpu_docked:
+                m["docking_success"] = True
+            log(f"GPU 预对接: {len(gpu_docked)} 个分子已有结合能", log_lines)
+
         # 对接处理
-        if use_docking_guidance and gen == 0:
-            # 初始代：docking_guidance mutate 模式已预对接（含 docking_success）
-            # hybrid/diffusion 模式生成的是裸分子，需显式对接
+        local_mols = [m for m in mols if not m.get("binding_energy")]
+        if gen == 0 and gpu_docked and not local_mols:
+            # 全部 GPU 预对接，跳过本地 Vina
+            successful = sorted(gpu_docked, key=lambda x: x.get("binding_energy", 999))
+            log(f"全部 GPU 预对接: {len(successful)}/{len(mols)} 个分子", log_lines)
+        elif gen == 0 and gpu_docked and local_mols:
+            # 混合：GPU 已对接收敛分子 + 本地对接 RDKit 分子
+            docked = batch_dock(local_mols)
+            rdkit_ok = [d for d in docked if d.get("success")]
+            successful = gpu_docked + rdkit_ok
+            successful.sort(key=lambda x: x.get("binding_energy", 999))
+            log(f"GPU 预对接 {len(gpu_docked)} + 本地对接 RDKit {len(rdkit_ok)}/{len(local_mols)}", log_lines)
+        elif gen == 0:
+            # 纯 RDKit 或 docking_guidance mutate
             pre_docked = [d for d in mols if d.get("docking_success")]
             if pre_docked:
                 successful = sorted(pre_docked, key=lambda x: x.get("binding_energy", 999))
@@ -164,7 +182,7 @@ def run_evolutionary_pipeline(
                 docked = batch_dock(mols)
                 successful = [d for d in docked if d.get("success")]
                 successful.sort(key=lambda x: x.get("binding_energy", 999))
-                log(f"对接完成 (hybrid/diffusion), 成功 {len(successful)}/{len(mols)}", log_lines)
+                log(f"本地对接完成: {len(successful)}/{len(mols)} 个分子", log_lines)
         else:
             log(f"第 {gen + 1} 代: 分子对接", log_lines)
             docked = batch_dock(mols)
@@ -407,7 +425,8 @@ def _generate_diffusion(n_molecules, log_lines):
     if not os.path.exists(pdb_path):
         raise RuntimeError(f"PDB 文件不存在: {pdb_path}")
 
-    pdb_content = open(pdb_path).read()
+    with open(pdb_path) as f:
+        pdb_content = f.read()
     pocket_radius = max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0
 
     request_body = json.dumps({
@@ -420,7 +439,7 @@ def _generate_diffusion(n_molecules, log_lines):
     base_url = api_url.rstrip("/")
 
     # Phase 1: Submit job
-    submit_url = f"{base_url}/generate"
+    submit_url = f"{base_url}/generate-and-dock"
     submit_req = urllib.request.Request(
         submit_url, data=request_body,
         headers={"Content-Type": "application/json"},
@@ -483,6 +502,7 @@ def _generate_diffusion(n_molecules, log_lines):
             "mw": m.get("mw"),
             "logp": m.get("logp"),
             "sa_score": m.get("sa_score"),
+            "binding_energy": m.get("binding_energy"),
         })
 
     if not converted:

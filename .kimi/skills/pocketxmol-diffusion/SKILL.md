@@ -34,16 +34,24 @@ PocketXMol 是一个原子级生成基础模型，通过去噪过程在蛋白口
 
 ## Available Tools
 
-### 1. `diffusion_generate` — 独立调用
+### 1. `diffusion_generate` — 独立调用（两阶段优化，默认开启）
 
 ```
-diffusion_generate(pdb_path="data/target.pdb", n_molecules=20)
+diffusion_generate(pdb_path="data/target.pdb", n_molecules=20, two_stage=True)
 ```
 
-返回 SMILES + QED/MW/LogP/SA/CFD score，格式与 `generate_molecules` 兼容，可直接送入 `dock_molecules`。
+**两阶段流程（默认）：**
+1. sbdd 生成 N 个口袋感知分子
+2. 按 QED 排序，取 top-3 种子
+3. 每个种子用 opt_mol 生成 5 个优化变体
+4. 合并去重，返回 N + 15 个分子
+
+**提效：** opt_mol 优化可提升 QED ~30%（实测 0.35 → 0.46），同时改善 logP 和 SA。
 
 **参数：**
 - `n_molecules`: 建议 10-50，过大无益（口袋化学空间有限）
+- `two_stage`: 是否启用两阶段优化，默认 True。单阶段用 `two_stage=False`
+- `n_optimize`: 两阶段时优化的种子数，默认 3
 - `pocket_center`: 留空自动从 `src/config.py` 读取
 
 ### 2. `run_pipeline(generator="hybrid")` — Pipeline 集成

@@ -1,0 +1,33 @@
+[2026-05-21T16:58:15.948211] ============================================================
+[2026-05-21T16:58:15.948333] MolCraft Agent 进化迭代版开始执行
+[2026-05-21T16:58:15.948354] 配置: n_generate=50, n_generations=2, n_offspring=3, strategy=mutate, docking_guidance=False, generator=hybrid
+[2026-05-21T16:58:15.948358] ============================================================
+[2026-05-21T16:58:15.948363] 步骤 1: 准备受体
+[2026-05-21T16:58:15.948376] 受体准备完成
+[2026-05-21T16:58:15.948380] ------------------------------------------------------------
+[2026-05-21T16:58:15.948384] 进化第 1/2 代
+[2026-05-21T16:58:15.948387] ------------------------------------------------------------
+[2026-05-21T16:58:15.949914] 扩散模型: 提交任务 http://localhost:8001 (n=50)
+[2026-05-21T16:58:16.410799] 扩散模型: 任务 38dd8d73954f 已接受，开始轮询...
+[2026-05-21T16:58:44.075315] 扩散模型: [running] 29s elapsed, 0 mols so far
+[2026-05-21T16:59:12.780940] 扩散模型: [completed] 58s elapsed, 47 mols so far
+[2026-05-21T16:59:13.396961] 扩散模型: 完成 — 47 个分子 (耗时 40s)
+[2026-05-21T16:59:13.402401] 扩散模型生成了 41 个分子
+[2026-05-21T16:59:13.751707] 混合模式: 扩散 41 + RDKit 25
+[2026-05-21T16:59:13.751849] 本代生成 66 个通过过滤的分子
+[2026-05-21T16:59:13.751868] 第 1 代: 分子对接
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+WARNING: Search space volume is greater than 27000 Angstrom^3 (See FAQ)
+ERROR: Cannot read ligand file. Ligand string is empty.

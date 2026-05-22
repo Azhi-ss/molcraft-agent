@@ -1,96 +1,95 @@
-# 诊断报告 — Round X (新会话)
-
-## 日期: 2026-05-21
-
----
+# 诊断报告 — Round X (2026-05-22 Session)
 
 ## 1. 禁重检查
 
-REJECTED 假设:
-- H019: Suzuki Byproduct Atom Balance — trivial ratio regression
-- H025: Polar Pharmacophore Substituents — Vina penalizes polarity
-- H026: Large Aromatic Scaffolds — significant BE regression
+已检查 knowledge_base.md 中所有 REJECTED 条目:
+- ❌ H019: Suzuki Byproduct Atom Balance — trivial ratio regressed (不可重提)
+- ❌ H025: Expanded Substituent Library (Polar Pharmacophores) — BE degraded (不可重提)
+- ❌ H026: Expanded Large Aromatic Scaffold Library — BE degraded (不可重提)
 
-新假设方向均不与此三条重叠。✅
+新假设方向与上述 REJECTED 条目均不重叠。
 
----
+## 2. 外部新知识搜索
 
-## 2. 当前基线 (result.csv 分析)
+### LKM 搜索
+搜索 TYK2 inhibitor + docking 相关文献，获得以下关键发现：
+- TYK2 选择性抑制剂的系统性虚拟筛选仍是不足领域（gcn_3b95e74852f24356）
+- AutoDock Vina 评分函数的 docking score 差异 ~1 kcal/mol 对应显著亲和力变化（gcn_83f59ea641254599）
+- DecompOpt (2024): 可控分解扩散模型用于基于结构的分子优化（arXiv:2403.13829）
 
-| 指标 | 值 |
-|------|-----|
-| 分子数 | 10 |
-| Best BE | -9.972 |
-| 实际 trivial route 数 | **2/10** (Row 6-7: OH→Cl 单原子替换) |
-| 报告中 trivial ratio | 0/10 (错误) |
+### arXiv 搜索
+- RetroReasoner (2026-03): 基于推理 LLM 的逆合成预测，使用 RL 优化（arXiv:2603.12666）
+- Margin-calibrated Classifier Guidance (2026-05): 属性驱动的合成规划（arXiv:2605.13101）
 
-### Trivial 路线详情:
-- Row 6: `O=C1c2ccccc2NNc2cccc(Cl)c21` → `...NNc2cccc(O)c21.Cl>>...NNc2cccc(Cl)c21.O`
-  - 本质: 芳基 Cl→OH 单原子替换
-  - `_is_trivial_route` 返回 False (reactant≠product)
-  - `route_quality` = ~0.7 (未被识别为 trivial)
+**可操作性评估**: 最新论文以深度学习为主，与项目规则基础架构差距大。直接可落地策略有限。
 
-- Row 7: `CC1CCC2(CC1)Cc1cccc(Cl)c1C2` → `...Cc1cccc(O)c1C2.Cl>>...Cc1cccc(Cl)c1C2.O`
-  - 本质: 同上
+## 3. 源码审查
 
----
+已审查文件：
+- `src/synthesis_v2.py`: RETRO_RULES 已覆盖 50+ 条规则（Suzuki, amide, sulfonamide, ester, ether, amine, heterocycles, Diels-Alder, lactone, epoxide, pyrazole, sp3 C-C 等）
+- `tools/pipeline.py`: H032 后过滤器已实现（line 321-336），排除 smiles>>smiles trivial 路线
+- `src/generator.py`: 使用 SCAFFOLDS + KINASE_HINGE_SCAFFOLDS，H021 激酶偏置已启用
 
-## 3. 瓶颈分析
-
-### 瓶颈: Trivial 路线检测不完整
-
-**根因**: `synthesis_v2.py` 第 407-409 行的卤素交换规则:
+H032 代码逻辑正确：
 ```python
-("[c]Cl", "[c:1]Cl>>[c:1]O.Cl"),
-("[c]Br", "[c:1]Br>>[c:1]O.Br"),
+valid_candidates = [c for c in scored_candidates if c["route"] != f"{c['mol_smiles']}>>{c['mol_smiles']}"]
 ```
+上一会话因工具模块缓存导致未实测（session progress 记载）。
 
-这些规则产生了化学上无效的单原子替换路线。当前 `plan_synthesis_recursive` 的 trivial 检测只检查 `reactants[0] == smiles`，但原子替换后的 reactant SMILES 与原始 SMILES 不同，导致漏检。
+## 4. 瓶颈诊断
 
-**影响维度**: 可合成性（route quality）
-- 2/10 分子有 trivial 路线
-- 复合评分中 `0.15 * route_quality` 给 trivial 分子 +0.10 优势分
-- 挤占了真正有合成价值分子的 top-10 位置
+### 当前基线 (H031 VERIFIED)
+| Metric | Value |
+|--------|-------|
+| Best BE | -9.902 |
+| Avg BE | -8.642 |
+| Trivial ratio | 2/10 |
 
----
+### 瓶颈识别
 
-## 4. 假设提出
+**瓶颈 1: H032 未实测验证**
+- 代码正确但未被 live pipeline 测试
+- 预期效果: 排除 smiles>>smiles 分子，trivial ratio 从 2/10 → ≤1/10
 
-### H031 — 单原子替换 Trivial 路线检测
+**瓶颈 2: 四环稠合体系无断键规则**
+- 知识库记载: "2 trivial are smiles>>smiles type (tetracyclic scaffolds w/o synthesis rules)"
+- 当前 RETRO_RULES 覆盖了常见双环/三环杂环（喹啉、异喹啉、吲哚、苯并呋喃等）
+- 但三环/四环稠合杂环体系（如 acridine, phenazine, carbazole, pyrrolopyrimidine）仍无匹配规则
+- 这些体系在激酶抑制剂中高频出现（hinge-binding scaffolds）
 
-```
-假设ID: H031
-瓶颈: 卤素交换规则产生的 OH↔Cl/Br 单原子替换路线未被识别为 trivial
-文献支撑: LARC (Baker et al., 2025) — Agent-as-a-Judge 路线质量评审;
-         标准药物化学实践 — 单官能团转化不是有效逆合成路线
+**瓶颈 3: BE 提升空间有限**
+- 当前最佳 BE -9.902 已处于 Vina 评分函数天花板附近
+- Vina 偏向疏水/扁平芳环体系（H025 结论），进一步优化需谨慎
 
-───────────────── 推理链 ─────────────────
-步骤 | 内容                                    | 置信度 | 推理方式 | 依据来源
-S1   | 卤素交换规则仅做单原子替换，非真正合成路线 | 高     | 演绎     | 化学反应常识
-S2   | 单原子替换的特征: 反应物与产物碳骨架相同  | 高     | 演绎     | RDKit 元素分析
-     | 仅一个杂原子类型不同                     |        |          |
-S3   | 检测此特征可标记为 trivial               | 高     | 演绎     | 源码分析
-S4   | Trivial 标记 → route_quality=0           | 高     | 演绎     | score_route_quality 逻辑
-     | → 复合评分中 route 权重归零              |        |          |
-综合置信度 = 高
+### 工具天花板评估
+- Vina 对接：已有 consensus docking (H009)、docking guidance (H002)
+- 逆合成：规则覆盖率已达 50+，但三/四环稠合体系为明确缺口
+- 分子生成：SCAFFOLDS 库丰富（H022），变异策略多样
 
-───────────────── 验证标准 ─────────────────
-Q1 如果核心指标提升 < 5%，是否仍保留？
-答：是
-理由：修复 trivial 检测是正确性修复，不依赖于 BE 提升
+## 5. 假设提出
 
-Q2 如果指标下降，最可能的原因是什么？
-答：Trivial 分子被移除后，top-10 被填补的分子可能 BE 偏低
+### H034: Tricyclic Fused Heterocycle Retrosynthesis Rules + H032 Live Verification
 
-Q3 本假设的最低可接受结果是什么？
-答：Trivial ratio 从当前的实际 2/10 降至 0/10（知识库中声称的状态）
+**来源**: LARC (Baker et al., 2025) — 规则覆盖率决定逆合成质量
 
-───────────────── 改进方案 ─────────────────
-改动文件: src/synthesis_v2.py
-改动内容:
-  1. 新增函数 _is_single_atom_swap(smiles, reactants): 
-     检测主反应物与原始分子是否仅差一个原子类型
-  2. 在 plan_synthesis_recursive 中:
-     当检测到单原子替换时，标记为 trivial
-验证指标: run_pipeline 50 分子，对比 trivial ratio
-```
+**问题**: 当前 RETRO_RULES 缺少以下在激酶抑制剂中高频出现的稠合杂环断键规则：
+1. **Acridine** (二苯并[b,e]吡啶): 三环含氮芳环 → 逆 Ullmann/环化
+2. **Phenazine** (二苯并[b,e]吡嗪): 三环双氮芳环 → 逆缩合
+3. **Carbazole** (二苯并[b,f]吡咯): 三环含氮芳环 → 逆 Cadogan/Borsche-Drechsel
+4. **Pyrrolo[2,3-d]pyrimidine** (7-deazapurine): 激酶 hinge-binder 核心
+5. **Pyrazolo[3,4-d]pyrimidine**: 常见激酶抑制剂骨架
+
+**方案**:
+1. 在 RETRO_RULES 中新增 5 条逆合成规则，覆盖上述稠合杂环
+2. 每条规则对应真实命名反应或仿生合成路径
+3. 同时运行 pipeline 实测 H032 + H034 效果
+
+**预期效果**: 
+- Trivial ratio: 2/10 → 0/10
+- Best BE: -9.902 ± 0.3 (不应显著退化)
+- 新增规则覆盖的分子应获得 ≥1 step 非平凡路线
+
+**验证标准**:
+- H032 后过滤器正确排除 smiles>>smiles 路线
+- 新规则至少为 1 个分子提供非平凡逆合成路线
+- Best BE 不低于 -9.5 kcal/mol（保守门槛）
