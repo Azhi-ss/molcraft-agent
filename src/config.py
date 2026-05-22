@@ -61,8 +61,8 @@ LLM_API_KEY = _get_api_key()
 # 之前 center=[24.87,0.55,33.89] (Hinge 区域)，与比赛规格偏移 14.2 Å
 # 新 center 覆盖 DFG + Gatekeeper + P-loop 区域，盒子扩大到 30Å
 DOCKING_CENTER = [21.86, -0.41, 29.93]  # TYK2 5C01 — 几何口袋检测活性位点
-DOCKING_SIZE = [35.0, 35.0, 35.0]       # TYK2 5C01 — 推荐盒子大小（原 30Å 偏移 8.66Å）
-DOCKING_EXHAUSTIVENESS = 8
+DOCKING_SIZE = [28.0, 28.0, 28.0]       # H037 收紧盒子 35→28（42875→21952 Å³, 低于 Vina 推荐上限 27000）
+DOCKING_EXHAUSTIVENESS = 32             # H037 提升 8→32 以发现更深结合模式
 
 # ==========================================
 # 分子生成配置

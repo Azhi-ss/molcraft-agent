@@ -137,7 +137,7 @@ def smiles_to_pdbqt_multi_conformer(smiles: str, n_conformers: int = 5):
 
 
 def dock_molecule(smiles: str, center=None, size=None, exhaustiveness=None, seed: int = 0,
-                  n_conformers: int = 3):
+                  n_conformers: int = 1):
     """对单个分子进行对接，返回结合能（kcal/mol）。
 
     H029 改进：支持多构象对接增强。
@@ -307,7 +307,7 @@ def dock_molecule_consensus(smiles: str, center=None, size=None, exhaustiveness=
     }
 
 
-def batch_dock(molecules, center=None, size=None, n_conformers: int = 3):
+def batch_dock(molecules, center=None, size=None, n_conformers: int = 1):
     """批量对接分子并返回结果。
 
     H029 改进：支持 n_conformers 参数传递到 dock_molecule。
