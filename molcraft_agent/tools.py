@@ -393,6 +393,10 @@ class RunPipelineParams(BaseModel):
         default="mutate",
         description="生成器选择: mutate(RDKit变异,默认), diffusion(PocketXMol扩散模型,需GPU), hybrid(扩散+RDKit混合)",
     )
+    seed_smiles: list[str] | None = Field(
+        default=None,
+        description="种子 SMILES 列表（跨 session 迭代核心）。传入后初始代从这些种子变异而非从 SCAFFOLDS 库从头生成。典型用法：从上一轮 run_pipeline 返回的 top_molecules 中提取 SMILES 列表传入。这实现了「扩散生成→RDKit迭代」的闭环。",
+    )
 
 
 class RunPipeline(CallableTool2):
@@ -416,6 +420,7 @@ class RunPipeline(CallableTool2):
                 n_generations=params.n_generations,
                 use_docking_guidance=params.use_docking_guidance,
                 generator=params.generator,
+                seed_smiles=params.seed_smiles,
                 output_dir="output",
             )
             energies = [r["binding_energy"] for r in results if r.get("binding_energy") is not None]

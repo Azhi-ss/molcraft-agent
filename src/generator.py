@@ -1176,7 +1176,7 @@ def _build_fragment_db_from_scaffolds():
 
 
 def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
-                       fragment_pool=None):
+                       fragment_pool=None, seed_smiles_list=None):
     """生成候选药物分子。
 
     策略:
@@ -1194,16 +1194,21 @@ def generate_molecules(strategy="mutate", n_molecules=50, scaffold=None,
         n_molecules: 目标分子数
         scaffold: 可选种子骨架
         fragment_pool: 可选的 SMILES 列表，用于 BRICS 分解（combine 策略使用）
+        seed_smiles_list: 可选种子 SMILES 列表，优先于 SCAFFOLDS 库使用（跨 session 迭代核心）
     """
     molecules = set()
     attempts = 0
     max_attempts = n_molecules * 20
 
     if strategy == "mutate":
-        seeds = SCAFFOLDS if scaffold is None else [scaffold]
+        # 种子优先级: seed_smiles_list(跨session迭代) > scaffold(定向) > SCAFFOLDS库(通用)
+        if seed_smiles_list:
+            seeds = seed_smiles_list
+        else:
+            seeds = SCAFFOLDS if scaffold is None else [scaffold]
         # H021: 40% 概率从激酶铰链骨架采样，提升 TYK2 hinge 探索
-        # 仅在无显式 scaffold 参数时生效（保留 scaffold 参数的精确控制）
-        _use_kinase_bias = (scaffold is None and random.random() < 0.4)
+        # 仅在无显式 seed_smiles_list 和 scaffold 参数时生效（有真实种子时不偏置）
+        _use_kinase_bias = (not seed_smiles_list and scaffold is None and random.random() < 0.4)
         while len(molecules) < n_molecules and attempts < max_attempts:
             attempts += 1
             if _use_kinase_bias:

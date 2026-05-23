@@ -78,6 +78,7 @@ def run_evolutionary_pipeline(
     output_dir="output",
     use_docking_guidance=True,
     generator="mutate",
+    seed_smiles=None,
     logger=None,  # Optional EventLogger instance
 ):
     """运行进化式迭代药物研发流程。
@@ -91,6 +92,8 @@ def run_evolutionary_pipeline(
         output_dir: 输出目录
         use_docking_guidance: 是否使用 H002 对接引导生成
         generator: 生成器选择 - "mutate"(RDKit), "diffusion"(PocketXMol), "hybrid"(混合)
+        seed_smiles: 可选种子 SMILES 列表（跨 session 迭代核心）。传入后初始代从这些种子变异，
+                     而非从 SCAFFOLDS 库从头生成。典型用法：上一轮 top 分子的 SMILES。
         logger: 可选的 EventLogger 实例，用于结构化日志输出
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -100,7 +103,8 @@ def run_evolutionary_pipeline(
     log("MolCraft Agent 进化迭代版开始执行", log_lines)
     log(f"配置: n_generate={n_generate}, n_generations={n_generations}, "
         f"n_offspring={n_offspring_per_seed}, strategy={strategy}, "
-        f"docking_guidance={use_docking_guidance}, generator={generator}", log_lines)
+        f"docking_guidance={use_docking_guidance}, generator={generator}, "
+        f"seed_smiles={len(seed_smiles) if seed_smiles else 'None'}", log_lines)
     log("=" * 60, log_lines)
 
     # 步骤 1: 准备受体
@@ -119,8 +123,16 @@ def run_evolutionary_pipeline(
 
         if gen == 0:
             # 初始代
-            if generator in ("diffusion", "hybrid"):
-                diffusion_mols = _generate_diffusion(n_generate, log_lines)
+            if seed_smiles and generator == "mutate":
+                # 种子进化模式：从上一轮 top 种子变异，跳过 docking_guidance（种子本身已对接验证）
+                log(f"种子进化: 从 {len(seed_smiles)} 个种子变异生成 (strategy={strategy})", log_lines)
+                mols = generate_molecules(
+                    strategy=strategy, n_molecules=n_generate,
+                    seed_smiles_list=seed_smiles,
+                )
+            elif generator in ("diffusion", "hybrid"):
+                # seed_smiles 传入时扩散模型走 opt_mol 局部优化，否则走 sbdd de novo
+                diffusion_mols = _generate_diffusion(n_generate, log_lines, seed_smiles=seed_smiles)
                 log(f"扩散模型生成了 {len(diffusion_mols)} 个分子", log_lines)
 
                 if generator == "diffusion":
@@ -308,7 +320,9 @@ def run_evolutionary_pipeline(
                     be_norm = 0.0
                 # H030: LogP score penalizes excessively lipophilic molecules
                 logp_score = compute_logp_score(c.get("logp", 0.0))
-                c["composite_score"] = 0.75 * be_norm + 0.15 * c["route_quality"] + 0.10 * logp_score
+                # H040: Increased route quality weight (0.15→0.25) for better synthesis tractability
+                # Source: LARC (Baker et al., 2025) — multi-parameter optimization
+                c["composite_score"] = 0.65 * be_norm + 0.25 * c["route_quality"] + 0.10 * logp_score
         else:
             for c in scored_candidates:
                 logp_score = compute_logp_score(c.get("logp", 0.0))
@@ -405,8 +419,14 @@ def run_evolutionary_pipeline(
     return results
 
 
-def _generate_diffusion(n_molecules, log_lines):
+def _generate_diffusion(n_molecules, log_lines, seed_smiles=None):
     """调用 PocketXMol 扩散模型 HTTP API 生成口袋感知分子（异步轮询模式）。
+
+    Args:
+        n_molecules: 生成分子数量
+        log_lines: 日志列表
+        seed_smiles: 可选种子 SMILES 列表。传入后使用 /optimize 端点（opt_mol）做局部优化，
+                     而非 /generate-and-dock（sbdd de novo）。实现扩散模型自迭代闭环。
 
     Returns:
         list[dict]: 生成的分子列表（格式与 generate_molecules 兼容）
@@ -427,67 +447,55 @@ def _generate_diffusion(n_molecules, log_lines):
 
     with open(pdb_path) as f:
         pdb_content = f.read()
+    pocket_center = _config.DOCKING_CENTER
     pocket_radius = max(_config.DOCKING_SIZE) / 2.0 if _config.DOCKING_SIZE else 15.0
-
-    request_body = json.dumps({
-        "pdb_content": pdb_content,
-        "n_molecules": n_molecules,
-        "pocket_center": _config.DOCKING_CENTER,
-        "pocket_radius": pocket_radius,
-    }, ensure_ascii=False).encode("utf-8")
-
     base_url = api_url.rstrip("/")
-
-    # Phase 1: Submit job
-    submit_url = f"{base_url}/generate-and-dock"
-    submit_req = urllib.request.Request(
-        submit_url, data=request_body,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    log(f"扩散模型: 提交任务 {base_url} (n={n_molecules})", log_lines)
-    accept = json.loads(urllib.request.urlopen(submit_req, timeout=60).read().decode("utf-8"))
-    job_id = accept["job_id"]
-    log(f"扩散模型: 任务 {job_id} 已接受，开始轮询...", log_lines)
-
-    # Phase 2: Poll for completion
-    poll_interval = 30
     timeout = _config.DIFFUSION_TIMEOUT
+
+    # ── 模式选择：有种子 → opt_mol 局部优化；无种子 → sbdd de novo ──
+    if seed_smiles:
+        return _diffusion_optimize_seeds(
+            seed_smiles, pdb_content, pocket_center, base_url, timeout, log_lines,
+        )
+    else:
+        return _diffusion_generate_sbdd(
+            n_molecules, pdb_content, pocket_center, pocket_radius, base_url, timeout, log_lines,
+        )
+
+
+def _poll_job(base_url, job_id, timeout, log_lines, label="扩散模型"):
+    """轮询 GPU 服务器异步任务直到完成。"""
+    import urllib.request
+    import urllib.error
+    poll_interval = 30
     elapsed = 0
     while elapsed < timeout:
         time.sleep(poll_interval)
         elapsed += poll_interval
-
         status_req = urllib.request.Request(f"{base_url}/job/{job_id}")
         try:
             status = json.loads(urllib.request.urlopen(status_req, timeout=15).read().decode("utf-8"))
         except urllib.error.URLError:
             continue
-
         job_status = status["status"]
         job_elapsed = status.get("elapsed_seconds", 0)
         mol_count = status.get("molecule_count", 0)
-
-        log(f"扩散模型: [{job_status}] {job_elapsed:.0f}s elapsed, {mol_count} mols so far", log_lines)
-
+        log(f"{label}: [{job_status}] {job_elapsed:.0f}s elapsed, {mol_count} mols", log_lines)
         if job_status == "completed":
-            break
+            return elapsed
         elif job_status == "failed":
-            raise RuntimeError(f"扩散模型推理失败: {status.get('message', 'Unknown')}")
+            raise RuntimeError(f"{label}推理失败: {status.get('message', 'Unknown')}")
+    raise RuntimeError(f"{label}推理超时 ({timeout}s)")
 
-    if elapsed >= timeout:
-        raise RuntimeError(f"扩散模型推理超时 ({timeout}s)")
 
-    # Phase 3: Fetch result
+def _fetch_job_result(base_url, job_id, log_lines):
+    """获取已完成任务的结果并转换为 generate_molecules 格式。"""
+    import urllib.request
     result_url = f"{base_url}/job/{job_id}/result"
     result_req = urllib.request.Request(result_url)
     result = json.loads(urllib.request.urlopen(result_req, timeout=30).read().decode("utf-8"))
-
     molecules = result.get("molecules", [])
     gen_time = result.get("generation_time_seconds", 0)
-    log(f"扩散模型: 完成 — {len(molecules)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
-
-    # Convert to generate_molecules-compatible format
     converted = []
     for m in molecules:
         smiles = m.get("smiles", "")
@@ -504,11 +512,91 @@ def _generate_diffusion(n_molecules, log_lines):
             "sa_score": m.get("sa_score"),
             "binding_energy": m.get("binding_energy"),
         })
+    return converted, gen_time
 
+
+def _diffusion_generate_sbdd(n_molecules, pdb_content, pocket_center, pocket_radius, base_url, timeout, log_lines):
+    """SBDD de novo 模式：从口袋生成全新分子。"""
+    import urllib.request
+    request_body = json.dumps({
+        "pdb_content": pdb_content,
+        "n_molecules": n_molecules,
+        "pocket_center": pocket_center,
+        "pocket_radius": pocket_radius,
+    }, ensure_ascii=False).encode("utf-8")
+
+    submit_url = f"{base_url}/generate-and-dock"
+    submit_req = urllib.request.Request(
+        submit_url, data=request_body,
+        headers={"Content-Type": "application/json"}, method="POST",
+    )
+    log(f"扩散模型(SBDD): 提交 de novo 任务 (n={n_molecules})", log_lines)
+    accept = json.loads(urllib.request.urlopen(submit_req, timeout=60).read().decode("utf-8"))
+    job_id = accept["job_id"]
+
+    _poll_job(base_url, job_id, timeout, log_lines, label="SBDD")
+    converted, gen_time = _fetch_job_result(base_url, job_id, log_lines)
+    log(f"扩散模型(SBDD): 完成 — {len(converted)} 个分子 (耗时 {gen_time:.0f}s)", log_lines)
     if not converted:
-        raise RuntimeError("扩散模型生成结果为空")
-
+        raise RuntimeError("扩散模型SBDD生成结果为空")
     return converted
+
+
+def _diffusion_optimize_seeds(seed_smiles_list, pdb_content, pocket_center, base_url, timeout, log_lines):
+    """Opt_mol 模式：对种子分子做局部优化（扩散模型自迭代闭环）。"""
+    import urllib.request
+    import urllib.error
+    n_seeds = min(5, len(seed_smiles_list))
+    seeds = seed_smiles_list[:n_seeds]
+    per_seed_timeout = max(timeout // n_seeds, 120)
+    all_variants = []
+
+    for i, seed_smi in enumerate(seeds):
+        log(f"扩散模型(opt_mol): 优化种子 {i+1}/{n_seeds} — {seed_smi[:40]}...", log_lines)
+        request_body = json.dumps({
+            "pdb_content": pdb_content,
+            "smiles": seed_smi,
+            "n_variants": 5,
+            "pocket_center": pocket_center,
+        }, ensure_ascii=False).encode("utf-8")
+
+        opt_req = urllib.request.Request(
+            f"{base_url}/optimize",
+            data=request_body,
+            headers={"Content-Type": "application/json"}, method="POST",
+        )
+        try:
+            accept = json.loads(urllib.request.urlopen(opt_req, timeout=60).read().decode("utf-8"))
+            job_id = accept["job_id"]
+        except Exception as e:
+            log(f"扩散模型(opt_mol): 种子 {i+1} 提交失败 — {e}", log_lines)
+            continue
+
+        try:
+            _poll_job(base_url, job_id, per_seed_timeout, log_lines, label=f"opt_mol#{i+1}")
+            variants, gen_time = _fetch_job_result(base_url, job_id, log_lines)
+            for v in variants:
+                v["optimized_from"] = seed_smi[:40]
+                all_variants.extend([v])
+            log(f"扩散模型(opt_mol): 种子 {i+1} 优化完成 — {len(variants)} 变体", log_lines)
+        except RuntimeError as e:
+            log(f"扩散模型(opt_mol): 种子 {i+1} 跳过 — {e}", log_lines)
+            continue
+
+    if not all_variants:
+        raise RuntimeError("扩散模型opt_mol全部种子优化失败")
+
+    # 去重
+    seen = set()
+    deduped = []
+    for v in all_variants:
+        smi = v.get("smiles", "")
+        if smi and smi not in seen:
+            seen.add(smi)
+            deduped.append(v)
+
+    log(f"扩散模型(opt_mol): {len(deduped)} 个去重变体（来自 {n_seeds} 种子）", log_lines)
+    return deduped
 
 
 def _generate_offspring(seeds, n_offspring_per_seed):
@@ -560,6 +648,8 @@ def main():
                         help="禁用 H002 对接引导（不推荐，已验证会退化 0.4~0.8 kcal/mol）")
     parser.add_argument("--generator", choices=["mutate", "diffusion", "hybrid"], default="mutate",
                         help="生成器选择: mutate(RDKit变异), diffusion(PocketXMol扩散), hybrid(混合) (默认: mutate)")
+    parser.add_argument("--seed-smiles", type=str, nargs="*", default=None,
+                        help="种子 SMILES 列表（跨 session 迭代）。传入后初始代从这些种子变异而非从 SCAFFOLDS 库生成")
     args = parser.parse_args()
 
     run_evolutionary_pipeline(
@@ -571,6 +661,7 @@ def main():
         output_dir=args.output_dir,
         use_docking_guidance=args.use_docking_guidance,
         generator=args.generator,
+        seed_smiles=args.seed_smiles,
     )
 
 

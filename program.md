@@ -115,13 +115,30 @@
 3. 将新策略写入 `docs/knowledge_base.md`
 4. 然后才允许重读 papers/ 相关章节或换方向
 
-### 扩散模型（PocketXMol）
+### 扩散模型与种子进化闭环
+
 当 RDKit 变异连续无进展时启用扩散模型。先读 `.kimi/skills/molcraft-env-testing/SKILL.md` 确认 GPU 环境可用。
 
+**核心闭环：扩散生成 → 种子提取 → 迭代升级**
+
+有两条迭代路径，根据 GPU 可用性选择：
+
+**路径A：扩散自迭代（GPU 可用时推荐）**
+1. **扩散探索**：`run_pipeline --generator diffusion`，sbdd de novo 生成口袋感知分子（BE 偏低但骨架新颖）
+2. **种子提取**：从返回的 `top_molecules` 取 best 5 SMILES（QED≥0.3, SA≤6.0 过滤）
+3. **扩散优化**：`run_pipeline --generator diffusion --seed-smiles [提取的SMILES]`，opt_mol 模式对种子做局部优化（3D 口袋感知，比 RDKit SMILES 变异更理性）
+4. **迭代深化**：每轮取 top 5 → 写入 knowledge_base → 下轮 seed_smiles 传入
+
+**路径B：扩散+RDKit 混合迭代（GPU 不可用或省时间）**
+1. **扩散探索**：`run_pipeline --generator diffusion`，获得初始骨架
+2. **种子进化**：`run_pipeline --generator mutate --seed-smiles [提取的SMILES]`，从扩散种子做 RDKit 变异
+3. **迭代深化**：每轮取 top 5 → 下轮 seed_smiles 传入
+
 - **默认 RDKit 变异**：`run_pipeline --generator mutate`，已验证 BE 最低 -10.359
-- **hybrid 模式**：`run_pipeline --generator hybrid`，扩散产骨架 + RDKit 做局部变异，新靶点首轮或多样性瓶颈时启用
-- **种子进化**：取扩散 top-5 分子（QED≥0.3, SA≤6.0 过滤）作种子，`run_pipeline --generator mutate`
-- **注意**：Vina 偏向疏水，扩散生成的极性分子 BE 偏低但路线更好——综合评判。GPU 不可用标记 INFRA_BLOCKED 不视为假设失败。
+- **hybrid 模式**：`run_pipeline --generator hybrid`，首轮扩散+RDKit 混合，后续代从 top 种子变异
+- **seed_smiles 作用**：所有生成器（mutate/diffusion/hybrid）都支持 seed_smiles——这是跨 session 迭代的唯一通道
+- **注意**：Vina 偏向疏水，扩散生成的极性分子 BE 偏低但路线更好——综合评判。GPU 不可用标记 INFRA_BLOCKED 不视为假设失败
+- **All-Time Best 机制**：每轮结束更新 `All-Time Best BE = min(历史, 本轮best)`，下一轮裁决以此为基准
 
 ---
 
